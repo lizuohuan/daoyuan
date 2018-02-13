@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IBusinessInsuranceMapper">
+
+
+
+    <resultMap id="BaseResult" type="com.magic.daoyuan.business.entity.BusinessInsurance">
+        <result column="id" property="id" javaType="java.lang.Integer"/>
+        <result column="companySonTotalBillId" property="companySonTotalBillId" javaType="java.lang.Integer"/>
+        <result column="serviceTime" property="serviceTime" javaType="java.lang.Integer"/>
+        <result column="memberId" property="memberId" javaType="java.lang.Integer"/>
+        <result column="serviceStartTime" property="serviceStartTime" javaType="java.util.Date"/>
+        <result column="createTime" property="createTime" javaType="java.util.Date"/>
+        <result column="userName" property="userName" javaType="java.lang.String"/>
+        <result column="certificateNum" property="certificateNum" javaType="java.lang.String"/>
+    </resultMap>
+
+
+    <resultMap id="IncludeItem" type="com.magic.daoyuan.business.entity.BusinessInsurance" extends="BaseResult">
+        <association property="businessInsuranceItemList" column="id" select="com.magic.daoyuan.business.mapper.IBusinessInsuranceItemMapper.queryBusinessInsuranceItem"/>
+    </resultMap>
+
+    <select id="countBusinessInsurance" resultType="double">
+        SELECT
+            IFNULL(SUM(bii.price),0)
+        FROM
+            business_insurance_item bii
+        WHERE bii.companySonTotalBillId = #{companySonTotalBillId}
+    </select>
+
+    <select id="countBusinessInsuranceByCompanyId" resultType="double">
+        SELECT
+            IFNULL(SUM(bii.price),0)
+        FROM
+            business_insurance bi,
+            business_insurance_item bii,
+            company_son_total_bill cstb
+        WHERE
+            bi.id = bii.businessInsuranceId
+            AND cstb.id = bi.companySonTotalBillId
+            AND DATE_FORMAT(cstb.billMonth, '%Y-%m') = DATE_FORMAT(#{billMonth}, '%Y-%m')
+            AND cstb.companyId = #{companyId}
+    </select>
+
+
+    <insert id="batchAddBusinessInsurance" parameterType="com.magic.daoyuan.business.entity.BusinessInsurance"
+        keyColumn="id" keyProperty="id" useGeneratedKeys="true">
+      INSERT INTO business_insurance ( memberId, serviceStartTime, serviceTime, createTime, companySonTotalBillId,serviceEndTime)
+      VALUES
+      <foreach collection="list" item="bi" index="index" separator=",">
+          ( #{bi.memberId}, #{bi.serviceStartTime}, #{bi.serviceTime}, NOW(), #{bi.companySonTotalBillId},#{bi.serviceEndTime})
+      </foreach>
+    </insert>
+
+    <delete id="delBusinessInsurance">
+        DELETE FROM business_insurance WHERE companySonTotalBillId IN
+        <foreach collection="companySonTotalBillIds" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <delete id="del">
+        DELETE FROM business_insurance WHERE id IN
+        <foreach collection="list" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+
+    <select id="queryBusinessInsurance" resultMap="IncludeItem">
+        SELECT bi.*,m.certificateNum,m.userName
+        FROM business_insurance bi,member m,business_insurance_item bii
+        WHERE bi.memberId = m.id
+        AND bi.id = bii.businessInsuranceId
+        AND bii.companySonTotalBillId = #{companySonTotalBillId}
+    </select>
+
+    <select id="queryBusinessInsuranceByCompanyIdAndBillMonth" resultMap="IncludeItem">
+        SELECT bi.*,m.certificateNum,m.userName
+        FROM business_insurance bi,member m,business_insurance_item bii,company_son_total_bill cstb
+        WHERE bi.memberId = m.id
+        AND bi.id = bii.businessInsuranceId
+        AND bii.companySonTotalBillId = cstb.id
+        <if test="billMonth != null">
+            AND DATE_FORMAT(cstb.billMonth, '%Y-%m') = DATE_FORMAT(#{billMonth}, '%Y-%m')
+        </if>
+        <if test="companyId != null">
+            AND cstb.companyId = #{companyId}
+        </if>
+    </select>
+
+    <select id="queryBusinessInsuranceIds" resultMap="BaseResult">
+        SELECT bi.*
+        FROM business_insurance bi,business_insurance_item bii
+        WHERE bi.id = bii.businessInsuranceId AND  bii.companySonTotalBillId IN
+        <foreach collection="companySonTotalBillIds" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+    </select>
+
+
+</mapper>

@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IMemberCountMapper">
+
+    <delete id="del">
+        DELETE FROM member_count WHERE DATE_FORMAT(createTime,'%y-%m-%d') = DATE_FORMAT(#{date},'%y-%m-%d')
+    </delete>
+
+    <select id="countMemberByDate" resultType="map">
+        SELECT
+        (SELECT COUNT(0) FROM member WHERE stateCooperation = 1 AND DATE_FORMAT(createTime,'%y-%m') = DATE_FORMAT(#{date},'%y-%m')) addMember,
+        (SELECT COUNT(0) FROM member_count WHERE stateCooperation = 0 AND DATE_FORMAT(createTime,'%y-%m') = DATE_FORMAT(#{date},'%y-%m')) reduceMember,
+        (SELECT COUNT(0) FROM member_count mc,company_cooperation mmc WHERE
+        mc.companyId = mmc.companyId AND mmc.isPeer = 1 AND mc.stateCooperation = 1 AND DATE_FORMAT(mc.createTime,'%y-%m') = DATE_FORMAT(#{date},'%y-%m')
+        AND DATE_FORMAT(mc.createTime,'%y-%m') = DATE_FORMAT(mmc.createTime,'%y-%m')) addMemberPeer,
+        (SELECT COUNT(0) FROM member_count mc,company_cooperation mmc WHERE
+        mc.companyId = mmc.companyId AND mmc.isPeer = 1 AND mc.stateCooperation = 0 AND DATE_FORMAT(mc.createTime,'%y-%m') = DATE_FORMAT(#{date},'%y-%m')
+        AND DATE_FORMAT(mc.createTime,'%y-%m') = DATE_FORMAT(mmc.createTime,'%y-%m')) reduceMemberPeer
+    </select>
+
+
+    <select id="countMemberCounts" resultType="com.magic.daoyuan.business.entity.MemberCount">
+        SELECT
+          COUNT(0) AS countNumber,
+          mc.companyId
+        FROM
+          member_count mc
+        WHERE
+          mc.stateCooperation = 1
+        <if test="startTime != null">
+            AND DATE_FORMAT(mc.createTime,'%y-%m-%d') >= DATE_FORMAT(#{startTime},'%y-%m-%d')
+        </if>
+        <if test="endTime != null">
+            [<![CDATA[
+            AND DATE_FORMAT(mc.createTime,'%y-%m-%d') <= DATE_FORMAT(#{endTime},'%y-%m-%d')
+            ]]>]
+        </if>
+        GROUP BY mc.companyId
+    </select>
+
+    <select id="statisticsMember" resultType="com.magic.daoyuan.business.entity.MemberCount">
+        SELECT
+            COUNT(0) AS countNumber,
+            mc.createTime
+        FROM
+            member_count mc
+            <if test="isPeer != null">
+                ,company_cooperation cc
+            </if>
+        WHERE
+            mc.stateCooperation = 1
+        <if test="payPlaceId != null">
+            AND (mc.payPlaceIdOfReservedFunds = #{payPlaceId} OR mc.payPlaceIdOfSocialSecurity = #{payPlaceId})
+        </if>
+        <if test="companyIds != null">
+            AND mc.companyId IN
+            <foreach collection="companyIds" index="index" item="companyId" open="(" close=")" separator=",">
+                #{companyId}
+            </foreach>
+        </if>
+        <if test="startTime != null">
+            AND DATE_FORMAT(mc.createTime,'%y-%m-%d') >= DATE_FORMAT(#{startTime},'%y-%m-%d')
+        </if>
+        <if test="endTime != null">
+
+            AND DATE_FORMAT(#{endTime},'%y-%m-%d') >= DATE_FORMAT(mc.createTime,'%y-%m-%d')
+
+        </if>
+        <if test="isPeer != null">
+            AND cc.companyId = mc.companyId
+            AND DATE_FORMAT(cc.createTime, '%y-%m-%d') = DATE_FORMAT(mc.createTime, '%y-%m-%d')
+            AND cc.isPeer = 1
+        </if>
+        <if test="flag == 0 or flag == 1">
+            GROUP BY DATE_FORMAT(mc.createTime,'%y-%m-%d')
+        </if>
+        <if test="flag == 2">
+            GROUP BY DATE_FORMAT(mc.createTime,'%y-%m')
+        </if>
+    </select>
+
+    <select id="info" resultType="com.magic.daoyuan.business.entity.MemberCount">
+        SELECT * FROM member_count WHERE memberId = #{memberId} AND DATE_FORMAT(createTime,'%y-%m-%d') = DATE_FORMAT(#{date},'%y-%m-%d')
+    </select>
+
+
+    <update id="update" parameterType="com.magic.daoyuan.business.entity.MemberCount">
+        UPDATE member_count SET companyId = #{companyId},`payPlaceIdOfSocialSecurity` = #{payPlaceIdOfSocialSecurity},
+        `payPlaceIdOfReservedFunds` = #{payPlaceIdOfReservedFunds},`stateCooperation` = #{stateCooperation}
+        WHERE  id = #{id}
+    </update>
+
+    <update id="batchUpdate">
+        <foreach collection="list" index="index" item="i" separator=";">
+            UPDATE member_count
+            <set>
+                <if test="i.companyId != null">
+                    `companyId` = #{i.companyId},
+                </if>
+                <if test="i.payPlaceIdOfSocialSecurity != null">
+                    `payPlaceIdOfSocialSecurity` = #{i.payPlaceIdOfSocialSecurity},
+                </if>
+                <if test="i.payPlaceIdOfReservedFunds != null">
+                    `payPlaceIdOfReservedFunds` = #{i.payPlaceIdOfReservedFunds},
+                </if>
+                <if test="i.stateCooperation != null">
+                    `stateCooperation` = #{i.stateCooperation},
+                </if>
+            </set>
+            WHERE id = #{i.id}
+        </foreach>
+    </update>
+
+    <insert id="add" parameterType="com.magic.daoyuan.business.entity.MemberCount">
+        INSERT INTO member_count
+        (memberId, companyId, payPlaceIdOfSocialSecurity, payPlaceIdOfReservedFunds, stateCooperation, createTime)
+        VALUES
+        (#{memberId}, #{companyId}, #{payPlaceIdOfSocialSecurity}, #{payPlaceIdOfReservedFunds}, #{stateCooperation}, NOW())
+    </insert>
+
+
+    <insert id="batchAdd">
+        INSERT INTO member_count
+        (memberId, companyId, payPlaceIdOfSocialSecurity, payPlaceIdOfReservedFunds, stateCooperation, createTime)
+        VALUES
+        <foreach collection="list" index="index" item="i" separator=",">
+            (#{i.memberId}, #{i.companyId}, #{i.payPlaceIdOfSocialSecurity}, #{i.payPlaceIdOfReservedFunds},
+            #{i.stateCooperation}, NOW())
+        </foreach>
+    </insert>
+
+</mapper>

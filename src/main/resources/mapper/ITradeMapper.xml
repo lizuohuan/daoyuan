@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.ITradeMapper">
+
+
+
+    <insert id="addTrade" parameterType="com.magic.daoyuan.business.entity.Trade">
+      INSERT INTO trade (tradeName, `describe`, isValid) VALUES
+      (#{tradeName}, #{describe}, 1)
+    </insert>
+
+    <update id="update" parameterType="com.magic.daoyuan.business.entity.Trade">
+        UPDATE trade
+        <set>
+            <if test="isValid != null">
+                `isValid` = #{isValid},
+            </if>
+            <if test="describe != null">
+                `describe` = #{describe},
+            </if>
+            <if test="tradeName != null">
+                tradeName = #{tradeName},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="queryTradeByItems" resultType="com.magic.daoyuan.business.entity.Trade">
+        SELECT
+          *
+        FROM
+          trade
+        WHERE
+          isValid = 1
+        <if test="tradeName != null">
+            AND tradeName LIKE '%${tradeName}%'
+        </if>
+        ORDER BY id DESC
+        <if test="limit != null and limitSize != null">
+            LIMIT #{limit},#{limitSize}
+        </if>
+    </select>
+
+    <select id="countTradeByItems" resultType="java.lang.Integer">
+        SELECT
+          COUNT(0)
+        FROM
+          trade
+        WHERE
+          isValid = 1
+        <if test="tradeName != null">
+            AND tradeName LIKE '%${tradeName}%'
+        </if>
+    </select>
+
+</mapper>

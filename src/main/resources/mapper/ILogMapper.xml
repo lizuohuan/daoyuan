@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.ILogMapper">
+
+
+    <insert id="add" parameterType="com.magic.daoyuan.business.entity.Log">
+        INSERT INTO log (userId, `model`, context, createTime, flag)
+        VALUES (#{userId}, #{model}, #{context}, NOW(), #{flag})
+    </insert>
+
+
+    <insert id="batchAdd">
+        INSERT INTO log (userId, `model`, context, createTime, flag)
+        VALUES
+        <foreach collection="list" index="index" item="l" separator=",">
+            (#{l.userId}, #{l.model}, #{l.context}, NOW(), #{l.flag})
+        </foreach>
+    </insert>
+
+    <select id="queryLogByItems" resultType="com.magic.daoyuan.business.entity.Log">
+        SELECT
+            l.*,u.userName AS userName
+        FROM
+            log l,
+            users u
+        WHERE
+            l.userId = u.id
+        <if test="startTime != null">
+            AND DATE_FORMAT(l.createTime,'%y-%m-%d') >= DATE_FORMAT(#{startTime},'%y-%m-%d')
+        </if>
+        <if test="endTime != null">
+            AND DATE_FORMAT(#{endTime},'%y-%m-%d') >= DATE_FORMAT(l.createTime,'%y-%m-%d')
+        </if>
+        <if test="flag != null">
+            AND l.flag = #{flag}
+        </if>
+        <if test="content != null">
+            AND l.context LIKE '%${content}%'
+        </if>
+        <if test="model != null">
+            AND l.`model` = #{model}
+        </if>
+        ORDER BY l.id DESC
+        <if test="pageArgs != null">
+            LIMIT #{pageArgs.pageStart}, #{pageArgs.pageSize}
+        </if>
+    </select>
+
+    <select id="countLog" resultType="int">
+        SELECT
+            COUNT(0)
+        FROM
+            log l,
+            users u
+        WHERE
+            l.userId = u.id
+        <if test="startTime != null">
+            AND DATE_FORMAT(l.createTime,'%y-%m-%d') >= DATE_FORMAT(#{startTime},'%y-%m-%d')
+        </if>
+        <if test="endTime != null">
+            AND DATE_FORMAT(#{endTime},'%y-%m-%d') >= DATE_FORMAT(l.createTime,'%y-%m-%d')
+        </if>
+        <if test="flag != null">
+            AND l.flag = #{flag}
+        </if>
+        <if test="content != null">
+            AND l.context LIKE '%${content}%'
+        </if>
+        <if test="model != null">
+            AND l.`model` = #{model}
+        </if>
+    </select>
+
+</mapper>

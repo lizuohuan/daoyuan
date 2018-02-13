@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IContractMapper">
+
+
+    <resultMap id="BaseContract" type="com.magic.daoyuan.business.entity.Contract">
+        <result column="id" property="id" javaType="java.lang.Integer"/>
+        <result column="serialNumber" property="serialNumber" javaType="java.lang.String"/>
+        <result column="remarks" property="remarks" javaType="java.lang.String"/>
+        <result column="companyName" property="companyName" javaType="java.lang.String"/>
+        <result column="isValid" property="isValid" javaType="java.lang.Integer"/>
+        <result column="companyId" property="companyId" javaType="java.lang.Integer"/>
+        <result column="isTermination" property="isTermination" javaType="java.lang.Integer"/>
+        <result column="startTime" property="startTime" javaType="java.util.Date"/>
+        <result column="endTime" property="endTime" javaType="java.util.Date"/>
+        <result column="createTime" property="createTime" javaType="java.util.Date"/>
+    </resultMap>
+
+    <resultMap id="IncludeAttachment" type="com.magic.daoyuan.business.entity.Contract">
+        <association property="attachments" column="id" select="com.magic.daoyuan.business.mapper.IAttachmentMapper.queryAttachmentByContract"/>
+    </resultMap>
+
+    <select id="queryContractByCompanyASC" resultMap="BaseContract">
+        SELECT * FROM contract
+        WHERE companyId = #{companyId}
+        AND isValid = 1
+        ORDER BY startTime ASC
+    </select>
+
+    <select id="countContractByItems" resultType="java.lang.Integer">
+        SELECT
+          COUNT(0)
+        FROM
+          contract con
+        WHERE
+        con.isValid = 1
+        <!--<if test="serialNumber != null">-->
+            <!--AND con.serialNumber LIKE '%${serialNumber}%'-->
+        <!--</if>-->
+        <!--<if test="startTime != null">-->
+            <!--AND con.startTime <![CDATA[ <= ]]> #{startTime}-->
+        <!--</if>-->
+        <!--<if test="endTime != null">-->
+            <!--AND con.endTime >= #{endTime}-->
+        <!--</if>-->
+        <if test="companyId != null">
+            AND con.companyId = #{companyId}
+        </if>
+    </select>
+
+    <select id="queryContractByItems" resultMap="BaseContract">
+        SELECT
+          con.*,com.companyName AS companyName
+        FROM
+          contract con,company com
+        WHERE
+        con.companyId = com.id
+        AND con.isValid = 1
+        <if test="companyId != null">
+            AND con.companyId = #{companyId}
+        </if>
+        ORDER BY con.endTime DESC
+        <if test="limit != null and limitSize != null">
+            LIMIT #{limit},#{limitSize}
+        </if>
+    </select>
+
+    <select id="queryContractByCompany" resultMap="IncludeAttachment">
+        SELECT
+          con.*,com.companyName AS companyName
+        FROM
+          contract con,company com
+        WHERE
+        con.companyId = com.id
+        AND con.isValid = 1
+        AND com.id = #{companyId}
+    </select>
+
+
+
+
+    <select id="queryContractById" resultMap="IncludeAttachment">
+        SELECT
+          con.*,com.companyName AS companyName
+        FROM
+          contract con,company com
+        WHERE
+        con.companyId = com.id
+        AND con.id = #{id}
+    </select>
+
+    <update id="updateContract" parameterType="com.magic.daoyuan.business.entity.Contract">
+        UPDATE contract
+        <set>
+            <if test="serialNumber != null">
+                serialNumber = #{serialNumber},
+            </if>
+            <if test="startTime != null">
+                startTime = #{startTime},
+            </if>
+            <if test="endTime != null">
+                endTime = #{endTime},
+            </if>
+            <if test="remarks != null">
+                remarks = #{remarks},
+            </if>
+            <if test="isValid != null">
+                isValid = #{isValid},
+            </if>
+            <if test="isTermination != null">
+                isTermination = #{isTermination},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <insert id="addContract" parameterType="com.magic.daoyuan.business.entity.Contract" useGeneratedKeys="true"
+    keyColumn="id" keyProperty="id">
+        INSERT INTO contract (serialNumber, startTime, endTime, remarks, isValid, createTime, companyId,isTermination)
+        VALUES
+        (#{serialNumber}, #{startTime}, #{endTime}, #{remarks}, 1, now(), #{companyId},#{isTermination})
+    </insert>
+
+
+
+</mapper>

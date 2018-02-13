@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IMemberBusinessOtherItemMapper">
+
+
+    <resultMap id="BaseMap" type="com.magic.daoyuan.business.entity.MemberBusinessOtherItem">
+        <result column="id" property="id" javaType="java.lang.Integer"/>
+        <result column="memberBusinessId" property="memberBusinessId" javaType="java.lang.Integer"/>
+        <result column="businessItemId" property="businessItemId" javaType="java.lang.Integer"/>
+        <result column="companySonBillId" property="companySonBillId" javaType="java.lang.Integer"/>
+    </resultMap>
+
+
+    <insert id="batchAddMemberBusinessOtherItem">
+        INSERT INTO member_business_other_item ( memberBusinessId, businessItemId,companySonBillId)
+        VALUES
+        <foreach collection="itemList" index="index" item="item" separator=",">
+            ( #{item.memberBusinessId}, #{item.businessItemId},#{item.companySonBillId})
+        </foreach>
+    </insert>
+
+    <delete id="delMemberBusinessOtherItem">
+        DELETE
+        FROM
+            member_business_other_item
+        WHERE
+            memberBusinessId IN (
+                SELECT
+                    mb.id
+                FROM
+                    member_business mb
+                WHERE
+                    mb.memberId = #{memberId}
+            )
+    </delete>
+
+    <delete id="batDel">
+        <foreach collection="list" index="index" item="i" separator=";">
+            DELETE
+            FROM
+            member_business_other_item
+            WHERE
+              id = #{i.id}
+        </foreach>
+    </delete>
+
+    <delete id="del">
+        DELETE FROM member_business_other_item WHERE  id IN
+        <foreach collection="list" index="index" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </delete>
+
+</mapper>

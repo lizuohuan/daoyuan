@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.ICompanyBillInfoMapper">
+
+
+    <resultMap id="BaseResultMap" type="com.magic.daoyuan.business.entity.CompanyBillInfo">
+        <result column="id" property="id" javaType="java.lang.Integer"/>
+        <result column="name" property="name" javaType="java.lang.String"/>
+        <result column="title" property="title" javaType="java.lang.String"/>
+        <result column="taxNumber" property="taxNumber" javaType="java.lang.String"/>
+        <result column="address" property="address" javaType="java.lang.String"/>
+        <result column="phone" property="phone" javaType="java.lang.String"/>
+        <result column="accountName" property="accountName" javaType="java.lang.String"/>
+        <result column="bankAccount" property="bankAccount" javaType="java.lang.String"/>
+        <result column="isValid" property="isValid" javaType="java.lang.Integer"/>
+        <result column="companyId" property="companyId" javaType="java.lang.Integer"/>
+        <result column="isEnabled" property="isEnabled" javaType="java.lang.Integer"/>
+        <result column="billType" property="billType" javaType="java.lang.Integer"/>
+        <result column="isFirstBill" property="isFirstBill" javaType="java.lang.Integer"/>
+        <result column="isPartBill" property="isPartBill" javaType="java.lang.Integer"/>
+        <result column="isCopy" property="isCopy" javaType="java.lang.Integer"/>
+        <result column="relevanceId" property="relevanceId" javaType="java.lang.Integer"/>
+    </resultMap>
+
+    <select id="queryBillInfoById" resultType="com.magic.daoyuan.business.entity.CompanyBillInfo">
+        SELECT
+          cbi.*,cc.companyName AS companyName
+        FROM
+        company_bill_info cbi,company cc
+        WHERE
+        cbi.companyId = cc.id
+        AND cbi.id = #{id}
+    </select>
+
+    <select id="countBillInfoByItems" resultType="java.lang.Integer">
+        SELECT
+          COUNT(0)
+        FROM
+        company_bill_info cbi,company cc
+        WHERE
+        cbi.companyId = cc.id
+        AND cbi.isCopy = 0
+        <if test="companyId != null">
+            AND cbi.companyId = #{companyId}
+        </if>
+    </select>
+
+    <select id="queryBillInfoByItems" resultType="com.magic.daoyuan.business.entity.CompanyBillInfo">
+        SELECT
+          cbi.*,cc.companyName AS companyName
+        FROM
+        company_bill_info cbi,company cc
+        WHERE
+        cbi.companyId = cc.id
+        AND cbi.isCopy = 0
+        <if test="companyId != null">
+            AND cbi.companyId = #{companyId}
+        </if>
+        ORDER BY cbi.id DESC
+        <if test="limit != null and limitSize != null">
+            LIMIT #{limit},#{limitSize}
+        </if>
+    </select>
+
+    <select id="queryBillInfo" resultType="com.magic.daoyuan.business.entity.CompanyBillInfo">
+        SELECT
+          cbi.*,cc.companyName AS companyName
+        FROM
+        company_bill_info cbi,company cc
+        WHERE
+        cbi.companyId = #{companyId}
+        AND cbi.companyId = cc.id
+        AND cbi.isValid = 1 AND cbi.isEnabled = 1 AND cbi.isCopy = 0
+
+    </select>
+
+    <update id="updateBillInfo" parameterType="com.magic.daoyuan.business.entity.CompanyBillInfo">
+        UPDATE company_bill_info
+        <set>
+            <if test="address != null">
+                address = #{address},
+            </if>
+            <if test="name != null">
+                `name` = #{name},
+            </if>
+            <if test="taxNumber != null">
+                taxNumber = #{taxNumber},
+            </if>
+            <if test="title != null">
+                title = #{title},
+            </if>
+            <if test="phone != null">
+                phone = #{phone},
+            </if>
+            <if test="accountName != null">
+                accountName = #{accountName},
+            </if>
+            <if test="bankAccount != null">
+                bankAccount = #{bankAccount},
+            </if>
+            <if test="isValid != null">
+                isValid = #{isValid},
+            </if>
+            <if test="companyId != null">
+                companyId = #{companyId},
+            </if>
+            <if test="isEnabled != null">
+                isEnabled = #{isEnabled},
+            </if>
+            <if test="billType != null">
+                billType = #{billType},
+            </if>
+            <if test="isFirstBill != null">
+                isFirstBill = #{isFirstBill},
+            </if>
+            <if test="isPartBill != null">
+                isPartBill = #{isPartBill},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <insert id="addBillInfo" parameterType="com.magic.daoyuan.business.entity.CompanyBillInfo"
+    useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO company_bill_info
+        (`name`, title, taxNumber, address, phone, accountName, bankAccount, isValid, companyId,isEnabled,billType,isFirstBill,isPartBill,isCopy,relevanceId)
+        VALUES
+        (#{name}, #{title}, #{taxNumber}, #{address},#{phone} , #{accountName}, #{bankAccount}, 1, #{companyId},#{isEnabled},#{billType}
+        ,#{isFirstBill},#{isPartBill},#{isCopy},#{relevanceId})
+    </insert>
+
+    <insert id="batchAddBillInfo">
+        INSERT INTO company_bill_info
+        (`name`, title, taxNumber, address, phone, accountName, bankAccount, isValid, companyId,isEnabled,billType,isFirstBill,isPartBill,isCopy,relevanceId)
+        VALUES
+        <foreach collection="billInfoList" index="index" item="info" separator=",">
+            (#{info.name}, #{info.title}, #{info.taxNumber}, #{info.address},#{info.phone} ,
+            #{info.accountName}, #{info.bankAccount}, 1, #{info.companyId},#{info.isEnabled},#{info.billType},#{info.isFirstBill},
+            #{info.isPartBill},#{info.isCopy},#{info.relevanceId})
+        </foreach>
+    </insert>
+
+
+</mapper>

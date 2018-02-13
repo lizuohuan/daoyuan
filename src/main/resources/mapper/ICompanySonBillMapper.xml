@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.magic.daoyuan.business.mapper.ICompanySonBillMapper">
+
+    <resultMap id="BaseResultMap" type="com.magic.daoyuan.business.entity.CompanySonBill">
+        <id column="id" property="id" javaType="java.lang.Integer" />
+        <result column="companyId" property="companyId" javaType="java.lang.Integer" />
+        <result column="contactsId" property="contactsId" javaType="java.lang.Integer" />
+        <result column="isValid" property="isValid" javaType="java.lang.Integer" />
+        <result column="companyBillInfoId" property="companyBillInfoId" javaType="java.lang.Integer" />
+        <result column="sonBillName" property="sonBillName" javaType="java.lang.String"/>
+        <result column="companyName" property="companyName" javaType="java.lang.String"/>
+        <result column="contactsName" property="contactsName" javaType="java.lang.String"/>
+        <result column="companyBillInfoName" property="companyBillInfoName" javaType="java.lang.String"/>
+        <result column="waysOfCooperation" property="waysOfCooperation" javaType="java.lang.Integer"/>
+    </resultMap>
+
+    <resultMap id="IncludeBillInfo" type="com.magic.daoyuan.business.entity.CompanySonBill" extends="BaseResultMap">
+        <association property="billInfo" column="companyBillInfoId" select="com.magic.daoyuan.business.mapper.ICompanyBillInfoMapper.queryBillInfoById"/>
+    </resultMap>
+
+    <resultMap id="BaseResultMapOther" type="com.magic.daoyuan.business.entity.CompanySonBill" extends="BaseResultMap">
+        <association property="companySonTotalBillList" columnPrefix="cstb_"
+                     resultMap="com.magic.daoyuan.business.mapper.ICompanySonTotalBillMapper.BaseResultMap"/>
+    </resultMap>
+    <resultMap id="BaseResultMapOther2" type="com.magic.daoyuan.business.entity.CompanySonBill" extends="BaseResultMap">
+        <association property="socialSecurityInfoList" columnPrefix="ssi_"
+                     resultMap="com.magic.daoyuan.business.mapper.ISocialSecurityInfoMapper.BaseResultItem"/>
+        <association property="reservedFundsInfoList" columnPrefix="rfi_"
+                     resultMap="com.magic.daoyuan.business.mapper.IReservedFundsInfoMapper.BaseResultMap"/>
+        <association property="memberBusinessList" columnPrefix="mb_"
+                     resultMap="com.magic.daoyuan.business.mapper.IMemberBusinessMapper.BaseResultMap"/>
+        <association property="salaryInfoList" columnPrefix="si_"
+                     resultMap="com.magic.daoyuan.business.mapper.ISalaryInfoMapper.BaseResultMap"/>
+    </resultMap>
+
+    <select id="queryCompanySonBillByIds" resultMap="IncludeBillInfo">
+        SELECT * FROM company_son_bill WHERE id IN
+        <foreach collection="ids" index="index" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </select>
+
+
+    <select id="queryCompanySonBillByCompany" resultMap="BaseResultMap">
+        SELECT * FROM company_son_bill WHERE 1=1
+        AND isValid = 1
+        <if test="companyId != null">
+            AND companyId = #{companyId}
+        </if>
+    </select>
+
+    <insert id="save" parameterType="com.magic.daoyuan.business.entity.CompanySonBill">
+        insert into company_son_bill (companyId, contactsId, companyBillInfoId, sonBillName,isValid)
+        values (#{companyId},#{contactsId},#{companyBillInfoId},#{sonBillName},1)
+    </insert>
+
+    <update id="update" parameterType="com.magic.daoyuan.business.entity.CompanySonBill">
+        update company_son_bill
+        <set>
+            <if test="isValid != null">
+                `isValid` = #{isValid},
+            </if>
+            <if test="companyId != null">
+                `companyId` = #{companyId},
+            </if>
+            <if test="contactsId != null">
+                `contactsId` = #{contactsId},
+            </if>
+            <if test="companyBillInfoId != null">
+                `companyBillInfoId` = #{companyBillInfoId},
+            </if>
+            <if test="sonBillName != null and sonBillName != ''">
+                sonBillName = #{sonBillName},
+            </if>
+
+        </set>
+        where id = #{id}
+    </update>
+
+    <select id="info" resultMap="BaseResultMap">
+        select csb.*,cp.companyName,cbi.title AS companyBillInfoName,ct.contactsName
+        from company_son_bill csb,company cp,company_bill_info cbi,contacts ct
+        WHERE
+        cp.id = csb.companyId
+        AND csb.isValid = 1
+        AND cbi.id = csb.companyBillInfoId
+        AND csb.contactsId = ct.id
+        AND csb.id = #{id}
+    </select>
+
+
+    <select id="list" resultMap="BaseResultMap" parameterType="map">
+        SELECT csb.*,cp.companyName,cbi.title AS companyBillInfoName,ct.contactsName
+        FROM company_son_bill csb,company cp,company_bill_info cbi,contacts ct
+        WHERE  cp.id = csb.companyId
+        AND cbi.id = csb.companyBillInfoId
+        AND csb.contactsId = ct.id
+        AND csb.isValid = 1
+        <if test="companyName != null and companyName != ''">
+            AND cp.companyName Like '%${companyName}%'
+        </if>
+        <if test="companyId != null">
+            AND csb.companyId = #{companyId}
+        </if>
+        <if test="sonBillName != null">
+            AND csb.sonBillName LIKE '%${sonBillName}%'
+        </if>
+        <if test="contactsId != null">
+            AND csb.contactsId = #{contactsId}
+        </if>
+        <if test="billInfoId != null">
+            AND csb.companyBillInfoId = #{billInfoId}
+        </if>
+        ORDER BY
+        <if test="pageArgs != null">
+            <if test="pageArgs.column != null and pageArgs.column != ''">
+                ${pageArgs.column} ${pageArgs.order},
+            </if>
+        </if>
+        csb.id DESC
+        <if test="pageArgs != null">
+            limit #{pageArgs.pageStart}, #{pageArgs.pageSize}
+        </if>
+    </select>
+
+
+
+    <select id="listCount" resultType="int" parameterType="map">
+        SELECT
+        COUNT(0)
+        FROM company_son_bill csb,company cp,company_bill_info cbi,contacts ct
+        WHERE cp.id = csb.companyId
+        AND cbi.id = csb.companyBillInfoId
+        AND csb.contactsId = ct.id
+        AND csb.isValid = 1
+        <if test="companyName != null and companyName != ''">
+            AND cp.companyName Like '%${companyName}%'
+        </if>
+        <if test="companyId != null">
+            AND csb.companyId = #{companyId}
+        </if>
+        <if test="sonBillName != null">
+            AND csb.sonBillName LIKE '%${sonBillName}%'
+        </if>
+        <if test="contactsId != null">
+            AND csb.contactsId = #{contactsId}
+        </if>
+        <if test="billInfoId != null">
+            AND csb.companyBillInfoId = #{billInfoId}
+        </if>
+    </select>
+
+    <select id="listForCompanyIds" resultMap="BaseResultMapOther" parameterType="map">
+        SELECT csb.*,cp.companyName,cbi.title AS companyBillInfoName,ct.contactsName,
+
+        cstb.id AS cstb_id,
+        cstb.billMonth AS cstb_billMonth,
+        cstb.companySonBillId AS cstb_companySonBillId,
+        cstb.`status` AS cstb_status,
+        csbi.id AS cstb_csbi_id,
+        csbi.serviceMonth AS cstb_csbi_serviceMonth,
+        csbi.companySonTotalBillId AS cstb_csbi_companySonTotalBillId/*,
+        csbi.id AS cstb_csbi_id,
+        csbi.id AS cstb_csbi_id,
+        csbi.id AS cstb_csbi_id,
+        csbi.id AS cstb_csbi_id*/
+
+        FROM company_son_bill csb
+        LEFT JOIN company_son_total_bill cstb ON csb.id = cstb.companySonBillId
+        LEFT JOIN company_son_bill_item csbi ON cstb.id = csbi.companySonTotalBillId
+        LEFT JOIN social_security_info ssi ON ssi.companySonBillId = csb.id AND ssi.companySonBillItemId IS NULL
+        LEFT JOIN reserved_funds_info rfi ON rfi.companySonBillId = csb.id AND rfi.companySonBillItemId IS NULL
+
+        ,company cp,company_bill_info cbi,contacts ct
+        <if test="billMadeMethod != null">
+            ,company_business cb
+        </if>
+        WHERE  cp.id = csb.companyId
+        AND cbi.id = csb.companyBillInfoId
+        AND csb.contactsId = ct.id
+        AND csb.isValid = 1
+        <if test="billMadeMethod != null">
+            AND cb.billMadeMethod = #{billMadeMethod}
+        </if>
+        AND csb.companyId IN (<foreach item="companyId" collection="companyIds" separator=",">
+                #{companyId}
+          </foreach> )
+
+    </select>
+
+
+
+    <select id="listForCompanyIds2" resultMap="BaseResultMapOther2" parameterType="map">
+        SELECT csb.*,
+        ssi.id AS ssi_id,
+        ssi.companySonBillId AS ssi_companySonBillId,
+        ssi.serviceNowYM AS ssi_serviceNowYM,
+        ssi.memberId AS ssi_memberId,
+        ssi.companyTotalPay AS ssi_companyTotalPay,
+        ssi.memberTotalPay AS ssi_memberTotalPay,
+        ssi.practicalCompanyTotalPay AS ssi_practicalCompanyTotalPay,
+        ssi.practicalMemberTotalPay AS ssi_practicalMemberTotalPay,
+        ssi.billMadeMethod AS ssi_billMadeMethod,
+        ssi.billMonth AS ssi_billMonth,
+        ssi.taxPrice AS ssi_taxPrice,
+        ssii.id AS ssi_ssii_id,
+        ssii.insuranceName AS ssi_ssii_insuranceName,
+        ssii.type AS ssi_ssii_type,
+        rfi.id AS rfi_id,
+        rfi.companySonBillId AS rfi_companySonBillId,
+        rfi.serviceNowYM AS rfi_serviceNowYM,
+        rfi.companyTotalPay AS rfi_companyTotalPay,
+        rfi.memberId AS rfi_memberId,
+        rfi.memberTotalPay AS rfi_memberTotalPay,
+        rfi.practicalCompanyTotalPay AS rfi_practicalCompanyTotalPay,
+        rfi.practicalMemberTotalPay AS rfi_practicalMemberTotalPay,
+        rfi.billMadeMethod AS rfi_billMadeMethod,
+        rfi.billMonth AS rfi_billMonth,
+        rfi.taxPrice AS rfi_taxPrice,
+        mb.id AS mb_id,
+        mb.companySonBillId AS mb_companySonBillId,
+        mb.businessId AS mb_businessId,
+        mb.memberId AS mb_memberId,
+        si.id AS si_id,
+        si.companySonBillId AS si_companySonBillId,
+        si.`month` AS si_month,
+        si.salaryBeforeTax AS si_salaryBeforeTax,
+        m.waysOfCooperation AS si_waysOfCooperation
+
+        FROM company_son_bill csb
+
+        LEFT JOIN (select ssi2.* from member_business_item mbi2,member_business mb2,social_security_info ssi2
+                    WHERE mb2.id = mbi2.memberBusinessId
+                    AND mb2.businessId = 3
+                    AND ssi2.memberId = mb2.memberId
+                    AND ssi2.companySonBillItemId IS NULL
+                    AND date_format(ssi2.serviceNowYM,'%Y-%m') >= date_format(mbi2.serviceStartTime,'%Y-%m')) AS ssi ON ssi.companySonBillId = csb.id
+        LEFT JOIN social_security_info_item ssii ON ssii.socialSecurityInfoId = ssi.id
+        LEFT JOIN (select rfi2.* from member_business_item mbi2,member_business mb2,reserved_funds_info rfi2
+                    WHERE mb2.id = mbi2.memberBusinessId
+                    AND mb2.businessId = 4
+                    AND rfi2.memberId = mb2.memberId
+                    AND rfi2.companySonBillItemId IS NULL
+                    AND date_format(rfi2.serviceNowYM,'%Y-%m') >= date_format(mbi2.serviceStartTime,'%Y-%m')) AS rfi ON rfi.companySonBillId = csb.id
+
+        LEFT JOIN salary_info si ON si.companySonBillId = csb.id AND si.companySonTotalBillId IS NULL,
+        member_business mb,member m
+        WHERE
+        csb.id = mb.companySonBillId
+        AND mb.memberId = m.id
+        AND m.id = si.memberId
+        AND csb.isValid = 1
+        AND csb.companyId IN (<foreach item="companyId" collection="companyIds" separator=",">
+                #{companyId}
+          </foreach> )
+
+    </select>
+
+
+</mapper>

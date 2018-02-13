@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IInformMapper">
+
+    <select id="list" resultType="com.magic.daoyuan.business.entity.Inform" parameterType="map">
+        SELECT i.*
+        FROM inform i
+        WHERE  i.userId = #{userId} or i.roleId = #{roleId}
+        <if test="startTime != null">
+            AND i.createTime <![CDATA[ >= ]]> #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND i.createTime <![CDATA[ <= ]]> #{endTime}
+        </if>
+        ORDER BY
+        <if test="pageArgs != null">
+            <if test="pageArgs.column != null and pageArgs.column != ''">
+                ${pageArgs.column} ${pageArgs.order},
+            </if>
+        </if>
+        i.id DESC
+        <if test="pageArgs != null">
+            limit #{pageArgs.pageStart}, #{pageArgs.pageSize}
+        </if>
+    </select>
+
+    <select id="listCount" resultType="int" parameterType="map">
+        SELECT
+        COUNT(*)
+        FROM inform i
+        WHERE i.userId = #{userId} or i.roleId = #{roleId}
+        <if test="startTime != null">
+            AND i.createTime <![CDATA[ >= ]]> #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND i.createTime <![CDATA[ <= ]]> #{endTime}
+        </if>
+    </select>
+
+
+    <insert id="save" parameterType="com.magic.daoyuan.business.entity.Inform" useGeneratedKeys="true" keyColumn="id" keyProperty="id">
+       insert into inform (userId,roleId, content, createTime) values (#{userId},#{roleId},#{content},now());
+    </insert>
+
+
+    <insert id="saveList" parameterType="com.magic.daoyuan.business.entity.Inform" useGeneratedKeys="true" keyColumn="id" keyProperty="id">
+       insert into inform (userId,roleId, content, createTime) values
+       <foreach collection="list" separator="," item="i">
+           (#{i.userId},#{i.roleId},#{i.content},now())
+       </foreach>
+
+    </insert>
+
+
+    <delete id="delete">
+        DELETE FROM inform WHERE id = #{id}
+    </delete>
+</mapper>

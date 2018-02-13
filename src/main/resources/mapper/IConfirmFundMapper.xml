@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IConfirmFundMapper">
+
+
+    <resultMap id="BaseConfirmFund" type="com.magic.daoyuan.business.entity.ConfirmFund">
+        <result column="id" property="id" javaType="java.lang.Integer"/>
+        <result column="companyId" property="companyId" javaType="java.lang.Integer"/>
+        <result column="billAmount" property="billAmount" javaType="java.lang.Double"/>
+        <result column="confirmAmount" property="confirmAmount" javaType="java.lang.Double"/>
+        <result column="handleMethod" property="handleMethod" javaType="java.lang.Integer"/>
+        <result column="confirmMethod" property="confirmMethod" javaType="java.lang.Integer"/>
+        <result column="confirmMoneyRecordId" property="confirmMoneyRecordId" javaType="java.lang.Integer"/>
+        <result column="createUserId" property="createUserId" javaType="java.lang.Integer"/>
+        <result column="isFirstBill" property="isFirstBill" javaType="java.lang.Integer"/>
+        <result column="createTime" property="createTime" javaType="java.util.Date"/>
+        <result column="createUserName" property="createUserName" javaType="java.lang.String"/>
+        <result column="companyName" property="companyName" javaType="java.lang.String"/>
+        <result column="userId" property="userId" javaType="java.lang.Integer"/>
+    </resultMap>
+
+    <resultMap id="IncludeConfirmFundTotalBill" type="com.magic.daoyuan.business.entity.ConfirmFund" extends="BaseConfirmFund">
+        <association property="confirmFundTotalBillList" columnPrefix="i_"
+                     resultMap="com.magic.daoyuan.business.mapper.IConfirmFundTotalBillMapper.BaseConfirmFundTotalBill"/>
+    </resultMap>
+
+
+
+    <select id="queryNewConfirmFundByCompany" resultMap="IncludeConfirmFundTotalBill">
+        SELECT
+            t.*
+        FROM
+            (
+                SELECT
+                    cf.*, cftb.id AS i_id,
+                    cftb.companySonTotalBillId AS i_companySonTotalBillId,
+                    cftb.confirmFundId AS i_confirmFundId,
+                    cf.billAmount AS i_amount
+                FROM
+                    confirm_fund cf,
+                    confirm_fund_total_bill cftb,
+                    company_son_total_bill cstb
+                WHERE
+                    cf.handleMethod = 2
+                AND cf.id = cftb.confirmFundId
+                AND cstb.id = cftb.companySonTotalBillId
+                AND cstb.isBalanceOfCancelAfterVerification = 0
+            AND cf.companyId IN
+            <foreach collection="list" index="index" item="companyId" separator="," open="(" close=")">
+                #{companyId}
+            </foreach>
+                ORDER BY
+                    cf.id DESC
+            ) t
+        GROUP BY
+            t.companyId
+    </select>
+
+
+    <select id="queryConfirmFundByCompany" resultMap="BaseConfirmFund">
+        SELECT cf.* FROM confirm_fund cf WHERE cf.handleMethod IS NULL AND cf.companyId IN
+        <foreach collection="list" index="index" item="companyId" separator="," open="(" close=")">
+            #{companyId}
+        </foreach>
+    </select>
+
+    <select id="queryConfirmFundByHandleMethod" resultMap="BaseConfirmFund">
+        SELECT cf.*,
+        cc.companyName AS companyName
+        FROM confirm_fund cf,company cc
+        WHERE
+        cc.id = cf.companyId
+        AND cf.handleMethod IS NULL
+        AND cf.companyId IN
+        <foreach collection="list" index="index" item="companyId" separator="," open="(" close=")">
+            #{companyId}
+        </foreach>
+    </select>
+
+    <select id="queryById" resultMap="IncludeConfirmFundTotalBill">
+        SELECT
+            cf.*, cc.isFirstBill,
+            cftb.id AS i_id,
+            cftb.companySonTotalBillId AS i_companySonTotalBillId,
+            cftb.confirmFundId AS i_confirmFundId,
+            cftb.amount AS i_amount
+        FROM
+            confirm_fund cf
+        LEFT JOIN confirm_fund_total_bill cftb ON cf.id = cftb.confirmFundId
+        LEFT JOIN company cc ON cc.id = cf.companyId
+        WHERE cf.id = #{id}
+    </select>
+
+    <select id="queryConfirmFundByItems" resultType="com.magic.daoyuan.business.entity.ConfirmFund">
+        SELECT
+            cf.*, u.userName AS createUserName,
+            cc.companyName AS companyName
+        FROM
+            confirm_fund cf
+        LEFT JOIN users u ON cf.createUserId = u.id
+        LEFT JOIN company cc ON cc.id = cf.companyId
+        WHERE
+            1 = 1
+        <if test="companyId != null">
+            AND cf.companyId = #{companyId}
+        </if>
+        <if test="confirmMethod != null">
+            AND cf.confirmMethod = #{confirmMethod}
+        </if>
+        <if test="handleMethod != null">
+            AND cf.handleMethod = #{handleMethod}
+        </if>
+        ORDER BY cf.id DESC
+        <if test="limit != null and limitSize != null">
+            LIMIT #{limit},#{limitSize}
+        </if>
+    </select>
+
+    <select id="countConfirmFundByItems" resultType="int">
+        SELECT
+            COUNT(0)
+        FROM
+            confirm_fund cf
+        WHERE
+            1 = 1
+        <if test="companyId != null">
+            AND cf.companyId = #{companyId}
+        </if>
+        <if test="confirmMethod != null">
+            AND cf.confirmMethod = #{confirmMethod}
+        </if>
+        <if test="handleMethod != null">
+            AND cf.handleMethod = #{handleMethod}
+        </if>
+    </select>
+
+    <update id="updateConfirmFund">
+        UPDATE confirm_fund
+        SET handleMethod = #{handleMethod}
+        WHERE id = #{id}
+    </update>
+
+    <update id="update" parameterType="com.magic.daoyuan.business.entity.ConfirmFund">
+        UPDATE confirm_fund
+        <set>
+            <if test="handleMethod != null">
+                handleMethod = #{handleMethod},
+            </if>
+            <if test="returnTime != null">
+                returnTime = #{returnTime},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateConfirmFundBillAmount">
+        UPDATE confirm_fund
+        SET billAmount = #{billAmount}
+        WHERE id = #{id}
+    </update>
+
+    <update id="batchUpdateHandleMethod">
+        <foreach collection="list" index="index" item="l" separator=";">
+            UPDATE confirm_fund
+            SET handleMethod = #{l.handleMethod}
+            WHERE id = #{l.id}
+        </foreach>
+
+    </update>
+
+    <select id="queryConfirmFundByRecord" resultType="com.magic.daoyuan.business.entity.ConfirmFund">
+        SELECT * FROM confirm_fund WHERE confirmMoneyRecordId = #{confirmMoneyRecordId}
+    </select>
+
+    <insert id="batchAddConfirmFund" useGeneratedKeys="true" keyColumn="id" keyProperty="id"
+            parameterType="com.magic.daoyuan.business.entity.ConfirmFund">
+        INSERT INTO confirm_fund (companyId, billAmount, confirmAmount, handleMethod, confirmMethod, confirmMoneyRecordId, createUserId, createTime)
+        VALUES
+        <foreach collection="list" index="index" item="cf" separator=",">
+            (#{cf.companyId}, #{cf.billAmount}, #{cf.confirmAmount}, #{cf.handleMethod}, #{cf.confirmMethod},
+            #{cf.confirmMoneyRecordId}, #{cf.createUserId}, NOW())
+        </foreach>
+    </insert>
+
+    <insert id="addConfirmFund" useGeneratedKeys="true" keyColumn="id" keyProperty="id"
+            parameterType="com.magic.daoyuan.business.entity.ConfirmFund">
+        INSERT INTO confirm_fund (companyId, billAmount, confirmAmount, handleMethod, confirmMethod, confirmMoneyRecordId, createUserId, createTime)
+        VALUES
+        (#{companyId}, #{billAmount}, #{confirmAmount}, #{handleMethod},
+         #{confirmMethod}, #{confirmMoneyRecordId}, #{createUserId}, now())
+
+    </insert>
+
+
+    <select id="getUnDispose" resultMap="BaseConfirmFund">
+        select cf.*,cc.beforeService AS userId from confirm_fund cf ,confirm_money_record cmr,company cc
+        WHERE cf.companyId = cc.id
+        AND cmr.id = cf.confirmMoneyRecordId
+        AND cf.handleMethod is null
+        AND date_format(cmr.createTime,'%Y-%m') = date_format(#{date},'%Y-%m')
+    </select>
+</mapper>

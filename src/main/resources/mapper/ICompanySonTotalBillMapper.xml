@@ -1,0 +1,1176 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.ICompanySonTotalBillMapper">
+
+    <resultMap id="BaseResultMap" type="com.magic.daoyuan.business.entity.CompanySonTotalBill">
+        <id column="id" property="id" javaType="java.lang.Integer" />
+        <result column="userId" property="userId" javaType="java.lang.Integer" />
+        <result column="monthBalance" property="monthBalance" javaType="java.lang.Double" />
+        <result column="lastMonthBalance" property="lastMonthBalance" javaType="java.lang.Double" />
+        <result column="companySonBillId" property="companySonBillId" javaType="java.lang.Integer" />
+        <result column="status" property="status" javaType="java.lang.Integer" />
+        <result column="createTime" property="createTime" javaType="java.util.Date" />
+        <result column="billMonth" property="billMonth" javaType="java.util.Date" />
+        <result column="companyName" property="companyName" javaType="java.lang.String" />
+        <result column="payTime" property="payTime" javaType="java.util.Date" />
+        <result column="serviceName" property="serviceName" javaType="java.lang.String" />
+        <result column="servicePhone" property="servicePhone" javaType="java.lang.String" />
+        <result column="sonBillName" property="sonBillName" javaType="java.lang.String" />
+        <result column="totalPrice" property="totalPrice" javaType="java.lang.Double" />
+        <result column="receivablePrice" property="receivablePrice" javaType="java.lang.Double" />
+        <result column="balanceOfCancelAfterVerification" property="balanceOfCancelAfterVerification" javaType="java.lang.Double" />
+        <result column="isBalanceOfCancelAfterVerification" property="isBalanceOfCancelAfterVerification" javaType="java.lang.Integer" />
+        <result column="isCreateBillMonth" property="isCreateBillMonth" javaType="java.lang.Integer" />
+        <result column="auditTheDifference" property="auditTheDifference" javaType="java.lang.Double" />
+        <result column="companyId" property="companyId" javaType="java.lang.Integer" />
+        <result column="billNumber" property="billNumber" javaType="java.lang.String" />
+        <result column="itemBillNumber" property="itemBillNumber" javaType="java.lang.String" />
+        <result column="userId2" property="userId2" javaType="java.lang.Integer" />
+        <result column="isConsignee" property="isConsignee" javaType="java.lang.Integer"/>
+        <result column="okTime" property="okTime" javaType="java.util.Date" />
+        <result column="afterVerificationTime" property="afterVerificationTime" javaType="java.util.Date" />
+    </resultMap>
+
+
+    <resultMap id="IncludeContacts" type="com.magic.daoyuan.business.entity.CompanySonTotalBill" extends="BaseResultMap">
+        <association property="contacts" column="contactsId" select="com.magic.daoyuan.business.mapper.IContactsMapper.queryContactsById"/>
+    </resultMap>
+
+    <resultMap id="BaseResultMapOther" type="com.magic.daoyuan.business.entity.CompanySonTotalBill" extends="BaseResultMap">
+        <association property="companySonBillItemList" columnPrefix="csbi_"
+                     resultMap="com.magic.daoyuan.business.mapper.ICompanySonBillItemMapper.BaseResultMap"/>
+    </resultMap>
+
+
+    <resultMap id="BaseResultMapOther2" type="com.magic.daoyuan.business.entity.CompanySonTotalBill" extends="BaseResultMap">
+        <association property="monthServiceFeeList" columnPrefix="msf_"
+                     resultMap="com.magic.daoyuan.business.mapper.IMonthServiceFeeMapper.BaseResultMap"/>
+        <association property="companySonBillItemList" columnPrefix="csbi_"
+                     resultMap="com.magic.daoyuan.business.mapper.ICompanySonBillItemMapper.BaseResultMap"/>
+    </resultMap>
+
+
+    <select id="queryLastMonthNoConfirmBill" resultMap="BaseResultMap">
+        SELECT * FROM company_son_total_bill WHERE `status` NOT IN (2)
+        AND DATE_FORMAT(billMonth,'%y-%m') = DATE_FORMAT(#{lastMonth},'%y-%m')
+    </select>
+
+
+    <select id="queryCompanySonTotalBillByNo" resultMap="BaseResultMap">
+        SELECT * FROM company_son_total_bill WHERE isBalanceOfCancelAfterVerification = 0
+        AND id IN
+        <foreach collection="list" index="index" item="companyId" open="(" close=")" separator=",">
+            #{companyId}
+        </foreach>
+    </select>
+
+    <select id="queryCompanySonTotalBill" resultMap="IncludeContacts">
+        SELECT
+          cstb.*,csb.contactsId,cc.companyName AS companyName
+        FROM
+          company_son_total_bill cstb ,company_son_bill csb,company cc
+        WHERE
+        cstb.`status` = 0
+        AND csb.id = cstb.companySonBillId
+        AND cc.id = cstb.companyId
+        <if test="null != mapList and mapList.size > 0">
+            AND
+            <foreach collection="mapList" item="list" separator="or">
+                (cstb.companyId = #{list.companyId}
+                AND DATE_FORMAT(cstb.billMonth, '%Y-%m') = DATE_FORMAT(#{list.billMonth}, '%Y-%m'))
+            </foreach>
+        </if>
+
+    </select>
+
+    <select id="queryCompanySonTotalBill_" resultMap="IncludeContacts">
+        SELECT
+          cstb.*,csb.contactsId,cc.companyName AS companyName,u.userName AS serviceName,
+          IFNULL(u.workPhone,u.homePhone) AS servicePhone,cc.payTime AS payTime
+        FROM
+          company_son_total_bill cstb ,company_son_bill csb,company cc,users u
+        WHERE
+        csb.id = cstb.companySonBillId
+        AND cc.id = cstb.companyId
+        AND u.id = cc.beforeService
+        <if test="null != mapList and mapList.size > 0">
+            AND(
+            <foreach collection="mapList" item="list" separator="or">
+                (cstb.companyId = #{list.companyId}
+                AND DATE_FORMAT(cstb.billMonth, '%Y-%m') = DATE_FORMAT(#{list.billMonth}, '%Y-%m'))
+            </foreach>)
+        </if>
+
+    </select>
+
+    <insert id="save" keyProperty="id" keyColumn="id" parameterType="com.magic.daoyuan.business.entity.CompanySonTotalBill"
+            useGeneratedKeys="true">
+        insert into company_son_total_bill (userId, monthBalance, companySonBillId,createTime,
+        `status`,billMonth,isCreateBillMonth,companyId,billNumber,itemBillNumber,lastMonthBalance)
+        values
+        <foreach collection="list" item="record" separator=",">
+            (#{record.userId},#{record.monthBalance},#{record.companySonBillId},now(),
+            0,#{record.billMonth},#{record.isCreateBillMonth},#{record.companyId},
+            #{record.billNumber},#{record.itemBillNumber},#{record.lastMonthBalance})
+        </foreach>
+    </insert>
+
+    <select id="info" resultMap="BaseResultMap">
+        SELECT * FROM company_son_total_bill cstb WHERE cstb.id = #{id}
+    </select>
+
+    <select id="listByCompanyIdAndBillMonth" resultMap="BaseResultMap">
+        SELECT * FROM company_son_total_bill cstb
+        WHERE DATE_FORMAT(cstb.billMonth, '%Y-%m') = DATE_FORMAT(#{billMonth}, '%Y-%m')
+        AND cstb.companyId = #{companyId}
+    </select>
+
+    <select id="getFinallyByCompanySonBillId" resultMap="BaseResultMap">
+        select * from company_son_total_bill cstb WHERE
+        cstb.status = 2
+        AND cstb.companySonBillId = #{companySonBillId} order by cstb.id desc limit 0,1
+    </select>
+
+    <select id="getFinallyByCompanySonBillId2" resultMap="BaseResultMap">
+
+        SELECT
+        *
+        FROM
+        (select * from company_son_total_bill cstb WHERE
+        cstb.status = 2
+        AND cstb.companySonBillId IN (
+        <foreach collection="companySonBillIdSet" separator="," item="companySonBillId">
+            #{companySonBillId}
+        </foreach>
+        )  order by cstb.id desc) AS t
+        GROUP BY t.companySonBillId
+
+    </select>
+
+
+
+    <select id="list" resultMap="BaseResultMap" parameterType="map">
+        SELECT cstb.*,csb.sonBillName,cp.companyName,
+        IFNULL((SELECT sum(csbi.totalPrice) FROM company_son_bill_item csbi WHERE csbi.companySonTotalBillId = cstb.id),0) AS totalPrice,
+        IFNULL((SELECT sum(csbi.receivablePrice) FROM company_son_bill_item csbi WHERE csbi.companySonTotalBillId = cstb.id),0) AS receivablePrice,
+        IFNULL((SELECT sum(csbi.auditTheDifference) FROM company_son_bill_item csbi WHERE csbi.companySonTotalBillId = cstb.id),0) AS auditTheDifference,
+        IFNULL((SELECT sum(csbi.balanceOfCancelAfterVerification) FROM company_son_bill_item csbi WHERE csbi.companySonTotalBillId = cstb.id),0) AS balanceOfCancelAfterVerification
+        FROM company_son_total_bill cstb ,company_son_bill csb ,company cp
+        WHERE csb.id = cstb.companySonBillId
+        AND csb.companyId = cp.id
+        AND csb.isValid = 1
+        <if test="companyName != null and companyName != ''">
+            AND cp.companyName Like '%${companyName}%'
+        </if>
+        <if test="companyId != null">
+            AND csb.companyId = #{companyId}
+        </if>
+        <if test="companySonBillId != null">
+            AND cstb.companySonBillId = #{companySonBillId}
+        </if>
+        <if test="startTime != null">
+            AND cstb.createTime <![CDATA[ >= ]]> #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND cstb.createTime <![CDATA[ <= ]]> #{endTime}
+        </if>
+        ORDER BY
+        <if test="pageArgs != null">
+            <if test="pageArgs.column != null and pageArgs.column != ''">
+                ${pageArgs.column} ${pageArgs.order},
+            </if>
+        </if>
+        cstb.id DESC
+        <if test="pageArgs != null">
+            limit #{pageArgs.pageStart}, #{pageArgs.pageSize}
+        </if>
+    </select>
+
+    <select id="listCount" resultType="int" parameterType="map">
+        SELECT
+        COUNT(*)
+        FROM company_son_total_bill cstb ,company_son_bill csb ,company cp
+        WHERE csb.id = cstb.companySonBillId
+        AND csb.companyId = cp.id
+        AND csb.isValid = 1
+        <if test="companyName != null and companyName != ''">
+            AND cp.companyName Like '%${companyName}%'
+        </if>
+        <if test="companyId != null">
+            AND csb.companyId = #{companyId}
+        </if>
+        <if test="companySonBillId != null">
+            AND cstb.companySonBillId = #{companySonBillId}
+        </if>
+        <if test="startTime != null">
+            AND cstb.createTime <![CDATA[ >= ]]> #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND cstb.createTime <![CDATA[ <= ]]> #{endTime}
+        </if>
+    </select>
+
+
+    <update id="update" parameterType="com.magic.daoyuan.business.entity.CompanySonTotalBill">
+        update company_son_total_bill
+        <set>
+            <if test="lastMonthBalance != null">
+                `lastMonthBalance` = #{lastMonthBalance},
+            </if>
+            <if test="isConsignee != null">
+                `isConsignee` = #{isConsignee},
+            </if>
+            <if test="status != null">
+                `status` = #{status},
+            </if>
+            <if test="okTime != null">
+                `okTime` = #{okTime},
+            </if>
+            <if test="monthBalance != null">
+                `monthBalance` = #{monthBalance}
+            </if>
+        </set>
+        <where>
+            id = #{id}
+        </where>
+    </update>
+
+    <update id="batchUpdate" parameterType="com.magic.daoyuan.business.entity.CompanySonTotalBill">
+        <foreach collection="list" index="index" item="i" separator=";">
+            UPDATE company_son_total_bill
+            <set>
+                <if test="i.lastMonthBalance != null">
+                    `lastMonthBalance` = #{i.lastMonthBalance},
+                </if>
+                <if test="i.isConsignee != null">
+                    `isConsignee` = #{i.isConsignee},
+                </if>
+                <if test="i.balanceOfCancelAfterVerification != null">
+                    `balanceOfCancelAfterVerification` = #{i.balanceOfCancelAfterVerification},
+                </if>
+                <if test="i.okTime != null">
+                    `okTime` = #{i.okTime},
+                </if>
+                <if test="i.monthBalance != null">
+                    `monthBalance` = #{i.monthBalance},
+                </if>
+                <if test="i.isBalanceOfCancelAfterVerification != null">
+                    `isBalanceOfCancelAfterVerification` = #{i.isBalanceOfCancelAfterVerification},
+                </if>
+                <if test="i.afterVerificationTime != null">
+                    `afterVerificationTime` = #{i.afterVerificationTime},
+                </if>
+            </set>
+            WHERE id = #{i.id}
+        </foreach>
+    </update>
+
+    <update id="update2" parameterType="com.magic.daoyuan.business.entity.CompanySonTotalBill">
+        update company_son_total_bill
+        <set>
+            <if test="isConsignee != null">
+                `isConsignee` = #{isConsignee},
+            </if>
+            <if test="lastMonthBalance != null">
+                `lastMonthBalance` = #{lastMonthBalance},
+            </if>
+            <if test="status != null">
+                `status` = #{status},
+            </if>
+            <if test="okTime != null">
+                `okTime` = #{okTime},
+            </if>
+            <if test="balanceOfCancelAfterVerification != null">
+                `balanceOfCancelAfterVerification` = #{balanceOfCancelAfterVerification},
+            </if>
+            <if test="isBalanceOfCancelAfterVerification != null">
+                `isBalanceOfCancelAfterVerification` = #{isBalanceOfCancelAfterVerification},
+            </if>
+        </set>
+        <where>
+            1 = 1
+            <if test="companyId != null">
+                AND `companyId` = #{companyId}
+            </if>
+            <if test="companyId != null">
+                AND DATE_FORMAT(billMonth, '%Y-%m') = DATE_FORMAT(#{billMonth}, '%Y-%m')
+            </if>
+
+        </where>
+    </update>
+
+
+    <select id="getByCompanySonTotalBillId" resultMap="BaseResultMap">
+        select * from company_son_total_bill cstb WHERE
+          DATE_FORMAT(cstb.billMonth, '%Y-%m') = DATE_FORMAT(#{billMonth}, '%Y-%m')
+        AND cstb.companySonBillId IN
+        ((SELECT csb.id FROM company_son_bill csb WHERE csb.companyId =
+        (SELECT csb2.companyId FROM company_son_bill csb2 ,
+          company_son_total_bill cstb2
+          WHERE csb2.id = cstb2.companySonBillId AND cstb2.id = #{companySonTotalBillId})))
+
+    </select>
+
+    <select id="getByCompanyId" resultMap="BaseResultMap">
+        select * from company_son_total_bill cstb WHERE
+        /*cstb.status not in (2)
+        AND */DATE_FORMAT(cstb.billMonth, '%Y-%m') = DATE_FORMAT(#{billMonth}, '%Y-%m')
+        AND cstb.companyId = #{companyId}
+    </select>
+
+    <select id="getByCompanyDateMapList" resultMap="BaseResultMap">
+        select * from company_son_total_bill cstb WHERE
+        1 = 1
+        <if test="companyDateMapList != null and companyDateMapList.size > 0">
+            AND
+            (<foreach collection="companyDateMapList" item="map" separator="or">
+                DATE_FORMAT(cstb.billMonth, '%Y-%m') = DATE_FORMAT(#{map.billMonth}, '%Y-%m')
+                AND cstb.companyId = #{map.companyId}
+            </foreach>)
+        </if>
+
+
+
+    </select>
+
+    <delete id="delete">
+        DELETE FROM company_son_total_bill WHERE id IN (
+        <foreach collection="ids" item="id" separator=",">
+            #{id}
+        </foreach>
+        )
+    </delete>
+
+
+
+    <select id="getByBillMonth" resultMap="BaseResultMapOther2">
+        select cstb.*,
+            msf.id AS msf_id,
+            msf.companyId AS msf_companyId,
+            msf.serviceFeeConfigId AS msf_serviceFeeConfigId,
+            msf.companySonTotalBillId AS msf_companySonTotalBillId,
+            msf.companyCooperationMethodJson AS msf_companyCooperationMethodJson,
+            msfd.id AS msf_msfd_id,
+            msfd.monthServiceFeeId AS msf_msfd_monthServiceFeeId,
+            msfd.memberId AS msf_msfd_memberId,
+            msfd.companySonBillId AS msf_msfd_companySonBillId,
+            msfd.waysOfCooperation AS msf_msfd_waysOfCooperation,
+            msfd.amount AS msf_msfd_amountfrom,
+            csbi.id AS csbi_id,
+            csbi.serviceMonth AS csbi_serviceMonth,
+            csbi.companySonTotalBillId AS csbi_companySonTotalBillId,
+            csbi.companySonBillId AS csbi_companySonBillId
+        FROM company_son_total_bill cstb
+        LEFT JOIN month_service_fee msf ON msf.companySonTotalBillId = cstb.id
+        LEFT JOIN month_service_fee_detail msfd ON msfd.monthServiceFeeId = msf.id
+        LEFT JOIN company_son_bill_item csbi ON csbi.companySonTotalBillId = cstb.id
+        WHERE
+        cstb.status not in (2)
+        AND cstb.companyId = #{companyId}
+        AND DATE_FORMAT(cstb.billMonth, '%Y-%m') = DATE_FORMAT(#{billMonth}, '%Y-%m')
+    </select>
+
+
+
+    <select id="getDateByBillMonthAndCompanyId" resultType="date">
+        SELECT ssi.serviceNowYM
+        FROM company_son_total_bill cstb ,company_son_bill_item csbi ,social_security_info ssi
+        WHERE
+        cstb.status not in (2)
+        AND cstb.companyId = #{companyId}
+				AND csbi.companySonTotalBillId = cstb.id
+				AND ssi.companySonBillItemId = csbi.id
+        AND DATE_FORMAT(cstb.billMonth, '%Y-%m') = DATE_FORMAT(#{billMonth}, '%Y-%m')
+        UNION
+        SELECT rfi.serviceNowYM
+				FROM company_son_total_bill cstb ,company_son_bill_item csbi ,reserved_funds_info rfi
+				WHERE
+				cstb.status not in (2)
+				AND cstb.companyId = #{companyId}
+				AND csbi.companySonTotalBillId = cstb.id
+				AND rfi.companySonBillItemId = csbi.id
+				AND DATE_FORMAT(cstb.billMonth, '%Y-%m') = DATE_FORMAT(#{billMonth}, '%Y-%m')
+    </select>
+
+    <select id="listDto" resultType="com.magic.daoyuan.business.dto.CompanySonTotalBillDto">
+        SELECT
+        <choose>
+            <when test="flag == 0" >
+                cc.id AS companyId,
+            </when>
+            <otherwise>
+                cstb.id AS companySonTotalBillId,
+            </otherwise>
+        </choose>
+        (SELECT GROUP_CONCAT(cb.businessId,',') FROM company_business cb WHERE cb.companyId = cc.id) AS companyBusinessStr,
+        SUM(csbi.totalPrice) AS totalPrice,
+        SUM(csbi.receivablePrice) AS receivablePrice,
+        <!-- SUM(cstb.balanceOfCancelAfterVerification) AS balanceOfCancelAfterVerification,-->
+        (SELECT SUM(ct.balanceOfCancelAfterVerification) FROM company_son_total_bill ct
+        WHERE ct.companyId = cc.id
+        <choose>
+            <when test="flag == 0" >
+                AND DATE_FORMAT(ct.billMonth, '%Y-%m') = DATE_FORMAT(cstb.billMonth, '%Y-%m')
+            </when>
+            <otherwise>
+                AND ct.id = cstb.id
+            </otherwise>
+        </choose>
+        ) AS balanceOfCancelAfterVerification,
+
+        (SELECT SUM(ct.lastMonthBalance) FROM company_son_total_bill ct
+        WHERE ct.companyId = cc.id
+        <choose>
+            <when test="flag == 0" >
+                AND DATE_FORMAT(ct.billMonth, '%Y-%m') = DATE_FORMAT(cstb.billMonth, '%Y-%m')
+            </when>
+            <otherwise>
+                AND ct.id = cstb.id
+            </otherwise>
+        </choose>
+        ) AS lastMonthBalance,
+
+
+        SUM(csbi.auditTheDifference) AS auditTheDifference,
+        (SELECT SUM(msf.serviceFee) FROM month_service_fee msf
+        WHERE msf.companyId = cc.id
+        <choose>
+            <when test="flag == 0" >
+                AND DATE_FORMAT(msf.`month`, '%Y-%m') = DATE_FORMAT(cstb.billMonth, '%Y-%m')
+            </when>
+            <otherwise>
+                AND msf.companySonTotalBillId = cstb.id
+            </otherwise>
+        </choose>
+
+        ) AS serviceFee,
+        /*(SELECT msf.companyCooperationMethodJson FROM month_service_fee msf,company_son_total_bill cstb2
+        WHERE cstb2.id = msf.companySonTotalBillId
+        AND cstb2.companyId = cc.id
+        AND DATE_FORMAT(cstb2.billMonth, '%Y-%m') = DATE_FORMAT(cstb.billMonth, '%Y-%m')
+        GROUP BY DATE_FORMAT(cstb2.billMonth,'%Y-%m')
+        ) AS companyCooperationMethodJson,
+        (SELECT msf.companyCooperationMethodJson FROM month_service_fee msf,company_son_total_bill cstb2
+        WHERE cstb2.id = msf.companySonTotalBillId
+        AND cstb2.companyId = cc.id
+        AND DATE_FORMAT(cstb2.billMonth, '%Y-%m') <![CDATA[<]]> DATE_FORMAT(cstb.billMonth, '%Y-%m')
+        GROUP BY DATE_FORMAT(cstb2.billMonth,'%Y-%m') limit 0,1
+        ) AS companyCooperationMethodJson2,*/
+        (SELECT IFNULL((select sum(si.salaryBeforeTax) from salary_info si, member m, member_business mb,company_son_total_bill cstb2
+        WHERE si.memberId = m.id
+        AND mb.businessId = 5
+        AND cstb2.id = si.companySonTotalBillId
+        AND mb.memberId = m.id
+        AND cstb2.companyId = cc.id
+        <choose>
+            <when test="flag == 0" >
+                AND DATE_FORMAT(cstb2.billMonth, '%Y-%m') = DATE_FORMAT(cstb.billMonth, '%Y-%m')
+            </when>
+            <otherwise>
+                AND cstb2.id = cstb.id
+            </otherwise>
+        </choose>
+        ),0)) AS salaryInfoPrice,
+        cc.companyName,
+        cstb.companyId,
+        cstb.billMonth,
+        cstb.createTime,
+        GROUP_CONCAT(csbi.isReservedFundAudit,',',csbi.isSocialSecurityAudit) AS auditStatusStr,
+        GROUP_CONCAT(cstb.isBalanceOfCancelAfterVerification) AS cancelAfterVerificationStatusStr,
+        GROUP_CONCAT(cstb.status) AS statusStr,
+        (SELECT sum(ssi.memberTotalPay + ssi.companyTotalPay)
+          FROM social_security_info ssi
+          WHERE ssi.companySonBillItemId = csbi.id
+          AND ssi.processingScheme = 1) AS ssiReceivablePrice,
+        (SELECT sum(ssi.practicalMemberTotalPay + ssi.practicalCompanyTotalPay)
+          FROM social_security_info ssi
+          WHERE ssi.companySonBillItemId = csbi.id
+          AND ssi.processingScheme = 1) AS ssiTotalPrice,
+
+        (SELECT sum(rfi.memberTotalPay + rfi.companyTotalPay)
+          FROM reserved_funds_info rfi
+          WHERE rfi.companySonBillItemId = csbi.id
+          AND rfi.processingScheme = 1) AS rfiReceivablePrice,
+
+        (SELECT sum(rfi.practicalMemberTotalPay + rfi.practicalCompanyTotalPay)
+          FROM reserved_funds_info rfi
+          WHERE rfi.companySonBillItemId = csbi.id
+          AND rfi.processingScheme = 1) AS rfiTotalPrice,
+
+        (SELECT SUM(bii.price) FROM business_insurance_item bii,company_son_total_bill cstb3
+        WHERE bii.companySonTotalBillId = cstb.id AND cstb3.id = cstb.id
+        <choose>
+            <when test="flag == 0" >
+                AND DATE_FORMAT(cstb3.billMonth,'%y-%m') = DATE_FORMAT(cstb.billMonth, '%y-%m')
+            </when>
+            <otherwise>
+                AND cstb3.id = cstb.id
+            </otherwise>
+        </choose>
+        ) AS insurancePrice,
+
+        (SELECT SUM(byi.price) FROM business_yc_item byi
+        WHERE byi.companySonTotalBillId = cstb.id
+        ) AS ycPrice,
+
+        ifnull((SELECT SUM(bii.taxPrice) FROM business_insurance_item bii,company_son_total_bill cstb3
+        WHERE bii.companySonTotalBillId = cstb3.id AND cstb3.companyId = cc.id
+        <choose>
+            <when test="flag == 0" >
+                AND DATE_FORMAT(cstb3.billMonth,'%y-%m') = DATE_FORMAT(cstb.billMonth, '%y-%m')
+            </when>
+            <otherwise>
+                AND cstb3.id = cstb.id
+            </otherwise>
+        </choose>
+        ),0) +
+        (SELECT IFNULL((select sum(si.taxPrice) from salary_info si, member m, member_business mb,company_son_total_bill cstb2
+        WHERE si.memberId = m.id
+        AND mb.businessId = 5
+        AND cstb2.id = si.companySonTotalBillId
+        AND mb.memberId = m.id
+        AND cstb2.companyId = cc.id
+        <choose>
+            <when test="flag == 0" >
+                AND DATE_FORMAT(cstb2.billMonth, '%Y-%m') = DATE_FORMAT(cstb.billMonth, '%Y-%m')
+            </when>
+            <otherwise>
+                AND cstb2.id = cstb.id
+            </otherwise>
+        </choose>),0)) +
+        ifnull((SELECT sum(rfi.taxPrice)
+        FROM reserved_funds_info rfi,company_son_bill csb
+        WHERE rfi.companySonBillId = csb.id
+        AND csb.companyId = cc.id
+        <choose>
+            <when test="flag == 0" >
+                AND DATE_FORMAT(rfi.billMonth, '%Y-%m') = DATE_FORMAT(cstb.billMonth, '%Y-%m')
+            </when>
+            <otherwise>
+                AND rfi.companySonBillItemId = csbi.id
+            </otherwise>
+        </choose>
+        ),0) +
+        ifnull((SELECT sum(ssi2.taxPrice)
+        FROM social_security_info ssi2,company_son_bill csb
+        WHERE ssi2.companySonBillId = csb.id
+        AND csb.companyId = cc.id
+        <choose>
+            <when test="flag == 0" >
+                AND DATE_FORMAT(ssi2.billMonth, '%Y-%m') = DATE_FORMAT(cstb.billMonth, '%Y-%m')
+            </when>
+            <otherwise>
+                AND ssi2.companySonBillItemId = csbi.id
+            </otherwise>
+        </choose>
+        ),0) AS taxPrice
+
+        FROM
+        company_son_bill_item csbi,company_son_total_bill cstb,company cc
+        WHERE csbi.companySonTotalBillId = cstb.id
+        AND cc.id = cstb.companyId
+        <if test="null != companyName and companyName != ''">
+            AND cc.companyName LIKE '%${companyName}%'
+        </if>
+        <if test="null != companyId">
+            AND cc.id = #{companyId}
+        </if>
+        <if test="null != companySonTotalBillId">
+            AND cstb.id = #{companySonTotalBillId}
+        </if>
+        <if test="null != beforeService">
+            AND cc.beforeService = #{beforeService}
+        </if>
+        <if test="null != hexiao">
+            AND cstb.isBalanceOfCancelAfterVerification = #{hexiao}
+        </if>
+        <if test="null != jihe">
+            AND cstb.isBalanceOfCancelAfterVerification = #{jihe}
+        </if>
+        <if test="null != status">
+            AND cstb.`status` = #{status}
+        </if>
+        <if test="null != billMonth">
+            AND DATE_FORMAT(cstb.`billMonth`,'%y-%m') = DATE_FORMAT(#{billMonth},'%y-%m')
+        </if>
+        <if test="null != companyIds">
+            AND cc.id in (
+            <foreach collection="companyIds" item="companyId" separator=",">
+                #{companyId}
+            </foreach>)
+            AND cstb.`status` = 2
+            AND cstb.id
+            NOT IN (
+            SELECT
+            cftb.companySonTotalBillId
+            FROM
+            confirm_fund_total_bill cftb
+            )
+        </if>
+        GROUP BY
+        <choose>
+            <when test="flag == 0" >
+                DATE_FORMAT(cstb.billMonth,'%Y-%m'), cc.id
+            </when>
+            <otherwise>
+                cstb.id
+            </otherwise>
+        </choose>
+        ORDER BY
+        <choose>
+            <when test="flag == 0" >
+                cstb.id DESC
+            </when>
+            <otherwise>
+                cstb.id ASC
+            </otherwise>
+        </choose>
+
+        <if test="pageArgs != null">
+            limit #{pageArgs.pageStart}, #{pageArgs.pageSize}
+        </if>
+    </select>
+
+
+    <select id="listDto3" resultType="com.magic.daoyuan.business.dto.CompanySonTotalBillDto">
+        SELECT
+        SUM(csbi.totalPrice) AS totalPrice,
+        SUM(csbi.receivablePrice) AS receivablePrice,
+        ( cstb.balanceOfCancelAfterVerification) AS balanceOfCancelAfterVerification,
+        (cstb.lastMonthBalance) AS lastMonthBalance,
+        SUM(csbi.auditTheDifference) AS auditTheDifference,
+
+        (SELECT SUM(msf.serviceFee) FROM month_service_fee msf
+          WHERE cstb.id = msf.companySonTotalBillId ) AS serviceFee,
+
+        (SELECT IFNULL((select sum(si.salaryBeforeTax) from salary_info si, member m, member_business mb
+        WHERE si.memberId = m.id
+        AND mb.businessId = 5
+        AND cstb.id = si.companySonTotalBillId
+        AND mb.memberId = m.id
+        ),0)) AS salaryInfoPrice,
+        cc.companyName,
+        cstb.companyId,
+        cstb.billMonth,
+        cstb.createTime,
+        GROUP_CONCAT(csbi.isReservedFundAudit,',',csbi.isSocialSecurityAudit) AS auditStatusStr,
+        GROUP_CONCAT(cstb.isBalanceOfCancelAfterVerification) AS cancelAfterVerificationStatusStr,
+        GROUP_CONCAT(cstb.status) AS statusStr,
+        (SELECT sum(ssi.memberTotalPay + ssi.companyTotalPay)
+          FROM social_security_info ssi
+          WHERE ssi.companySonBillItemId = csbi.id
+          AND ssi.processingScheme = 1) AS ssiReceivablePrice,
+        (SELECT sum(ssi.practicalMemberTotalPay + ssi.practicalCompanyTotalPay)
+          FROM social_security_info ssi
+          WHERE ssi.companySonBillItemId = csbi.id
+          AND ssi.processingScheme = 1) AS ssiTotalPrice,
+
+        (SELECT sum(rfi.memberTotalPay + rfi.companyTotalPay)
+          FROM reserved_funds_info rfi
+          WHERE rfi.companySonBillItemId = csbi.id
+          AND rfi.processingScheme = 1) AS rfiReceivablePrice,
+
+        (SELECT sum(rfi.practicalMemberTotalPay + rfi.practicalCompanyTotalPay)
+          FROM reserved_funds_info rfi
+          WHERE rfi.companySonBillItemId = csbi.id
+          AND rfi.processingScheme = 1) AS rfiTotalPrice,
+        (SELECT SUM(bii.price) FROM business_insurance_item bii,company_son_total_bill cstb3
+        WHERE bii.companySonTotalBillId = cstb3.id AND cstb3.companyId = cc.id
+        AND DATE_FORMAT(cstb3.billMonth,'%y-%m') = DATE_FORMAT(cstb.billMonth, '%y-%m')) AS insurancePrice,
+
+        (SELECT SUM(byi.price) FROM business_yc_item byi,company_son_total_bill cstb3
+        WHERE byi.companySonTotalBillId = cstb3.id AND cstb3.companyId = cc.id
+        AND DATE_FORMAT(cstb3.billMonth,'%y-%m') = DATE_FORMAT(cstb.billMonth, '%y-%m')) AS ycPrice,
+
+        ifnull((SELECT SUM(bii.taxPrice) FROM business_insurance_item bii,company_son_total_bill cstb3
+        WHERE bii.companySonTotalBillId = cstb3.id AND cstb3.companyId = cc.id
+        AND DATE_FORMAT(cstb3.billMonth,'%y-%m') = DATE_FORMAT(cstb.billMonth, '%y-%m')),0) +
+        (SELECT IFNULL((select sum(si.taxPrice) from salary_info si, member m, member_business mb
+        WHERE si.memberId = m.id
+        AND mb.businessId = 5
+        AND cstb.id = si.companySonTotalBillId
+        AND mb.memberId = m.id),0)) +
+        ifnull((SELECT sum(rfi.taxPrice)
+        FROM reserved_funds_info rfi,company_son_bill csb
+        WHERE rfi.companySonBillId = csb.id
+        AND csb.companyId = cc.id
+        AND DATE_FORMAT(rfi.billMonth, '%Y-%m') = DATE_FORMAT(cstb.billMonth, '%Y-%m')),0) +
+        ifnull((SELECT sum(ssi2.taxPrice)
+        FROM social_security_info ssi2,company_son_bill csb
+        WHERE ssi2.companySonBillId = csb.id
+        AND csb.companyId = cc.id
+        AND DATE_FORMAT(ssi2.billMonth, '%Y-%m') = DATE_FORMAT(cstb.billMonth, '%Y-%m')),0) AS taxPrice
+
+        FROM
+        company_son_bill_item csbi,company_son_total_bill cstb,company cc
+        WHERE csbi.companySonTotalBillId = cstb.id
+        AND cc.id = cstb.companyId
+        <if test="null != companyId">
+            AND cc.id = #{companyId}
+        </if>
+        <if test="null != companySonTotalBillId">
+            AND cstb.id = #{companySonTotalBillId}
+        </if>
+        <if test="null != beforeService">
+            AND cc.beforeService = #{beforeService}
+        </if>
+        <if test="null != hexiao">
+            AND cstb.isBalanceOfCancelAfterVerification = #{hexiao}
+        </if>
+        <if test="null != jihe">
+            AND cstb.isBalanceOfCancelAfterVerification = #{jihe}
+        </if>
+        <if test="null != status">
+            AND cstb.`status` = #{status}
+        </if>
+        <if test="null != billMonth">
+            AND DATE_FORMAT(cstb.`billMonth`,'%y-%m') = DATE_FORMAT(#{billMonth},'%y-%m')
+        </if>
+        GROUP BY DATE_FORMAT(cstb.billMonth,'%Y-%m'),cc.id
+        ORDER BY cstb.id DESC
+
+    </select>
+
+    <select id="countDto" resultType="com.magic.daoyuan.business.dto.CompanySonTotalBillDto">
+        SELECT
+
+        (SELECT SUM(msf.serviceFee) FROM month_service_fee msf,company_son_total_bill cstb2
+        WHERE cstb2.id = msf.companySonTotalBillId
+        AND cstb2.companyId = cc.id
+        AND DATE_FORMAT(cstb2.billMonth, '%Y-%m') = DATE_FORMAT(cstb.billMonth, '%Y-%m')
+        GROUP BY DATE_FORMAT(cstb2.billMonth,'%Y-%m'),cstb2.companyId
+        ) AS serviceFee,
+
+        cc.companyName,
+        cstb.companyId,
+        cstb.billMonth,
+        cstb.createTime,
+        GROUP_CONCAT(csbi.isReservedFundAudit,',',csbi.isSocialSecurityAudit) AS auditStatusStr,
+        GROUP_CONCAT(cstb.isBalanceOfCancelAfterVerification) AS cancelAfterVerificationStatusStr,
+        GROUP_CONCAT(cstb.status) AS statusStr,
+        (SELECT MAX(cstb3.okTime) FROM company_son_total_bill cstb3 WHERE  DATE_FORMAT(cstb3.billMonth,'%Y-%m') = DATE_FORMAT(cstb.billMonth,'%Y-%m')
+          AND cstb3.companyId = cstb.companyId ) AS okTime,
+        (SELECT MAX(cstb3.afterVerificationTime) FROM company_son_total_bill cstb3 WHERE  DATE_FORMAT(cstb3.billMonth,'%Y-%m') = DATE_FORMAT(cstb.billMonth,'%Y-%m')
+          AND cstb3.companyId = cstb.companyId ) AS afterVerificationTime
+        FROM
+        company_son_bill_item csbi,company_son_total_bill cstb,company cc
+        WHERE csbi.companySonTotalBillId = cstb.id
+        AND cc.id = cstb.companyId
+        <if test="more != null">
+            AND (SELECT COUNT(0) FROM member_count mc WHERE  mc.stateCooperation = 1
+                AND mc.companyId = cc.id AND DATE_FORMAT(mc.createTime,'%y-%m-%d') = DATE_FORMAT(#{day},'%y-%m-%d')) >= #{more}
+        </if>
+        <if test="less != null">
+            AND #{less} >= (SELECT COUNT(0) FROM member_count mc WHERE  mc.stateCooperation = 1
+                AND mc.companyId = cc.id AND DATE_FORMAT(mc.createTime,'%y-%m-%d') = DATE_FORMAT(#{day},'%y-%m-%d'))
+        </if>
+        GROUP BY DATE_FORMAT(cstb.billMonth,'%Y-%m'),cc.id
+        ORDER BY cstb.id DESC
+    </select>
+
+    <select id="listDtoCount" resultType="integer">
+        SELECT COUNT(0) FROM
+        (SELECT
+        0
+        FROM
+        company_son_bill_item csbi,
+        company_son_total_bill cstb,
+        company cc
+        WHERE csbi.companySonTotalBillId = cstb.id
+        AND cc.id = cstb.companyId
+        <if test="null != companyName and companyName != ''">
+            AND cc.companyName LIKE '%${companyName}%'
+        </if>
+        <if test="null != companyId">
+            AND cc.id = #{companyId}
+        </if>
+        <if test="null != beforeService">
+            AND cc.beforeService = #{beforeService}
+        </if>
+        <if test="null != hexiao">
+            AND cstb.isBalanceOfCancelAfterVerification = #{hexiao}
+        </if>
+        <if test="null != jihe">
+            AND cstb.isBalanceOfCancelAfterVerification = #{jihe}
+        </if>
+        <if test="null != status">
+            AND cstb.`status` = #{status}
+        </if>
+        <if test="null != billMonth">
+            AND DATE_FORMAT(cstb.`billMonth`,'%y-%m') = DATE_FORMAT(#{billMonth},'%y-%m')
+        </if>
+        GROUP BY DATE_FORMAT(cstb.billMonth,'%Y-%m'),cc.id
+        ORDER BY cstb.id DESC) AS cstbDto
+    </select>
+
+
+    <select id="infoByCompanySonBillItemId" resultMap="BaseResultMap">
+        select cstb.* from company_son_total_bill cstb ,company_son_bill_item csbi
+        WHERE cstb.id = csbi.companySonTotalBillId
+        AND csbi.id = #{companySonBillItemId}
+    </select>
+
+
+    <select id="listHrBillListDtoCount" resultType="integer">
+        SELECT COUNT(0) FROM (
+        SELECT 0 FROM company_son_total_bill cstb,
+        (SELECT mmpbs.billMonth ,mmpbs.companyId,mmpbs.businessId
+        FROM member_month_pay_business mmpbs) AS mmpbs2
+        WHERE mmpbs2.companyId = cstb.companyId
+        AND DATE_FORMAT(mmpbs2.billMonth, '%Y-%m') = DATE_FORMAT(cstb.billMonth, '%Y-%m')
+        AND cstb.companyId = #{companyId}
+        <if test="affirmTime != null">
+            AND DATE_FORMAT(cstb.okTime, '%Y-%m') = DATE_FORMAT(#{affirmTime}, '%Y-%m')
+        </if>
+        <if test="billMonth != null">
+            AND DATE_FORMAT(cstb.billMonth, '%Y-%m') = DATE_FORMAT(#{billMonth}, '%Y-%m')
+        </if>
+        <if test="businessIds != null and businessIds.size > 0">
+            AND mmpbs2.businessId IN (
+            <foreach collection="businessIds" separator="," item="businessId">
+                #{businessId}
+            </foreach>
+            )
+        </if>
+        GROUP BY DATE_FORMAT(cstb.billMonth,'%Y-%m')) AS cstb2
+    </select>
+
+    <select id="listHrBillListDto" resultType="com.magic.daoyuan.business.dto.HrBillListDto">
+        SELECT
+        (
+        SELECT
+        SUM(csbi2.receivablePrice)
+        FROM
+        company_son_total_bill cstb2,
+        company_son_bill_item csbi2
+        WHERE
+        cstb2.id = csbi2.companySonTotalBillId
+        AND cstb2.companyId = cstb.companyId
+        AND DATE_FORMAT(cstb2.billMonth, '%Y-%m') = DATE_FORMAT(cstb.billMonth, '%Y-%m')
+        ) + ifnull((
+        SELECT
+        SUM(msf.serviceFee)
+        FROM
+        month_service_fee msf,
+        company_son_total_bill cstb2
+        WHERE
+        cstb2.id = msf.companySonTotalBillId
+        AND cstb2.companyId = cstb.companyId
+        AND DATE_FORMAT(cstb2.billMonth, '%Y-%m') = DATE_FORMAT(cstb.billMonth, '%Y-%m')
+        GROUP BY
+        DATE_FORMAT(cstb2.billMonth, '%Y-%m')
+        ),0) + (
+        SELECT
+        IFNULL(
+        (
+        SELECT
+        sum(si.salaryBeforeTax)
+        FROM
+        salary_info si,
+        member m,
+        member_business mb,
+        company_son_total_bill cstb2
+        WHERE
+        si.memberId = m.id
+        AND mb.businessId = 5
+        AND cstb2.companyId = cstb.companyId
+        AND cstb2.id = si.companySonTotalBillId
+        AND mb.memberId = m.id
+        AND DATE_FORMAT(cstb2.billMonth, '%Y-%m') = DATE_FORMAT(cstb.billMonth, '%Y-%m')
+        GROUP BY
+        DATE_FORMAT(cstb2.billMonth, '%Y-%m')
+        ),
+        0
+        )
+        )
+        AS amount,
+        cstb.billMonth,
+        GROUP_CONCAT(cstb.status) AS cstbStatusStr,
+        bi.bankAccount,
+        bi.accountName,
+        bi.bankName,
+        (SELECT GROUP_CONCAT(DISTINCT b.businessName) FROM
+        member_month_pay_business mmpb, business b
+        WHERE mmpb.businessId = b.id
+        AND mmpb.companyId = cstb.companyId
+        AND DATE_FORMAT(mmpb.billMonth,'%Y-%m') = DATE_FORMAT(cstb.billMonth,'%Y-%m')) AS businessStr,
+        if(cf.id IS NULL ,0,1) AS isConfirmFund,
+        if(mb.id IS NULL ,0,1) AS isMakeBill,
+        CASE
+            WHEN cf.id IS NULL AND mb.id IS NULL THEN cc.isFirstBill
+            WHEN cf.id IS NOT NULL AND mb.id IS NULL THEN 0
+            WHEN cf.id IS NULL AND mb.id IS NOT NULL THEN 1
+            WHEN cf.id IS NOT NULL AND mb.id IS NOT NULL
+                  THEN CASE WHEN mb.confirmFundId IS NULL THEN 1 ELSE 1 END
+        END AS isFirstBill,
+        ec.url AS expressUrl,
+        cstb.billNumber,
+        /*(SELECT msf.companyCooperationMethodJson FROM month_service_fee msf,company_son_total_bill cstb2
+        WHERE cstb2.id = msf.companySonTotalBillId
+        AND cstb2.companyId = cc.id
+        AND DATE_FORMAT(cstb2.billMonth, '%Y-%m') = DATE_FORMAT(cstb.billMonth, '%Y-%m')
+        GROUP BY DATE_FORMAT(cstb2.billMonth,'%Y-%m')
+        ) AS companyCooperationMethodJson,
+        (SELECT msf.companyCooperationMethodJson FROM month_service_fee msf,company_son_total_bill cstb2
+        WHERE cstb2.id = msf.companySonTotalBillId
+        AND cstb2.companyId = cc.id
+        AND DATE_FORMAT(cstb2.billMonth, '%Y-%m') <![CDATA[<]]> DATE_FORMAT(cstb.billMonth, '%Y-%m')
+        GROUP BY DATE_FORMAT(cstb2.billMonth,'%Y-%m') limit 0,1
+        ) AS companyCooperationMethodJson2,*/
+        (SELECT SUM(ct.lastMonthBalance) FROM company_son_total_bill ct
+        WHERE ct.companyId = cc.id
+        AND DATE_FORMAT(ct.billMonth, '%Y-%m') = DATE_FORMAT(cstb.billMonth, '%Y-%m')
+        GROUP BY DATE_FORMAT(ct.billMonth,'%Y-%m')) AS lastMonthBalance,
+        (SELECT SUM(bii.price) FROM business_insurance_item bii,company_son_total_bill cstb3
+        WHERE bii.companySonTotalBillId = cstb3.id AND cstb3.companyId = cc.id
+        AND DATE_FORMAT(cstb3.billMonth,'%y-%m') = DATE_FORMAT(cstb.billMonth, '%y-%m')) AS insurancePrice,
+
+
+        (SELECT SUM(byi.price) FROM business_yc_item byi,company_son_total_bill cstb3
+        WHERE byi.companySonTotalBillId = cstb3.id AND cstb3.companyId = cc.id
+        AND DATE_FORMAT(cstb3.billMonth,'%y-%m') = DATE_FORMAT(cstb.billMonth, '%y-%m')) AS ycPrice,
+
+        ifnull((SELECT SUM(bii.taxPrice) FROM business_insurance_item bii,company_son_total_bill cstb3
+        WHERE bii.companySonTotalBillId = cstb3.id AND cstb3.companyId = cc.id
+        AND DATE_FORMAT(cstb3.billMonth,'%y-%m') = DATE_FORMAT(cstb.billMonth, '%y-%m')),0) +
+        (SELECT IFNULL((select sum(si.taxPrice) from salary_info si, member m, member_business mb,company_son_total_bill cstb2
+        WHERE si.memberId = m.id
+        AND mb.businessId = 5
+        AND cstb2.id = si.companySonTotalBillId
+        AND mb.memberId = m.id
+        AND cstb2.companyId = cc.id
+        AND DATE_FORMAT(cstb2.billMonth, '%Y-%m') = DATE_FORMAT(cstb.billMonth, '%Y-%m')
+        GROUP BY DATE_FORMAT(cstb2.billMonth,'%Y-%m')),0)) +
+        ifnull((SELECT sum(rfi.taxPrice)
+        FROM reserved_funds_info rfi,company_son_bill csb
+        WHERE rfi.companySonBillId = csb.id
+        AND csb.companyId = cc.id
+        AND DATE_FORMAT(rfi.billMonth, '%Y-%m') = DATE_FORMAT(cstb.billMonth, '%Y-%m')),0) +
+        ifnull((SELECT sum(ssi2.taxPrice)
+        FROM social_security_info ssi2,company_son_bill csb
+        WHERE ssi2.companySonBillId = csb.id
+        AND csb.companyId = cc.id
+        AND DATE_FORMAT(ssi2.billMonth, '%Y-%m') = DATE_FORMAT(cstb.billMonth, '%Y-%m')),0) AS taxPrice
+
+
+        FROM
+        company_son_bill_item csbi,
+        company cc,bank_info bi,
+        company_bill_info cbi,
+        (SELECT mmpbs.billMonth ,mmpbs.companyId,mmpbs.businessId
+        FROM member_month_pay_business mmpbs) AS mmpbs2,
+        company_son_total_bill cstb
+        LEFT JOIN confirm_fund_total_bill cftb ON cftb.companySonTotalBillId = cstb.id
+        LEFT JOIN confirm_fund cf ON cf.id = cftb.confirmFundId
+        LEFT JOIN make_bill mb ON mb.confirmFundId = cf.id OR DATE_FORMAT(mb.billMonth,'%Y-%m') = DATE_FORMAT(cstb.billMonth,'%Y-%m')
+        LEFT JOIN express_info ei ON ei.id = mb.expressInfoId
+        LEFT JOIN express_company ec ON ei.expressCompanyId = ec.id AND ec.isValid = 1
+        WHERE csbi.companySonTotalBillId = cstb.id
+        AND bi.companyId = cstb.companyId
+        AND cc.id = bi.companyId
+        AND cbi.companyId = cstb.companyId
+        AND mmpbs2.companyId = cstb.companyId
+        AND DATE_FORMAT(mmpbs2.billMonth, '%Y-%m') = DATE_FORMAT(cstb.billMonth, '%Y-%m')
+        <if test="billMonth != null">
+            AND DATE_FORMAT(cstb.billMonth, '%Y-%m') = DATE_FORMAT(#{billMonth}, '%Y-%m')
+        </if>
+        <if test="affirmTime != null">
+            AND DATE_FORMAT(cstb.okTime, '%Y-%m') = DATE_FORMAT(#{affirmTime}, '%Y-%m')
+        </if>
+        <if test="businessIds != null and businessIds.size > 0">
+            AND mmpbs2.businessId IN (
+            <foreach collection="businessIds" separator="," item="businessId">
+                #{businessId}
+            </foreach>
+            )
+        </if>
+        AND cstb.companyId = #{companyId}
+        GROUP BY DATE_FORMAT(cstb.billMonth,'%Y-%m')
+        ORDER BY cstb.id DESC
+        <if test="pageArgs != null">
+            limit #{pageArgs.pageStart}, #{pageArgs.pageSize}
+        </if>
+    </select>
+
+    <select id="getUncertainBill" resultMap="BaseResultMap">
+        select cstb.*,cc.beforeService AS userId from company_son_total_bill cstb ,company cc,
+        (SELECT MAX(com.d) AS dateDay ,com.companyId
+        FROM (SELECT MAX(DATE_FORMAT(ccm.serviceFeeStartTime,'%d')) AS d ,ccm.companyId
+        FROM company_cooperation_method ccm GROUP BY ccm.companyId UNION ALL
+        SELECT DATE_FORMAT(cc.businessStartTime,'%d') AS d ,cc.id AS companyId
+        FROM company cc GROUP BY cc.id ) AS com GROUP BY com.companyId) AS coms
+        WHERE cstb.companyId = coms.companyId
+        AND cstb.companyId = cc.id
+        AND cstb.status = 0
+        AND coms.dateDay <![CDATA[<]]> #{dateDay}
+    </select>
+
+
+    <select id="listConsoleDto" resultType="com.magic.daoyuan.business.dto.HrBillListDto">
+        SELECT
+        /*SUM(csbi.receivablePrice) AS receivablePrice,*/
+        (
+        SELECT
+        SUM(csbi2.receivablePrice)
+        FROM
+        company_son_total_bill cstb2,
+        company_son_bill_item csbi2
+        WHERE
+        cstb2.id = csbi2.companySonTotalBillId
+        AND cstb2.companyId = cstb.companyId
+        AND DATE_FORMAT(cstb2.billMonth, '%Y-%m') = DATE_FORMAT(cstb.billMonth, '%Y-%m')
+        ) +  ifnull((SELECT SUM(msf.serviceFee) FROM month_service_fee msf,company_son_total_bill cstb2
+        WHERE cstb2.id = msf.companySonTotalBillId
+        AND cstb2.companyId = cstb.companyId
+        AND DATE_FORMAT(cstb2.billMonth, '%Y-%m') = DATE_FORMAT(cstb.billMonth, '%Y-%m')
+        ),0)  +
+        (SELECT IFNULL((select sum(si.salaryBeforeTax) from salary_info si,
+        member m, member_business mb,company_son_total_bill cstb2
+        WHERE si.memberId = m.id
+        AND mb.businessId = 5
+        AND cstb2.companyId = cstb.companyId
+        AND cstb2.id = si.companySonTotalBillId
+        AND mb.memberId = m.id
+        AND DATE_FORMAT(cstb2.billMonth, '%Y-%m') = DATE_FORMAT(cstb.billMonth, '%Y-%m')
+        GROUP BY DATE_FORMAT(cstb2.billMonth,'%Y-%m')),0))
+         AS amount,
+        cstb.billMonth,
+        GROUP_CONCAT(cstb.status) AS cstbStatusStr,
+        (SELECT GROUP_CONCAT(DISTINCT b.businessName) FROM
+        member_month_pay_business mmpb, business b
+        WHERE mmpb.businessId = b.id
+        AND mmpb.companyId = cstb.companyId
+        AND DATE_FORMAT(mmpb.billMonth,'%Y-%m') = DATE_FORMAT(cstb.billMonth,'%Y-%m')) AS businessStr,
+        if(cf.id IS NULL ,0,1) AS isConfirmFund,
+        if(mb.id IS NULL ,0,1) AS isMakeBill,
+        CASE
+        WHEN cf.id IS NULL AND mb.id IS NULL THEN cc.isFirstBill
+        WHEN cf.id IS NOT NULL AND mb.id IS NULL THEN 0
+        WHEN cf.id IS NULL AND mb.id IS NOT NULL THEN 1
+        WHEN cf.id IS NOT NULL AND mb.id IS NOT NULL
+        THEN CASE WHEN mb.confirmFundId IS NULL THEN 1 ELSE 1 END
+        END AS isFirstBill,
+        cstb.billNumber,
+        (SELECT SUM(msf.serviceFee) FROM month_service_fee msf,company_son_total_bill cstb2
+        WHERE cstb2.id = msf.companySonTotalBillId
+        AND cstb2.companyId = cstb.companyId
+        AND DATE_FORMAT(cstb2.billMonth, '%Y-%m') = DATE_FORMAT(cstb.billMonth, '%Y-%m')
+        GROUP BY DATE_FORMAT(cstb2.billMonth,'%Y-%m')
+        ) AS serviceFee,
+        u.userName,cc.companyName,cc.id AS companyId,
+        (select GROUP_CONCAT(distinct mburi.status ORDER BY mburi.status ASC) as sStatus  from member_business_update_record_item mburi,member_business_update_record mbur,member m WHERE
+        mbur.id = mburi.memberBusinessUpdateRecordId AND mbur.memberId = m.id AND m.companyId = cc.id) AS realDoStatusStr,
+        GROUP_CONCAT(ifnull(csbi.isUploadKaoPanR,0),',',ifnull(csbi.isUploadKaoPanS,0)) AS isUploadKaoPanStr,
+        GROUP_CONCAT(ifnull(csbi.isReservedFundAudit,0),',',ifnull(csbi.isSocialSecurityAudit,0)) AS auditStatusStr,
+        GROUP_CONCAT(distinct ifnull(cstb.isBalanceOfCancelAfterVerification,0)) AS cancelAfterVerificationStatusStr,
+        ifnull((select GROUP_CONCAT(distinct ifnull(ei.isReceive,0)) from make_bill mb,express_info ei WHERE
+        ei.companyId = cstb.companyId
+        AND mb.expressInfoId = ei.id
+        AND DATE_FORMAT(mb.billMonth, '%Y-%m') = DATE_FORMAT(cstb.billMonth, '%Y-%m')),0) AS isConsigneeStr,
+
+        /*GROUP_CONCAT(distinct (ifnullcstb.isConsignee,0)) AS isConsigneeStr,*/
+       /* (SELECT msf.companyCooperationMethodJson FROM month_service_fee msf,company_son_total_bill cstb2
+        WHERE cstb2.id = msf.companySonTotalBillId
+        AND cstb2.companyId = cc.id
+        AND DATE_FORMAT(cstb2.billMonth, '%Y-%m') = DATE_FORMAT(cstb.billMonth, '%Y-%m')
+        GROUP BY DATE_FORMAT(cstb2.billMonth,'%Y-%m')
+        ) AS companyCooperationMethodJson,
+        (SELECT msf.companyCooperationMethodJson FROM month_service_fee msf,company_son_total_bill cstb2
+        WHERE cstb2.id = msf.companySonTotalBillId
+        AND cstb2.companyId = cc.id
+        AND DATE_FORMAT(cstb2.billMonth, '%Y-%m') <![CDATA[<]]> DATE_FORMAT(cstb.billMonth, '%Y-%m')
+        GROUP BY DATE_FORMAT(cstb2.billMonth,'%Y-%m') limit 0,1
+        ) AS companyCooperationMethodJson2,*/
+        (SELECT SUM(ct.lastMonthBalance) FROM company_son_total_bill ct
+        WHERE ct.companyId = cc.id
+        AND DATE_FORMAT(ct.billMonth, '%Y-%m') = DATE_FORMAT(cstb.billMonth, '%Y-%m')
+        GROUP BY DATE_FORMAT(ct.billMonth,'%Y-%m')) AS lastMonthBalance,
+        (SELECT SUM(bii.price) FROM business_insurance_item bii,company_son_total_bill cstb3
+        WHERE bii.companySonTotalBillId = cstb3.id AND cstb3.companyId = cc.id
+        AND DATE_FORMAT(cstb3.billMonth,'%y-%m') = DATE_FORMAT(cstb.billMonth, '%y-%m')) AS insurancePrice,
+        (SELECT SUM(byi.price) FROM business_yc_item byi,company_son_total_bill cstb3
+        WHERE byi.companySonTotalBillId = cstb3.id AND cstb3.companyId = cc.id
+        AND DATE_FORMAT(cstb3.billMonth,'%y-%m') = DATE_FORMAT(cstb.billMonth, '%y-%m')) AS ycPrice,
+
+        ifnull((SELECT SUM(bii.taxPrice) FROM business_insurance_item bii,company_son_total_bill cstb3
+        WHERE bii.companySonTotalBillId = cstb3.id AND cstb3.companyId = cc.id
+        AND DATE_FORMAT(cstb3.billMonth,'%y-%m') = DATE_FORMAT(cstb.billMonth, '%y-%m')),0) +
+        (SELECT IFNULL((select sum(si.taxPrice) from salary_info si, member m, member_business mb,company_son_total_bill cstb2
+        WHERE si.memberId = m.id
+        AND mb.businessId = 5
+        AND cstb2.id = si.companySonTotalBillId
+        AND mb.memberId = m.id
+        AND cstb2.companyId = cc.id
+        AND DATE_FORMAT(cstb2.billMonth, '%Y-%m') = DATE_FORMAT(cstb.billMonth, '%Y-%m')
+        GROUP BY DATE_FORMAT(cstb2.billMonth,'%Y-%m')),0)) +
+        ifnull((SELECT sum(rfi.taxPrice)
+        FROM reserved_funds_info rfi,company_son_bill csb
+        WHERE rfi.companySonBillId = csb.id
+        AND csb.companyId = cc.id
+        AND DATE_FORMAT(rfi.billMonth, '%Y-%m') = DATE_FORMAT(cstb.billMonth, '%Y-%m')),0) +
+        ifnull((SELECT sum(ssi2.taxPrice)
+        FROM social_security_info ssi2,company_son_bill csb
+        WHERE ssi2.companySonBillId = csb.id
+        AND csb.companyId = cc.id
+        AND DATE_FORMAT(ssi2.billMonth, '%Y-%m') = DATE_FORMAT(cstb.billMonth, '%Y-%m')),0) AS taxPrice
+        FROM
+        company_son_bill_item csbi,company cc,users u,
+        company_son_total_bill cstb
+        LEFT JOIN confirm_fund_total_bill cftb ON cftb.companySonTotalBillId = cstb.id
+        LEFT JOIN confirm_fund cf ON cf.id = cftb.confirmFundId
+        LEFT JOIN make_bill mb ON mb.confirmFundId = cf.id OR DATE_FORMAT(mb.billMonth,'%Y-%m') = DATE_FORMAT(cstb.billMonth,'%Y-%m')
+        LEFT JOIN express_info ei ON ei.id = mb.expressInfoId
+        WHERE csbi.companySonTotalBillId = cstb.id
+        AND u.id = cc.beforeService
+        AND cc.id = cstb.companyId
+        AND cstb.isSendSummarize = 0
+        <if test="null != companyName and companyName != ''">
+            AND cc.companyName LIKE '%${companyName}%'
+        </if>
+        <if test="null != companyId">
+            AND cc.id = #{companyId}
+        </if>
+        GROUP BY DATE_FORMAT(cstb.billMonth,'%Y-%m'),cc.id
+        ORDER BY cstb.id DESC
+        <if test="pageArgs != null">
+            limit #{pageArgs.pageStart}, #{pageArgs.pageSize}
+        </if>
+    </select>
+
+
+    <select id="listConsoleDtoCount" resultType="integer">
+        SELECT COUNT(0) FROM
+        (SELECT
+        0
+        FROM
+        company_son_bill_item csbi,company_son_total_bill cstb,company cc
+        WHERE csbi.companySonTotalBillId = cstb.id
+        AND cc.id = cstb.companyId
+        AND cstb.isSendSummarize = 0
+        <if test="null != companyName and companyName != ''">
+            AND cc.companyName LIKE '%${companyName}%'
+        </if>
+        <if test="null != companyId">
+            AND cc.id = #{companyId}
+        </if>
+        GROUP BY DATE_FORMAT(cstb.billMonth,'%Y-%m'),cc.id
+        ORDER BY cstb.id DESC) AS cstbDto
+    </select>
+    
+    
+    <update id="updateConsigneeList" >
+
+        <foreach collection="list" item="c" separator=";">
+            update company_son_total_bill set isSendSummarize = 1
+            where
+            companyId = #{c.companyId}
+            AND DATE_FORMAT(#{c.date},'%Y-%m') = DATE_FORMAT(billMonth,'%Y-%m')
+        </foreach>
+    </update>
+
+
+    <select id="queryTotalBillByCompany" resultMap="BaseResultMap">
+        SELECT * FROM company_son_total_bill WHERE companyId = #{companyId} AND isBalanceOfCancelAfterVerification = 0
+    </select>
+</mapper>

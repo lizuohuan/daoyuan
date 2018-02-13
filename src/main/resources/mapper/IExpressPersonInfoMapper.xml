@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IExpressPersonInfoMapper">
+
+
+    <update id="updateAllIsDefault">
+        UPDATE express_person_info SET isDefault = 0 WHERE companyId = #{companyId}
+    </update>
+
+    <select id="queryInfoById"  resultType="com.magic.daoyuan.business.entity.ExpressPersonInfo">
+        SELECT epi.*,cc.companyName FROM
+        express_person_info epi
+        LEFT JOIN company cc ON epi.companyId = cc.id
+        WHERE epi.id = #{id}
+    </select>
+
+    <select id="queryDefaultInfo" resultType="com.magic.daoyuan.business.entity.ExpressPersonInfo">
+        SELECT * FROM express_person_info WHERE companyId = #{companyId} AND isDefault = 1
+    </select>
+
+    <select id="countExpressPersonInfoByItems" resultType="java.lang.Integer">
+        SELECT
+        COUNT(0)
+        FROM
+        express_person_info epi
+        LEFT JOIN company cc ON epi.companyId = cc.id
+        WHERE epi.isValid = 1
+        <if test="companyId != null">
+            AND epi.companyId = #{companyId}
+        </if>
+    </select>
+
+
+
+    <select id="queryExpressPersonInfoByItems" resultType="com.magic.daoyuan.business.entity.ExpressPersonInfo">
+        SELECT epi.*,cc.companyName
+        FROM
+        express_person_info epi
+        LEFT JOIN company cc ON epi.companyId = cc.id
+        WHERE epi.isValid = 1
+        <if test="companyId != null">
+            AND epi.companyId = #{companyId}
+        </if>
+        ORDER BY epi.id DESC
+        <if test="limit != null and limitSize != null">
+            LIMIT #{limit},#{limitSize}
+        </if>
+    </select>
+
+    <select id="queryByAllField" resultType="com.magic.daoyuan.business.entity.ExpressPersonInfo" parameterType="com.magic.daoyuan.business.entity.ExpressPersonInfo">
+        SELECT * FROM express_person_info WHERE personName = #{personName} AND phone = #{phone}
+          AND address = #{address} AND unitName = #{unitName} AND  zipcode = #{zipcode}
+    </select>
+
+    <insert id="addExpressPersonInfo" parameterType="com.magic.daoyuan.business.entity.ExpressPersonInfo" useGeneratedKeys="true"
+        keyProperty="id" keyColumn="id">
+        INSERT INTO express_person_info (personName, phone, address, unitName, zipcode, companyId, isValid, isDefault)
+        VALUES
+        (#{personName}, #{phone}, #{address}, #{unitName}, #{zipcode}, #{companyId}, 1, #{isDefault})
+    </insert>
+
+
+    <update id="updateExpressPersonInfo" parameterType="com.magic.daoyuan.business.entity.ExpressPersonInfo">
+        UPDATE express_person_info
+        <set>
+          <if test="isValid != null">
+              isValid = #{isValid},
+          </if>
+          <if test="isDefault != null">
+              isDefault = #{isDefault},
+          </if>
+          <if test="zipcode != null">
+              zipcode = #{zipcode},
+          </if>
+          <if test="unitName != null">
+              unitName = #{unitName},
+          </if>
+          <if test="address != null">
+              address = #{address},
+          </if>
+          <if test="phone != null">
+              phone = #{phone},
+          </if>
+          <if test="personName != null">
+              personName = #{personName},
+          </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+
+
+</mapper>

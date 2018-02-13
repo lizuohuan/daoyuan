@@ -1,0 +1,318 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IMemberBusinessUpdateRecordMapper">
+
+    <resultMap id="BaseResult" type="com.magic.daoyuan.business.entity.MemberBusinessUpdateRecord">
+        <result column="id" property="id" javaType="java.lang.Integer"/>
+        <result column="memberId" property="memberId" javaType="java.lang.Integer"/>
+        <result column="serviceType" property="serviceType" javaType="java.lang.Integer"/>
+        <result column="serviceNumber" property="serviceNumber" javaType="java.lang.String"/>
+        <result column="payPlaceId" property="payPlaceId" javaType="java.lang.Integer"/>
+        <result column="organizationId" property="organizationId" javaType="java.lang.Integer"/>
+        <result column="transactorId" property="transactorId" javaType="java.lang.Integer"/>
+        <result column="status" property="status" javaType="java.lang.Integer"/>
+        <result column="createTime" property="createTime" javaType="java.util.Date"/>
+        <result column="companyName" property="companyName" javaType="java.lang.String"/>
+        <result column="userName" property="userName" javaType="java.lang.String"/>
+        <result column="certificateType" property="certificateType" javaType="java.lang.Integer"/>
+        <result column="certificateNum" property="certificateNum" javaType="java.lang.String"/>
+        <result column="beforeService" property="beforeService" javaType="java.lang.String"/>
+        <result column="payPlaceName" property="payPlaceName" javaType="java.lang.String"/>
+        <result column="organizationName" property="organizationName" javaType="java.lang.String"/>
+        <result column="transactorName" property="transactorName" javaType="java.lang.String"/>
+        <result column="insuranceLevelId" property="insuranceLevelId" javaType="java.lang.Integer"/>
+        <result column="insuranceLevelName" property="insuranceLevelName" javaType="java.lang.String"/>
+        <result column="failReason" property="failReason" javaType="java.lang.String"/>
+        <result column="remark" property="remark" javaType="java.lang.String"/>
+        <result column="serviceStatus" property="serviceStatus" javaType="java.lang.Integer"/>
+        <result column="mburiId" property="mburiId" javaType="java.lang.Integer"/>
+        <result column="createUserName" property="createUserName" javaType="java.lang.String"/>
+    </resultMap>
+
+    <resultMap id="BaseResultOther" type="com.magic.daoyuan.business.entity.MemberBusinessUpdateRecord"  extends="BaseResult">
+        <association property="memberBusinessItem" columnPrefix="mbi_"
+                     resultMap="com.magic.daoyuan.business.mapper.IMemberBusinessItemMapper.BaseResultMap"/>
+    </resultMap>
+
+    <resultMap id="BaseResultOther2" type="com.magic.daoyuan.business.entity.MemberBusinessUpdateRecord" extends="BaseResult">
+        <association property="memberBusinessUpdateRecordItems" columnPrefix="mburi_"
+                     resultMap="com.magic.daoyuan.business.mapper.IMemberBusinessUpdateRecordItemMapper.BaseResult"/>
+    </resultMap>
+
+    <resultMap id="IncludeItems" type="com.magic.daoyuan.business.entity.MemberBusinessUpdateRecord" extends="BaseResult">
+        <association property="memberBusinessUpdateRecordItems" column="id"
+                     select="com.magic.daoyuan.business.mapper.IMemberBusinessUpdateRecordItemMapper.queryValidRecordItem"/>
+    </resultMap>
+
+
+    <select id="queryValidRecord" resultMap="IncludeItems">
+        SELECT * FROM member_business_update_record WHERE id IN
+        <foreach collection="set" index="index" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </select>
+
+    <select id="queryBaseInfo" resultMap="BaseResult">
+      SELECT * FROM member_business_update_record WHERE  id = #{id}
+    </select>
+
+    <insert id="save" parameterType="com.magic.daoyuan.business.entity.MemberBusinessUpdateRecord"
+            keyColumn="id" keyProperty="id" useGeneratedKeys="true">
+         insert into member_business_update_record (memberId, serviceType, serviceNumber, payPlaceId,
+         organizationId, transactorId, `status`, createTime,insuranceLevelId)
+         values
+         <foreach collection="list" item="m" separator=",">
+             (#{m.memberId},#{m.serviceType},#{m.serviceNumber},#{m.payPlaceId},
+             #{m.organizationId},#{m.transactorId},#{m.status},now(),#{m.insuranceLevelId})
+         </foreach>
+    </insert>
+
+
+    <select id="add" parameterType="com.magic.daoyuan.business.entity.MemberBusinessUpdateRecord">
+        INSERT INTO member_business_update_record (memberId, serviceType, serviceNumber, payPlaceId,
+        organizationId, transactorId, `status`, createTime,insuranceLevelId)
+        VALUES
+        (#{memberId}, #{serviceType}, #{serviceNumber}, #{payPlaceId},
+        #{organizationId}, #{transactorId}, #{status}, now())
+
+    </select>
+
+    <update id="update" parameterType="com.magic.daoyuan.business.entity.MemberBusinessUpdateRecord">
+        UPDATE member_business_update_record
+        <set>
+            <if test="remark != null">
+                `remark` = #{remark},
+            </if>
+            <if test="payPlaceId != null">
+                `payPlaceId` = #{payPlaceId},
+            </if>
+            <if test="organizationId != null">
+                `organizationId` = #{organizationId},
+            </if>
+            <if test="transactorId != null">
+                `transactorId` = #{transactorId},
+            </if>
+            <if test="insuranceLevelId != null">
+                `insuranceLevelId` = #{insuranceLevelId},
+            </if>
+            <if test="status != null">
+                `status` = #{status},
+            </if>
+            <!--<if test="reason != null and reason != ''">-->
+                <!--`reason` = #{reason},-->
+            <!--</if>-->
+        </set>
+        <where>
+            id = #{id}
+        </where>
+    </update>
+
+
+    <select id="info" resultMap="BaseResult">
+        select * from member_business_update_record mbur,member_business mb ,member_business_item mbi,member m  WHERE mbur.id = #{id}
+    </select>
+
+
+    <select id="list" resultMap="BaseResultOther" parameterType="map">
+        SELECT
+            d.*
+        FROM
+            (SELECT
+                mbur.id,
+                mbur.serviceType,
+                mbur.memberId,
+                mbur.serviceNumber,
+                mburi.`status`,
+                mbur.remark,
+                mburi.serviceStatus,
+                mburi.id AS mburiId,
+                cc.companyName AS companyName,
+                m.userName AS userName,
+                m.certificateType AS certificateType,
+                m.certificateNum AS certificateNum,
+                u.userName AS beforeService,
+                CASE mburi.serveMethod WHEN 1 THEN (SELECT cc.`name` FROM company_pay_place cpp,pay_place pp,citys cc WHERE cpp.id = mburi.payPlaceId AND cpp.payPlaceId = pp.id AND pp.cityId = cc.id  )
+                                                                            ELSE (SELECT cc.`name` FROM pay_place pp,citys cc WHERE pp.id = mburi.payPlaceId AND pp.cityId = cc.id) END
+                 AS payPlaceName,
+                CASE mburi.serveMethod WHEN 1 THEN (CASE mbur.serviceType WHEN 0 THEN (SELECT cpp.organizationName FROM company_pay_place cpp WHERE cpp.id = mburi.payPlaceId)
+                                                                                                                                 WHEN 1 THEN (SELECT o.organizationName FROM organization o,company_pay_place cpp WHERE cpp.id = mburi.payPlaceId AND cpp.organizationId = o.id ) END)
+                                                            WHEN 0 THEN (SELECT o.organizationName FROM organization o WHERE o.id = mburi.organizationId) END
+                AS organizationName,
+                CASE mburi.serveMethod WHEN 1 THEN (SELECT cpp.transactorName FROM company_pay_place cpp WHERE cpp.id = mburi.payPlaceId)
+                                                            WHEN 0 THEN (SELECT s.supplierName FROM transactor t,supplier s WHERE t.id = mburi.transactorId AND s.id = t.supplierId) END
+                AS transactorName,
+                mburi.reason AS failReason,ct.userName AS createUserName
+
+            FROM
+                member_business_update_record_item mburi
+            LEFT JOIN member_business_update_record mbur ON mbur.id = mburi.memberBusinessUpdateRecordId
+            LEFT JOIN member m ON mbur.memberId = m.id
+            LEFT JOIN company cc ON m.companyId = cc.id
+            LEFT JOIN users u ON u.id = cc.beforeService
+            LEFT JOIN users ct ON ct.id = mburi.createUserId
+            WHERE
+            mburi.`status` NOT IN (4)
+            <if test="userId != null">
+                AND u.id = #{id}
+            </if>
+            <if test="uUserName != null and uUserName != ''">
+                AND u.userName Like '%${uUserName}%'
+            </if>
+            <if test="mUserName != null and mUserName != ''">
+                AND m.userName Like '%${mUserName}%'
+            </if>
+            <if test="certificateNum != null and certificateNum != ''">
+                AND m.certificateNum Like '%${certificateNum}%'
+            </if>
+            <if test="companyId != null">
+                AND m.companyId = #{companyId}
+            </if>
+            <if test="payPlaceId != null">
+                AND ((mburi.payPlaceId = #{payPlaceId} AND mburi.serveMethod = 0)
+                OR (SELECT cpp.payPlaceId FROM company_pay_place cpp  WHERE cpp.id = mburi.payPlaceId AND mburi.serveMethod = 1) = #{payPlaceId} )
+            </if>
+            <if test="organizationId != null">
+                AND mburi.organizationId = #{organizationId}
+            </if>
+            <if test="serviceType != null">
+                AND mbur.serviceType = #{serviceType}
+            </if>
+            <if test="transactorId != null">
+                AND mburi.transactorId = #{transactorId}
+            </if>
+            <if test="status != null">
+                AND mburi.status = #{status}
+            </if>
+            ORDER BY
+                mburi.id DESC
+        ) d
+        GROUP BY d.serviceType,d.serviceStatus,d.memberId
+        ORDER BY d.mburiId DESC
+        <if test="pageArgs != null">
+            limit #{pageArgs.pageStart}, #{pageArgs.pageSize}
+        </if>
+    </select>
+
+    <select id="listCount" resultType="int" parameterType="map">
+        SELECT
+            COUNT(0)
+        FROM
+            (SELECT
+                mbur.id,
+                mbur.serviceType,
+                mbur.memberId,
+                mbur.serviceNumber,
+                mburi.`status`,
+                mbur.remark,
+                mburi.serviceStatus,
+                cc.companyName AS companyName,
+                m.userName AS userName,
+                m.certificateType AS certificateType,
+                m.certificateNum AS certificateNum,
+                u.userName AS beforeService
+
+            FROM
+                member_business_update_record_item mburi
+            LEFT JOIN member_business_update_record mbur ON mbur.id = mburi.memberBusinessUpdateRecordId
+            LEFT JOIN member m ON mbur.memberId = m.id
+            LEFT JOIN company cc ON m.companyId = cc.id
+            LEFT JOIN users u ON u.id = cc.beforeService
+            WHERE
+            mburi.`status` NOT IN (4)
+            <if test="userId != null">
+                AND u.id = #{id}
+            </if>
+            <if test="uUserName != null and uUserName != ''">
+                AND u.userName Like '%${uUserName}%'
+            </if>
+            <if test="mUserName != null and mUserName != ''">
+                AND m.userName Like '%${mUserName}%'
+            </if>
+            <if test="certificateNum != null and certificateNum != ''">
+                AND m.certificateNum Like '%${certificateNum}%'
+            </if>
+            <if test="companyId != null">
+                AND m.companyId = #{companyId}
+            </if>
+            <if test="payPlaceId != null">
+                AND ((mburi.payPlaceId = #{payPlaceId} AND mburi.serveMethod = 0) OR
+                (SELECT cpp.payPlaceId FROM company_pay_place cpp  WHERE cpp.id = mburi.payPlaceId AND mburi.serveMethod = 1) = #{payPlaceId} )
+            </if>
+            <if test="organizationId != null">
+                AND mburi.organizationId = #{organizationId}
+            </if>
+            <if test="serviceType != null">
+                AND mbur.serviceType = #{serviceType}
+            </if>
+            <if test="transactorId != null">
+                AND mburi.transactorId = #{transactorId}
+            </if>
+            <if test="status != null">
+                AND mburi.status = #{status}
+            </if>
+            GROUP BY mbur.serviceType,mburi.serviceStatus,mbur.memberId
+        ) d
+    </select>
+
+    <select id="getMemberUpdateList" resultMap="IncludeItems">
+        select * from member_business_update_record mbur WHERE mbur.memberId = #{memberId}
+    </select>
+
+
+
+    <select id="getMemberUpdateListByMembers" resultMap="BaseResult">
+        select * from member_business_update_record mbur WHERE mbur.memberId IN 
+        <foreach collection="list" index="index" item="l" open="(" close=")" separator=",">
+            #{l}
+        </foreach>
+    </select>
+
+
+    <update id="updateList" parameterType="com.magic.daoyuan.business.entity.MemberBusinessUpdateRecord">
+        <foreach collection="list" item="m" separator=";">
+            UPDATE member_business_update_record
+            <set>
+                <if test="m.payPlaceId != null">
+                    `payPlaceId` = #{m.payPlaceId},
+                </if>
+                <if test="m.organizationId != null">
+                    `organizationId` = #{m.organizationId},
+                </if>
+                <if test="m.transactorId != null">
+                    `transactorId` = #{m.transactorId},
+                </if>
+                <if test="m.insuranceLevelId != null">
+                    `insuranceLevelId` = #{m.insuranceLevelId},
+                </if>
+                <if test="m.status != null">
+                    `status` = #{m.status},
+                </if>
+            </set>
+            <where>
+                id = #{m.id}
+            </where>
+        </foreach>
+    </update>
+
+
+    <select id="getRecordAndItemByIds" resultMap="BaseResultOther2" >
+        select mbur.*,
+        mburi.id AS mburi_id,
+        mburi.memberBusinessUpdateRecordId AS mburi_memberBusinessUpdateRecordId,
+        mburi.status AS mburi_status,
+        mburi.serviceStatus AS mburi_serviceStatus
+        from member_business_update_record mbur ,member_business_update_record_item mburi
+        WHERE mbur.id = mburi.memberBusinessUpdateRecordId
+        AND mburi.isNowCreate = 0
+        AND mbur.id IN
+        <foreach collection="ids" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+    </select>
+
+
+    <update id="allApplyFor" >
+        UPDATE member_business_update_record SET `status` = 1 WHERE `status` = 0
+    </update>
+</mapper>

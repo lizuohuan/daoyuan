@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IBusinessMethodMapper">
+
+
+    <resultMap id="BaseResultMap" type="com.magic.daoyuan.business.entity.BusinessMethod">
+        <result column="id" property="id" javaType="java.lang.Integer"/>
+        <result column="companyBusinessId" property="companyBusinessId" javaType="java.lang.Integer"/>
+        <result column="tuoGuan" property="tuoGuan" javaType="java.lang.Integer"/>
+        <result column="daiLi" property="daiLi" javaType="java.lang.Integer"/>
+    </resultMap>
+
+    <select id="queryBusinessMethodByCompanyBusinessId" resultType="com.magic.daoyuan.business.entity.BusinessMethod">
+        SELECT * FROM business_method WHERE companyBusinessId = #{companyBusinessId}
+    </select>
+
+    <insert id="batchAddBusinessMethod">
+        INSERT INTO business_method ( companyBusinessId, daiLi, tuoGuan)
+        VALUES
+        <foreach collection="businessMethods" index="index" item="businessMethod" separator=",">
+            ( #{businessMethod.companyBusinessId}, #{businessMethod.daiLi}, #{businessMethod.tuoGuan})
+        </foreach>
+    </insert>
+
+    <delete id="delBusinessMethod">
+        DELETE FROM business_method WHERE companyBusinessId
+        IN (
+          <foreach collection="ids" index="index" item="id" separator=",">
+              #{id}
+          </foreach>
+        )
+    </delete>
+
+</mapper>

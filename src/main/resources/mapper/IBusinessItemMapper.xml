@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IBusinessItemMapper">
+
+
+    <resultMap id="BaseResult" type="com.magic.daoyuan.business.entity.BusinessItem">
+        <result column="id" property="id" javaType="java.lang.Integer"/>
+        <result column="businessId" property="businessId" javaType="java.lang.Integer"/>
+        <result column="companyId" property="companyId" javaType="java.lang.Integer"/>
+        <result column="itemName" property="itemName" javaType="java.lang.String"/>
+        <result column="businessName" property="businessName" javaType="java.lang.String"/>
+        <result column="type" property="type" javaType="java.lang.Integer"/>
+        <result column="serviceFee" property="serviceFee" javaType="java.lang.Double"/>
+        <result column="price" property="price" javaType="java.lang.Double"/>
+        <result column="chargeMethod" property="chargeMethod" javaType="java.lang.Integer"/>
+        <result column="companySonBillId" property="companySonBillId" javaType="java.lang.Integer"/>
+    </resultMap>
+
+    <select id="info" resultMap="BaseResult">
+        SELECT * FROM business_items WHERE  id = #{id}
+    </select>
+
+    <select id="queryBusinessItemByCompany" resultMap="BaseResult">
+        SELECT
+            cb.companyId,
+            bi.*,cbi.price AS price,
+            cbi.sonBillId AS companySonBillId
+        FROM
+            company_business cb,
+            company_business_item cbi,
+            business_items bi
+        WHERE
+            cb.id = cbi.businessCompanyId
+        AND cbi.businessItemId = bi.id
+        AND cb.businessId = #{businessId}
+        AND cb.companyId = #{companyId}
+    </select>
+
+    <select id="queryBusinessItemByCompany2" resultMap="BaseResult">
+        SELECT
+            cb.companyId,
+            bi.*,cbi.price AS price,
+            cbi.sonBillId AS companySonBillId
+        FROM
+            company_business cb,
+            company_business_item cbi,
+            business_items bi
+        WHERE
+            cb.id = cbi.businessCompanyId
+        AND cbi.businessItemId = bi.id
+        AND cb.companyId IN (
+        <foreach collection="companyIds" item="id" separator=",">
+            #{id}
+        </foreach>)
+        AND cb.businessId = #{businessId}
+    </select>
+
+    <select id="queryBusinessItemsByMember" resultType="com.magic.daoyuan.business.entity.BusinessItem">
+        SELECT
+            bi.*,mbi.companySonBillId,
+            CASE bi.`type` WHEN 1 THEN
+                (
+                    SELECT cbi.price
+                    FROM member m,member_business mb,company_business cb,company_business_item cbi
+                    WHERE m.id = mb.memberId AND m.companyId = cb.companyId AND cb.id = cbi.businessCompanyId
+                    AND mb.id = mbi.memberBusinessId AND cbi.businessItemId = bi.id
+                )
+            ELSE bi.serviceFee END AS price
+
+        FROM
+            business_items bi,
+            member_business_other_item mbi
+        WHERE
+            bi.id = mbi.businessItemId
+        AND mbi.memberBusinessId = #{memberBusinessId}
+    </select>
+
+
+    <select id="queryBusinessByBusiness" resultType="com.magic.daoyuan.business.entity.BusinessItem">
+        SELECT * FROM business_items WHERE isValid = 1
+            AND businessId = #{businessId}
+    </select>
+
+    <select id="queryBusinessByCompany" resultType="com.magic.daoyuan.business.entity.BusinessItem">
+        SELECT * FROM business_items WHERE isValid = 1
+            AND businessId = #{businessId}
+    </select>
+
+    <select id="countBusinessItem" resultType="java.lang.Integer">
+        SELECT COUNT(0) FROM business_items WHERE isValid = 1
+        <if test="businessId != null">
+            AND businessId = #{businessId}
+        </if>
+        <if test="type != null">
+            AND bi.`type` = #{type}
+        </if>
+    </select>
+
+
+    <select id="queryBusinessItem" resultType="com.magic.daoyuan.business.entity.BusinessItem">
+        SELECT bi.*,b.businessName AS businessName FROM
+        business_items bi LEFT JOIN business b ON bi.businessId = b.id
+        WHERE bi.isValid = 1
+        <if test="businessId != null">
+            AND bi.businessId = #{businessId}
+        </if>
+        <if test="type != null">
+            AND bi.`type` = #{type}
+        </if>
+        ORDER BY bi.id DESC
+        <if test="limit != null and limitSize != null">
+            LIMIT #{limit},#{limitSize}
+        </if>
+    </select>
+
+    <update id="updateBusinessItem" parameterType="com.magic.daoyuan.business.entity.BusinessItem">
+        UPDATE business_items
+        <set>
+            <if test="businessId != null">
+                businessId = #{businessId},
+            </if>
+            <if test="isValid != null">
+                isValid = #{isValid},
+            </if>
+            <if test="itemName != null">
+                itemName = #{itemName},
+            </if>
+            <if test="serviceFee != null">
+                serviceFee = #{serviceFee},
+            </if>
+            <if test="chargeMethod != null">
+                chargeMethod = #{chargeMethod},
+            </if>
+            <if test="isCompany != null">
+                isCompany = #{isCompany},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <insert id="addBusinessItem" parameterType="com.magic.daoyuan.business.entity.BusinessItem">
+        INSERT INTO business_items ( businessId, itemName, isValid, `type`, serviceFee, chargeMethod, isCompany)
+        VALUES ( #{businessId}, #{itemName}, 1,#{type},#{serviceFee},#{chargeMethod},#{isCompany})
+    </insert>
+
+</mapper>

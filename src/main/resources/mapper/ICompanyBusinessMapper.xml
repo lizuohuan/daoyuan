@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.ICompanyBusinessMapper">
+
+
+    <resultMap id="BaseCompanyBusiness" type="com.magic.daoyuan.business.entity.CompanyBusiness">
+        <result column="id" property="id" javaType="java.lang.Integer"/>
+        <result column="businessId" property="businessId" javaType="java.lang.Integer"/>
+        <result column="companyId" property="companyId" javaType="java.lang.Integer"/>
+        <result column="billMadeMethod" property="billMadeMethod" javaType="java.lang.Integer"/>
+        <result column="businessMethod" property="businessMethod" javaType="java.lang.Integer"/>
+        <association property="businessMethodList" columnPrefix="bm_"
+                     resultMap="com.magic.daoyuan.business.mapper.IBusinessMethodMapper.BaseResultMap"/>
+    </resultMap>
+
+    <resultMap id="IncludeItem" type="com.magic.daoyuan.business.entity.CompanyBusiness">
+        <association property="companyBusinessItems" columnPrefix="cbi_" resultMap="com.magic.daoyuan.business.mapper.ICompanyBusinessItemMapper.BaseResult"/>
+    </resultMap>
+
+    <select id="queryCompanyBusinessOfYC" resultMap="BaseCompanyBusiness">
+        SELECT
+            cb.*,
+            cbi.id AS cbi_id,
+            cbi.businessItemId AS cbi_businessItemId
+        FROM
+            company_business cb,
+            company_business_item cbi
+        WHERE
+            cb.businessId = 7
+        AND cb.id = cbi.businessCompanyId
+
+    </select>
+
+    <delete id="del">
+        DELETE FROM company_business WHERE id IN
+        <foreach collection="list" index="index" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </delete>
+
+    <select id="queryCompanyBusiness" resultMap="BaseCompanyBusiness">
+      SELECT id,businessId,companyId FROM company_business
+    </select>
+
+    <insert id="addCompanyBusiness" useGeneratedKeys="true" keyColumn="id" parameterType="com.magic.daoyuan.business.entity.CompanyBusiness" keyProperty="id">
+        INSERT INTO company_business ( businessId, companyId, billMadeMethod, businessMethod)
+        VALUES
+            (#{businessId},#{companyId},#{billMadeMethod},
+            #{businessMethod})
+    </insert>
+
+    <insert id="batchAddCompanyBusiness" parameterType="java.util.List" useGeneratedKeys="true" keyColumn="id">
+        INSERT INTO company_business ( businessId, companyId, billMadeMethod, businessMethod)
+        VALUES
+        <foreach collection="companyBusinessList" item="i" index="index"  separator=",">
+            (#{i.businessId},#{i.companyId},#{i.billMadeMethod},
+            #{i.businessMethod})
+        </foreach>
+    </insert>
+
+    <delete id="delCompanyBusiness">
+        DELETE FROM company_business WHERE companyId = #{companyId}
+    </delete>
+
+    <select id="countCompanyBusiness" resultType="int">
+        SELECT
+            COUNT(0)
+        FROM
+            company_business cb
+        WHERE
+        1=1
+        <if test="businessId != null">
+            AND cb.businessId = #{businessId}
+        </if>
+        <if test="companyId != null">
+            AND cb.companyId = #{companyId}
+        </if>
+    </select>
+
+</mapper>

@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IOrganizationMapper" >
+
+
+    <resultMap id="BaseOrganization" type="com.magic.daoyuan.business.entity.Organization">
+        <result column="id" property="id" javaType="java.lang.Integer"/>
+        <result column="operationType" property="operationType" javaType="java.lang.Integer"/>
+        <result column="organizationName" property="organizationName" javaType="java.lang.String"/>
+        <result column="isValid" property="isValid" javaType="java.lang.Integer"/>
+        <result column="payPlaceId" property="payPlaceId" javaType="java.lang.Integer"/>
+        <result column="computationRule" property="computationRule" javaType="java.lang.Integer"/>
+        <result column="precision" property="precision" javaType="java.lang.Integer"/>
+        <result column="type" property="type" javaType="java.lang.Integer"/>
+        <result column="computationalAccuracy" property="computationalAccuracy" javaType="java.lang.Integer"/>
+        <result column="minCardinalNumber" property="minCardinalNumber" javaType="java.lang.Double"/>
+        <result column="maxCardinalNumber" property="maxCardinalNumber" javaType="java.lang.Double"/>
+        <result column="inTheEndTime" property="inTheEndTime" javaType="java.lang.Integer"/>
+        <result column="remindTime" property="remindTime" javaType="java.lang.Integer"/>
+        <result column="max" property="max" javaType="java.lang.Double"/>
+        <result column="min" property="min" javaType="java.lang.Double"/>
+        <result column="flag" property="flag" javaType="java.lang.Integer"/>
+        <result column="companyName" property="companyName" javaType="java.lang.String"/>
+    </resultMap>
+
+    <resultMap id="BaseTransactorMap" type="com.magic.daoyuan.business.entity.Organization" extends="BaseOrganization">
+        <association property="transactors" columnPrefix="t_"
+                     resultMap="com.magic.daoyuan.business.mapper.ITransactorMapper.BaseTransactorInsuranceLevelMap"/>
+    </resultMap>
+
+
+    <select id="countByOrganization" resultType="map">
+        SELECT
+            (SELECT
+                MAX(maxScope)
+            FROM
+                organization o,
+                transactor t
+            WHERE
+                o.id = t.organizationId
+            AND o.id = #{organization}) AS `max`,
+            (SELECT
+                MIN(minScope)
+            FROM
+                organization o,
+                transactor t
+            WHERE
+                o.id = t.organizationId
+            AND o.id = #{organization}) AS `min`
+    </select>
+
+    <select id="queryAllOrganization" resultMap="BaseOrganization">
+        SELECT
+         o.* ,
+         (SELECT MAX(maxScope) FROM transactor t WHERE  t.organizationId = o.id) AS `max`,
+         (SELECT MIN(minScope) FROM transactor t WHERE  t.organizationId = o.id) AS `min`
+        FROM
+         organization o
+        WHERE o.isValid = 1
+    </select>
+
+    <select id="queryOrganizationByPayPlace" resultMap="BaseOrganization">
+        SELECT
+          o.*,0 AS flag
+        FROM
+            organization o,
+            pay_place pp
+        WHERE
+          o.payPlaceId = pp.id
+       <!-- AND pp.type = 1 -->
+        AND o.isValid = 1
+        <if test="payPlaceId != null">
+            AND o.payPlaceId = #{payPlaceId}
+        </if>
+    </select>
+    <select id="countOrganizationByItems" resultType="java.lang.Integer">
+        SELECT COUNT(0) FROM organization o
+        WHERE o.isValid = 1
+        <if test="payPlaceId != null">
+            AND o.payPlaceId = #{payPlaceId}
+        </if>
+    </select>
+
+    <select id="queryOrganizationByItems" resultMap="BaseOrganization">
+        SELECT o.* FROM organization o
+        WHERE o.isValid = 1
+        <if test="payPlaceId != null">
+            AND o.payPlaceId = #{payPlaceId}
+        </if>
+        ORDER BY o.id DESC
+        <if test="limit != null and limitSize != null">
+            LIMIT #{limit},#{limitSize}
+        </if>
+    </select>
+
+    <select id="queryOrganizationById" resultMap="BaseOrganization">
+        SELECT o.*,
+        (SELECT MAX(maxScope) FROM transactor t WHERE  t.organizationId = o.id) AS `max`,
+         (SELECT MIN(minScope) FROM transactor t WHERE  t.organizationId = o.id) AS `min`
+        FROM organization o
+        WHERE o.id = #{id}
+    </select>
+
+    <update id="updateOrganization" parameterType="com.magic.daoyuan.business.entity.Organization">
+        UPDATE organization
+        <set>
+          <if test="organizationName != null">
+              organizationName = #{organizationName},
+          </if>
+          <if test="operationType != null">
+              operationType = #{operationType},
+          </if>
+          <if test="inTheEndTime != null">
+              inTheEndTime = #{inTheEndTime},
+          </if>
+          <if test="remindTime != null">
+              remindTime = #{remindTime},
+          </if>
+          <if test="remindContent != null">
+              remindContent = #{remindContent},
+          </if>
+          <if test="isValid != null">
+              isValid = #{isValid},
+          </if>
+          <if test="payPlaceId != null">
+              payPlaceId = #{payPlaceId},
+          </if>
+          <if test="computationalAccuracy != null">
+              computationalAccuracy = #{computationalAccuracy},
+          </if>
+          <if test="precision != null">
+              `precision` = #{precision},
+          </if>
+          <if test="computationRule != null">
+              computationRule = #{computationRule},
+          </if>
+          <if test="minCardinalNumber != null">
+              minCardinalNumber = #{minCardinalNumber},
+          </if>
+          <if test="maxCardinalNumber != null">
+              maxCardinalNumber = #{maxCardinalNumber},
+          </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <insert id="addOrganization" parameterType="com.magic.daoyuan.business.entity.Organization">
+        INSERT INTO organization (organizationName, operationType, inTheEndTime, remindTime, remindContent,
+        isValid, payPlaceId, computationalAccuracy, computationRule, minCardinalNumber, maxCardinalNumber,`precision`)
+        VALUES
+        (#{organizationName}, #{operationType}, #{inTheEndTime}, #{remindTime}, #{remindContent}, 1,
+        #{payPlaceId}, #{computationalAccuracy}, #{computationRule}, #{minCardinalNumber}, #{maxCardinalNumber},#{precision})
+    </insert>
+
+
+
+</mapper>

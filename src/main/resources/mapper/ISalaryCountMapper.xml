@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.ISalaryCountMapper">
+
+
+    <insert id="addSalaryCount" parameterType="com.magic.daoyuan.business.entity.SalaryCount">
+        INSERT INTO salary_count ( amount, ratio, deduct)
+        VALUES
+        ( #{amount}, #{ratio}, #{deduct})
+    </insert>
+
+
+    <select id="queryAllSalaryCount" resultType="com.magic.daoyuan.business.entity.SalaryCount">
+        SELECT * FROM salary_count ORDER BY amount ASC
+    </select>
+
+    <delete id="delSalaryCount">
+        DELETE FROM salary_count WHERE id = #{id}
+    </delete>
+
+</mapper>

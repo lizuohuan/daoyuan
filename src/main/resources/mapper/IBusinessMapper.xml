@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IBusinessMapper">
+
+
+    <update id="updateBusiness">
+        UPDATE business
+        <set>
+          <if test="describe != null">
+              `describe` = #{describe},
+          </if>
+          <if test="businessName != null">
+              businessName = #{businessName},
+          </if>
+          <if test="isValid != null">
+              isValid = #{isValid},
+          </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <insert id="addBusiness" parameterType="com.magic.daoyuan.business.entity.Business">
+        INSERT INTO business ( businessName, `describe`, isValid)
+        VALUES ( #{businessName}, #{describe}, 1)
+    </insert>
+
+
+    <resultMap id="BaseBusiness" type="com.magic.daoyuan.business.entity.Business">
+        <result column="id" property="id" javaType="java.lang.Integer"/>
+        <result column="businessName" property="businessName" javaType="java.lang.String"/>
+        <result column="describe" property="describe" javaType="java.lang.String"/>
+        <association property="memberBusinessItem" columnPrefix="mbi_"
+                     resultMap="com.magic.daoyuan.business.mapper.IMemberBusinessItemMapper.BaseResultMap"/>
+    </resultMap>
+
+    <resultMap id="IncludeBusinessMethod" type="com.magic.daoyuan.business.entity.Business" extends="BaseBusiness">
+        <association property="businessMethod" column="companyBusinessId" select="com.magic.daoyuan.business.mapper.IBusinessMethodMapper.queryBusinessMethodByCompanyBusinessId"/>
+        <association property="businessItems" column="companyBusinessId" select="com.magic.daoyuan.business.mapper.ICompanyBusinessItemMapper.queryBusinessItems"/>
+    </resultMap>
+
+
+    <resultMap id="IncludeMemberBusiness" type="com.magic.daoyuan.business.entity.Business" extends="BaseBusiness">
+        <association property="memberBusinessItem" column="businessMemberId=memberBusinessId,type=type"
+                     select="com.magic.daoyuan.business.mapper.IMemberBusinessItemMapper.queryMemberBusinessItemByBusinessMember"/>
+        <association property="businessItems" column="memberBusinessId" select="com.magic.daoyuan.business.mapper.IBusinessItemMapper.queryBusinessItemsByMember"/>
+
+    </resultMap>
+
+
+    <resultMap id="IncludeBusinessItem" type="com.magic.daoyuan.business.entity.Business" extends="BaseBusiness">
+        <association property="businessItems" column="id" select="com.magic.daoyuan.business.mapper.ICompanyBusinessItemMapper.queryBusinessItemByBusiness"/>
+    </resultMap>
+
+    <select id="queryOtherBusiness" resultMap="IncludeBusinessItem">
+        SELECT * FROM business WHERE id IN (6,7)
+    </select>
+
+    <select id="queryBusinessByMember" resultMap="IncludeMemberBusiness">
+        SELECT
+            b.*, mb.id AS memberBusinessId,mb.companySonBillId AS companySonBillId,
+            CASE b.id WHEN 3 THEN 0
+                      WHEN 4 THEN 1 END AS `type`
+        FROM
+            business b,
+            member_business mb
+        WHERE
+            b.id = mb.businessId
+        AND mb.memberId = #{memberId}
+    </select>
+
+
+    <select id="queryOnlyBusinessByMember" resultMap="BaseBusiness">
+        SELECT
+            b.*, mb.id AS memberBusinessId,mb.companySonBillId AS companySonBillId,
+            CASE b.id WHEN 3 THEN 0
+                      WHEN 4 THEN 1 END AS `type`
+        FROM
+            business b,
+            member_business mb
+        WHERE
+            b.id = mb.businessId
+        AND mb.memberId = #{memberId}
+    </select>
+
+    <select id="queryBusiness" resultMap="IncludeBusinessMethod">
+        SELECT b.*,cb.id AS companyBusinessId FROM business b,company_business cb
+        WHERE b.isValid = 1
+        AND b.id = cb.businessId
+        AND cb.companyId = #{companyId}
+    </select>
+
+    <select id="queryBusinessByItems" resultType="com.magic.daoyuan.business.entity.Business">
+        SELECT * FROM business WHERE isValid = 1
+        <if test="limit != null and limitSize != null">
+            LIMIT #{limit},#{limitSize}
+        </if>
+    </select>
+
+
+    <select id="countBusinessByItems" resultType="java.lang.Integer">
+        SELECT COUNT(0) FROM business WHERE isValid = 1
+    </select>
+
+</mapper>

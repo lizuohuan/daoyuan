@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.ITransactorInsuranceLevelMapper" >
+  <resultMap id="BaseResultMap" type="com.magic.daoyuan.business.entity.TransactorInsuranceLevel" >
+    <id column="id" property="id" javaType="java.lang.Integer" />
+    <result column="payTheWayId" property="payTheWayId" javaType="java.lang.Integer" />
+    <result column="coPayType" property="coPayType" javaType="java.lang.Integer" />
+    <result column="coPayPrice" property="coPayPrice" javaType="java.lang.Double" />
+    <result column="mePayType" property="mePayType" javaType="java.lang.Integer" />
+    <result column="mePayPrice" property="mePayPrice" javaType="java.lang.Double" />
+    <result column="isValid" property="isValid" javaType="java.lang.Integer" />
+  </resultMap>
+  <resultMap id="BasePayTheWay" type="com.magic.daoyuan.business.entity.TransactorInsuranceLevel" extends="BaseResultMap">
+      <association property="payTheWay" columnPrefix="pt_"
+                   resultMap="com.magic.daoyuan.business.mapper.IPayTheWayMapper.BaseResultMap" />
+  </resultMap>
+  <sql id="BasePayTheWay">
+    pt.id AS pt_id,
+    pt.coPayType AS pt_coPayType,
+    pt.coPayPrice AS pt_coPayPrice,
+    pt.coComputationalAccuracy AS pt_coComputationalAccuracy,
+    pt.coComputationRule AS pt_coComputationRule,
+    pt.isCMakeASupplementaryPayment AS pt_isCMakeASupplementaryPayment,
+    pt.mePayType AS pt_mePayType, pt.mePayPrice AS pt_mePayPrice,
+    pt.meComputationalAccuracy AS pt_meComputationalAccuracy,
+    pt.meComputationRule AS pt_meComputationRule,
+    pt.isMMakeASupplementaryPayment AS pt_isMMakeASupplementaryPayment,
+    pt.insuranceLevelId AS pt_insuranceLevelId,
+    pt.coMinScope AS pt_coMinScope, pt.coMaxScope AS pt_coMaxScope,
+    pt.meMinScope AS pt_meMinScope, pt.meMaxScope AS pt_meMaxScope,
+    pt.mePrecision AS pt_mePrecision,pt.coPrecision AS pt_coPrecision
+  </sql>
+
+  <select id="info" resultMap="BasePayTheWay" parameterType="java.lang.Integer" >
+    select 
+      ti.* ,il.levelName AS pt_insuranceLevelName ,i.insuranceName AS pt_insuranceName,
+      <include refid="BasePayTheWay"/>
+    from transactor_insurance_level ti,insurance_level il,insurance i,pay_the_way pt
+    where
+    ti.payTheWayId = pt.id
+    AND pt.insuranceLevelId = il.id
+    AND pt.insuranceId = i.id
+    AND ti.id = #{id}
+  </select>
+  <insert id="save" parameterType="com.magic.daoyuan.business.entity.TransactorInsuranceLevel" >
+      insert into transactor_insurance_level (payTheWayId, transactorId, coPayType,
+      coPayPrice, mePayType, mePayPrice, isValid)
+      values (#{payTheWayId},#{transactorId},
+      #{coPayType},#{coPayPrice},#{mePayType},#{mePayPrice},1)
+  </insert>
+
+  <update id="update" parameterType="com.magic.daoyuan.business.entity.TransactorInsuranceLevel" >
+    update transactor_insurance_level
+    <set>
+      <if test="payTheWayId != null">
+        `payTheWayId` = #{payTheWayId},
+      </if>
+      <if test="transactorId != null">
+        `transactorId` = #{transactorId},
+      </if>
+      <if test="coPayType != null">
+        `coPayType` = #{coPayType},
+      </if>
+      <if test="coPayPrice != null">
+        `coPayPrice` = #{coPayPrice},
+      </if>
+      <if test="mePayType != null">
+        mePayType = #{mePayType},
+      </if>
+      <if test="mePayPrice != null">
+        mePayPrice = #{mePayPrice},
+      </if>
+      <if test="isValid != null">
+        isValid = #{isValid},
+      </if>
+    </set>
+    where id = #{id}
+  </update>
+  <update id="updateAll" parameterType="com.magic.daoyuan.business.entity.TransactorInsuranceLevel" >
+    update transactor_insurance_level
+    set
+      `payTheWayId` = #{payTheWayId},
+      `transactorId` = #{transactorId},
+      `coPayType` = #{coPayType},
+      `coPayPrice` = #{coPayPrice},
+      `mePayType` = #{mePayType},
+      `mePayPrice` = #{mePayPrice}
+    where id = #{id}
+  </update>
+
+
+
+
+  <select id="list" resultMap="BasePayTheWay" parameterType="map">
+    SELECT ti.* ,il.levelName AS pt_insuranceLevelName ,i.insuranceName AS pt_insuranceName,
+    <include refid="BasePayTheWay"/>
+    FROM transactor_insurance_level ti,insurance_level il,insurance i ,pay_the_way pt
+    WHERE
+    ti.payTheWayId = pt.id
+    AND pt.insuranceLevelId = il.id
+    AND pt.insuranceId = i.id
+    <if test="levelName != null and levelName != ''">
+      AND il.levelName Like '%${levelName}%'
+    </if>
+    <if test="insuranceName != null and insuranceName != ''">
+      AND i.insuranceName Like '%${insuranceName}%'
+    </if>
+    <if test="isValid != null">
+      AND ti.isValid = #{isValid}
+    </if>
+    <if test="coPayType != null">
+      AND ti.coPayType = #{coPayType}
+    </if>
+    <if test="mePayType != null">
+      AND ti.mePayType = #{mePayType}
+    </if>
+    <if test="transactorId != null">
+      AND ti.transactorId = #{transactorId}
+    </if>
+    ORDER BY
+    <if test="pageArgs != null">
+      <if test="pageArgs.column != null and pageArgs.column != ''">
+        ${pageArgs.column} ${pageArgs.order},
+      </if>
+    </if>
+    ti.id DESC
+    <if test="pageArgs != null">
+      limit #{pageArgs.pageStart}, #{pageArgs.pageSize}
+    </if>
+  </select>
+
+  <select id="listCount" resultType="int" parameterType="map">
+    SELECT
+    COUNT(*)
+    FROM transactor_insurance_level ti,insurance_level il,insurance i,pay_the_way p
+    WHERE ti.payTheWayId = p.id
+    AND p.insuranceLevelId = il.id
+    AND p.insuranceId = i.id
+    <if test="levelName != null and levelName != ''">
+      AND il.levelName Like '%${levelName}%'
+    </if>
+    <if test="insuranceName != null and insuranceName != ''">
+      AND i.insuranceName Like '%${insuranceName}%'
+    </if>
+    <if test="isValid != null">
+      AND ti.isValid = #{isValid}
+    </if>
+    <if test="coPayType != null">
+      AND ti.coPayType = #{coPayType}
+    </if>
+    <if test="mePayType != null">
+      AND ti.mePayType = #{mePayType}
+    </if>
+    <if test="transactorId != null">
+      AND ti.transactorId = #{transactorId}
+    </if>
+  </select>
+</mapper>

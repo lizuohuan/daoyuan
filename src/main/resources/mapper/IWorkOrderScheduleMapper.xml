@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IWorkOrderScheduleMapper">
+
+    <select id="queryWorkOrderScheduleByItems" resultType="com.magic.daoyuan.business.entity.WorkOrderSchedule">
+        SELECT
+        w.*,
+        u.userName AS userName,
+        r.roleName AS roleName,
+        us.userName AS proposerName,
+        uss.userName AS nextUserName,
+        ro.roleName AS nextRoleName
+        FROM
+            work_order_schedule w
+        LEFT JOIN users u ON w.userId = u.id
+        LEFT JOIN users us ON w.proposerId = us.id
+        LEFT JOIN users uss ON w.nextUserId = uss.id
+        LEFT JOIN role r ON w.roleId = r.id
+        LEFT JOIN role ro ON w.nextRoleId = ro.id
+        WHERE
+	    w.workOrderId = #{workOrderId}
+	    ORDER BY w.id DESC
+    </select>
+
+    <select id="getNextWorkOrderSchedule" resultType="com.magic.daoyuan.business.entity.WorkOrderSchedule">
+        SELECT
+            w.*
+        FROM
+            work_order_schedule w
+        WHERE
+            w.workOrderId = #{workOrderId}
+        ORDER BY
+            w.createTime DESC
+        LIMIT 1
+    </select>
+
+    <insert id="insert" parameterType="com.magic.daoyuan.business.entity.WorkOrderSchedule">
+        INSERT INTO work_order_schedule (`proposerId`, `userId`, `roleId`, `accessory`, `remindWay`, `remark`, `status`, `workOrderId`, `serviceType`, `createTime`)
+        VALUES (#{proposerId}, #{userId}, #{roleId}, #{accessory}, #{remindWay}, #{remark}, #{status}, #{workOrderId},#{serviceType}, NOW());
+    </insert>
+
+
+
+</mapper>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IConsoleMapper">
+
+
+    <select id="rightConsole" resultType="map">
+        SELECT 
+        (select COUNT(0) from member m WHERE m.stateCooperation = 1) AS memberNum,
+        (select COUNT(DISTINCT cc.id) from company cc,company_cooperation cc2 WHERE cc.id = cc2.companyId AND cc2.cooperationStatus = 1) AS companyNum,
+        (select COUNT(0) from member m WHERE m.stateCooperation = 1 AND date_format(m.createTime,'%Y-%m') = date_format(#{date},'%Y-%m')) AS addMemberNum,
+        (select COUNT(mc.id) from member m,member_count mc where m.id = mc.memberId AND mc.stateCooperation = 0 AND date_format(mc.createTime,'%Y-%m') = date_format(#{date},'%Y-%m')) AS delMemberNum,
+        (select COUNT(0) from company cc where date_format(cc.createTime,'%Y-%m') = date_format(#{date},'%Y-%m')) AS addCompanyNum,
+        (select COUNT(cc.id) from company cc,company_cooperation cc2 WHERE cc.id = cc2.companyId AND cc2.cooperationStatus = 0 AND date_format(cc2.createTime,'%Y-%m') = date_format(#{date},'%Y-%m')) AS delCompanyNum,
+        (select COUNT(cc.id) from company cc ,company_son_total_bill cstb WHERE cc.id = cstb.companyId AND cstb.status = 0) AS unconfirmedBillCompanyNum,
+        (select COUNT(cc.id) from company cc ,company_son_total_bill cstb WHERE cc.id = cstb.companyId AND cstb.isBalanceOfCancelAfterVerification = 0) AS unCancelAfterVerificationCompanyNum,
+        ((SELECT COUNT(DISTINCT cbc.id) FROM company_bill_count cbc,company cc WHERE cbc.companyId = cc.id AND DATE_FORMAT(cbc.createTime,'%y-%m') = DATE_FORMAT(#{date},'%y-%m')) /
+         (select COUNT(DISTINCT cc.id) from company cc,company_son_total_bill cstb WHERE cc.id = cstb.companyId AND date_format(cstb.billMonth,'%Y-%m') = date_format(#{date},'%Y-%m')))
+        as cancelAfterVerificationForNewMonthRate
+    </select>
+
+</mapper>

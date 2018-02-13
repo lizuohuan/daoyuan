@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IConfirmMoneyRecordMapper">
+
+
+
+    <resultMap id="BaseResult" type="com.magic.daoyuan.business.entity.ConfirmMoneyRecord">
+        <result column="id" property="id" javaType="java.lang.Integer"/>
+        <result column="createUserId" property="createUserId" javaType="java.lang.Integer"/>
+        <result column="bankAccount" property="bankAccount" javaType="java.lang.String"/>
+        <result column="companyName" property="companyName" javaType="java.lang.String"/>
+        <result column="digest" property="digest" javaType="java.lang.String"/>
+        <result column="remark" property="remark" javaType="java.lang.String"/>
+        <result column="amount" property="amount" javaType="java.lang.Double"/>
+        <result column="transactionTime" property="transactionTime" javaType="java.util.Date"/>
+        <result column="createTime" property="createTime" javaType="java.util.Date"/>
+        <result column="status" property="status" javaType="java.lang.Integer"/>
+        <result column="resource" property="resource" javaType="java.lang.Integer"/>
+        <result column="confirmMethod" property="confirmMethod" javaType="java.lang.Integer"/>
+        <association property="confirmMoneyCompanyList" columnPrefix="cr_" resultMap="com.magic.daoyuan.business.mapper.IConfirmMoneyCompanyMapper.BaseResult"/>
+        <association property="confirmFundList" column="id" select="com.magic.daoyuan.business.mapper.IConfirmFundMapper.queryConfirmFundByRecord"/>
+    </resultMap>
+
+    <select id="queryAll" resultType="com.magic.daoyuan.business.entity.ConfirmMoneyRecord">
+        SELECT id,bankAccount,companyName,digest,transactionTime,amount FROM confirm_money_record
+    </select>
+
+
+    <select id="queryById" resultType="com.magic.daoyuan.business.entity.ConfirmMoneyRecord">
+        SELECT * FROM confirm_money_record cmr WHERE cmr.id = #{id}
+    </select>
+
+    <select id="queryConfirmMoneyRecordByItems" parameterType="map" resultMap="BaseResult">
+        SELECT
+            cmr.*, cmc.id AS cr_id,
+            cmc.companyId AS cr_companyId,
+            cmc.confirmMoneyRecordId AS cr_confirmMoneyRecordId,
+            cmc.serviceId AS cr_serviceId,
+            cc.companyName AS cr_companyName,
+            su.userName AS cr_serviceUserName,
+            cf.confirmMethod AS confirmMethod
+        FROM
+            confirm_money_record cmr
+        LEFT JOIN users cu ON cmr.createUserId = cu.id
+        LEFT JOIN confirm_money_company cmc ON cmr.id = cmc.confirmMoneyRecordId
+        LEFT JOIN company cc ON cc.id = cmc.companyId
+        LEFT JOIN users su ON cc.beforeService = su.id
+        LEFT JOIN confirm_fund cf ON cf.confirmMoneyRecordId = cmr.id
+        WHERE 1=1
+        <if test="startTime != null">
+            AND DATE_FORMAT(cmr.transactionTime,'%y-%m-%d') >= DATE_FORMAT(#{startTime},'%y-%m-%d')
+        </if>
+        <if test="endTime != null">
+            <![CDATA[
+            AND DATE_FORMAT(cmr.transactionTime,'%y-%m-%d') <= DATE_FORMAT(#{endTime},'%y-%m-%d')
+            ]]>
+        </if>
+        <if test="importStartDate != null">
+            AND DATE_FORMAT(cmr.createTime,'%y-%m-%d') >= DATE_FORMAT(#{importStartDate},'%y-%m-%d')
+        </if>
+        <if test="importEndDate != null">
+            <![CDATA[
+            AND DATE_FORMAT(cmr.createTime,'%y-%m-%d') <= DATE_FORMAT(#{importEndDate},'%y-%m-%d')
+            ]]>
+        </if>
+        <if test="beforeService != null">
+            AND cc.beforeService = #{beforeService}
+        </if>
+        <if test="status != null">
+            AND cmr.`status` = #{status}
+        </if>
+        <if test="matchCompanyName != null">
+            AND cc.companyName LIKE '%${matchCompanyName}%'
+        </if>
+        <if test="companyName != null">
+            AND cmr.companyName LIKE '%${companyName}%'
+        </if>
+        ORDER BY cmr.id DESC
+        <if test="limit != null and limitSize != null">
+            LIMIT #{limit},#{limitSize}
+        </if>
+    </select>
+
+    <select id="countConfirmMoneyRecordByItems" resultType="int">
+        SELECT COUNT(0)
+        FROM confirm_money_record cmr
+        LEFT JOIN confirm_money_company cmc ON cmr.id = cmc.confirmMoneyRecordId
+        LEFT JOIN company cc ON cc.id = cmc.companyId
+        WHERE  1=1
+        <if test="startTime != null">
+            AND DATE_FORMAT(cmr.transactionTime,'%y-%m-%d') >= DATE_FORMAT(#{startTime},'%y-%m-%d')
+        </if>
+        <if test="endTime != null">
+            <![CDATA[
+            AND DATE_FORMAT(cmr.transactionTime,'%y-%m-%d') <= DATE_FORMAT(#{endTime},'%y-%m-%d')
+            ]]>
+        </if>
+        <if test="importStartDate != null">
+            AND DATE_FORMAT(cmr.createTime,'%y-%m-%d') >= DATE_FORMAT(#{importStartDate},'%y-%m-%d')
+        </if>
+        <if test="importEndDate != null">
+            <![CDATA[
+            AND DATE_FORMAT(cmr.createTime,'%y-%m-%d') <= DATE_FORMAT(#{importEndDate},'%y-%m-%d')
+            ]]>
+        </if>
+        <if test="beforeService != null">
+            AND cc.beforeService = #{beforeService}
+        </if>
+        <if test="status != null">
+            AND cmr.`status` = #{status}
+        </if>
+        <if test="matchCompanyName != null">
+            AND cc.companyName LIKE '%${matchCompanyName}%'
+        </if>
+        <if test="companyName != null">
+            AND cmr.companyName LIKE '%${companyName}%'
+        </if>
+    </select>
+
+
+    <insert id="batchAddConfirmMoneyRecord" parameterType="com.magic.daoyuan.business.entity.ConfirmMoneyRecord"
+            useGeneratedKeys="true" keyColumn="id" keyProperty="id">
+      INSERT INTO confirm_money_record ( bankAccount, transactionTime, amount, companyName, digest, createTime,
+      remark, createUserId, `status`,resource)
+      VALUES
+      <foreach collection="list" index="index" item="cmr" separator=",">
+          ( #{cmr.bankAccount}, #{cmr.transactionTime}, #{cmr.amount}, #{cmr.companyName}, #{cmr.digest}, NOW(),
+          #{cmr.remark}, #{cmr.createUserId}, 0,#{cmr.resource})
+      </foreach>
+    </insert>
+
+
+    <update id="updateConfirmMoneyRecord" parameterType="com.magic.daoyuan.business.entity.ConfirmMoneyRecord">
+        UPDATE confirm_money_record
+        SET `status` = #{status}
+        WHERE id = #{id}
+    </update>
+
+    <update id="update">
+        <foreach collection="list" index="index" item="l" separator=";">
+            UPDATE confirm_money_record
+            SET `status` = #{l.status}
+            WHERE id = #{l.id}
+        </foreach>
+    </update>
+
+    <select id="getOverTime" resultType="int">
+        select COUNT(0) from confirm_money_record cmr WHERE
+        cmr.status = 0
+        AND date_format(cmr.createTime,'%Y-%m') = date_format(#{date},'%Y-%m')
+    </select>
+</mapper>

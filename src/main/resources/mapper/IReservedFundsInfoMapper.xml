@@ -1,0 +1,452 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IReservedFundsInfoMapper">
+
+    <resultMap id="BaseResultMap" type="com.magic.daoyuan.business.entity.ReservedFundsInfo">
+        <id column="id" property="id" javaType="java.lang.Integer" />
+        <result column="userName" property="userName" javaType="java.lang.String" />
+        <result column="certificateType" property="certificateType" javaType="java.lang.Integer"/>
+        <result column="idCard" property="idCard" javaType="java.lang.String" />
+        <result column="memberNum" property="memberNum" javaType="java.lang.String" />
+        <result column="payPlaceOrganizationName" property="payPlaceOrganizationName" javaType="java.lang.String" />
+        <result column="payRatio" property="payRatio" javaType="java.lang.Double"/>
+        <result column="beginPayYM" property="beginPayYM" javaType="java.util.Date"/>
+        <result column="serviceNowYM" property="serviceNowYM" javaType="java.util.Date"/>
+        <result column="payCardinalNumber" property="payCardinalNumber" javaType="java.lang.Double"/>
+        <result column="companyTotalPay" property="companyTotalPay" javaType="java.lang.Double"/>
+        <result column="memberTotalPay" property="memberTotalPay" javaType="java.lang.Double"/>
+        <result column="companySonBillItemId" property="companySonBillItemId" javaType="java.lang.Integer"/>
+        <result column="memberId" property="memberId" javaType="java.lang.Integer"/>
+        <result column="waysOfCooperation" property="waysOfCooperation" javaType="java.lang.Integer"/>
+        <result column="billMadeMethod" property="billMadeMethod" javaType="java.lang.Integer"/>
+        <result column="isAudit" property="isAudit" javaType="java.lang.Integer"/>
+        <result column="transactorName" property="transactorName" javaType="java.lang.String"/>
+        <result column="organizationName" property="organizationName" javaType="java.lang.String"/>
+        <result column="payPlaceName" property="payPlaceName" javaType="java.lang.String"/>
+        <result column="practicalCompanyTotalPay" property="practicalCompanyTotalPay" javaType="java.lang.Double"/>
+        <result column="practicalMemberTotalPay" property="practicalMemberTotalPay" javaType="java.lang.Double"/>
+        <result column="processingScheme" property="processingScheme" javaType="java.lang.Integer"/>
+        <result column="companyName" property="companyName" javaType="java.lang.String"/>
+        <result column="affirmBillMonth" property="affirmBillMonth" javaType="java.util.Date"/>
+        <result column="billMonth" property="billMonth" javaType="java.util.Date"/>
+        <result column="billMonthCstb" property="billMonthCstb" javaType="java.util.Date"/>
+        <result column="realDoTime" property="realDoTime" javaType="java.util.Date"/>
+        <result column="isUploadKaoPan" property="isUploadKaoPan" javaType="java.lang.Integer"/>
+        <result column="taxPrice" property="taxPrice" javaType="java.lang.Double"/>
+    </resultMap>
+
+    <select id="queryReservedFundsInfoByTotalBillIds" resultMap="BaseResultMap">
+        SELECT
+            rfi.*,m.waysOfCooperation
+        FROM
+            reserved_funds_info rfi,
+            company_son_bill_item csbi,
+            member m
+        WHERE
+            rfi.companySonBillItemId = csbi.id
+        AND m.id = rfi.memberId
+        AND csbi.companySonTotalBillId IN
+        <foreach collection="list" item="billId" index="index" separator="," open="(" close=")">
+            #{billId}
+        </foreach>
+    </select>
+
+    <delete id="del">
+        DELETE FROM reserved_funds_info WHERE billMadeMethod = 0
+        AND companySonBillItemId IN (
+        select csbi.id from company_son_bill_item csbi WHERE
+        /*(csbi.isReservedFundAudit = 0 OR csbi.isSocialSecurityAudit = 0)
+        AND */csbi.companySonTotalBillId IN
+        <foreach collection="companySonTotalBillIds" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+        )
+    </delete>
+
+
+    <insert id="save" parameterType="com.magic.daoyuan.business.entity.ReservedFundsInfo"
+            keyColumn="id" keyProperty="id" useGeneratedKeys="true">
+        insert into reserved_funds_info (userName, certificateType, idCard,
+        memberNum, payPlaceOrganizationName, payRatio,
+        beginPayYM, serviceNowYM, payCardinalNumber,
+        transactorName,organizationName,payPlaceName,
+        companyTotalPay, memberTotalPay, companySonBillItemId,memberId,
+        practicalCompanyTotalPay,practicalMemberTotalPay,billMadeMethod,
+        isAudit,processingScheme,companySonBillId,billMonth,realDoTime,isUploadKaoPan,taxPrice)
+        values
+        <foreach collection="list" separator="," item="record">
+            (#{record.userName},#{record.certificateType},#{record.idCard},
+            #{record.memberNum},#{record.payPlaceOrganizationName},#{record.payRatio},
+            #{record.beginPayYM},#{record.serviceNowYM},#{record.payCardinalNumber},
+            #{record.transactorName},#{record.organizationName},#{record.payPlaceName},
+            #{record.companyTotalPay},#{record.memberTotalPay},#{record.companySonBillItemId},#{record.memberId},
+            #{record.practicalCompanyTotalPay},#{record.practicalMemberTotalPay},#{record.billMadeMethod},
+            #{record.isAudit},#{record.processingScheme},#{record.companySonBillId},
+            #{record.billMonth},#{record.realDoTime},#{record.isUploadKaoPan},#{record.taxPrice})
+        </foreach>
+    </insert>
+
+    <select id="list" resultMap="BaseResultMap" parameterType="map">
+        SELECT rfi.*,cstb.billMonth AS billMonthCstb
+        FROM reserved_funds_info rfi,company_son_bill_item csbi ,company_son_total_bill cstb
+        WHERE (rfi.companySonBillItemId = csbi.id or rfi.processingScheme = 1)
+        AND cstb.id = csbi.companySonTotalBillId
+        AND rfi.companySonBillId = cstb.companySonBillId
+        <if test="billMonth != null">
+            AND DATE_FORMAT(cstb.billMonth, '%Y-%m') = DATE_FORMAT(#{billMonth}, '%Y-%m')
+        </if>
+        <if test="companyId != null">
+            AND cstb.companyId = #{companyId}
+        </if>
+        <if test="userName != null and userName != ''">
+            AND rfi.userName Like '%${userName}%'
+        </if>
+        <if test="payPlaceOrganizationName != null and payPlaceOrganizationName != ''">
+            AND rfi.payPlaceOrganizationName Like '%${payPlaceOrganizationName}%'
+        </if>
+        <if test="memberNum != null and memberNum != ''">
+            AND rfi.memberNum Like '%${memberNum}%'
+        </if>
+        <if test="certificateType != null">
+            AND rfi.certificateType = #{certificateType}
+        </if>
+        <if test="idCard != null">
+            AND rfi.idCard = #{idCard}
+        </if>
+        <if test="companySonBillItemId != null">
+            AND rfi.companySonBillItemId = #{companySonBillItemId}
+        </if>
+        <if test="memberId != null">
+            AND rfi.memberId = #{memberId}
+        </if>
+        <if test="companySonTotalBillId != null">
+            AND csbi.companySonTotalBillId = #{companySonTotalBillId}
+        </if>
+        ORDER BY
+        <if test="pageArgs != null">
+            <if test="pageArgs.column != null and pageArgs.column != ''">
+                ${pageArgs.column} ${pageArgs.order},
+            </if>
+        </if>
+        rfi.id DESC
+        <if test="pageArgs != null">
+            limit #{pageArgs.pageStart}, #{pageArgs.pageSize}
+        </if>
+    </select>
+
+    <select id="listCount" resultType="int" parameterType="map">
+        SELECT
+        COUNT(0)
+        FROM reserved_funds_info rfi,company_son_bill_item csbi,company_son_total_bill cstb
+        WHERE (rfi.companySonBillItemId = csbi.id or rfi.processingScheme = 1)
+        AND cstb.id = csbi.companySonTotalBillId
+        AND rfi.companySonBillId = cstb.companySonBillId
+        <if test="billMonth != null">
+            AND DATE_FORMAT(cstb.billMonth, '%Y-%m') = DATE_FORMAT(#{billMonth}, '%Y-%m')
+        </if>
+        <if test="companyId != null">
+            AND cstb.companyId = #{companyId}
+        </if>
+        <if test="userName != null and userName != ''">
+            AND rfi.userName Like '%${userName}%'
+        </if>
+        <if test="payPlaceOrganizationName != null and payPlaceOrganizationName != ''">
+            AND rfi.payPlaceOrganizationName Like '%${payPlaceOrganizationName}%'
+        </if>
+        <if test="memberNum != null and memberNum != ''">
+            AND rfi.memberNum Like '%${memberNum}%'
+        </if>
+        <if test="certificateType != null">
+            AND rfi.certificateType = #{certificateType}
+        </if>
+        <if test="idCard != null">
+            AND rfi.idCard = #{idCard}
+        </if>
+        <if test="companySonBillItemId != null">
+            AND rfi.companySonBillItemId = #{companySonBillItemId}
+        </if>
+        <if test="memberId != null">
+            AND rfi.memberId = #{memberId}
+        </if>
+        <if test="companySonTotalBillId != null">
+            AND csbi.companySonTotalBillId = #{companySonTotalBillId}
+        </if>
+        <if test="companySonTotalBillId != null">
+            AND csbi.companySonTotalBillId = #{companySonTotalBillId}
+        </if>
+    </select>
+
+    <select id="processingSchemeCount" resultType="int">
+        SELECT COUNT(0) FROM reserved_funds_info rfi WHERE
+        (rfi.practicalCompanyTotalPay <![CDATA[<>]]> rfi.companyTotalPay
+        OR rfi.practicalMemberTotalPay <![CDATA[<>]]> rfi.memberTotalPay)
+        AND rfi.processingScheme IS NULL
+        AND rfi.companySonBillItemId = #{companySonBillItemId}
+    </select>
+
+    <select id="getPayPriceByCompanySonBillItemIdAndCreateTime" resultType="double">
+        SELECT IFNULL(
+        (select sum(rfi.companyTotalPay+rfi.memberTotalPay)
+        from reserved_funds_info rfi
+        WHERE
+        1 = 1
+        AND rfi.companySonBillId = #{companySonBillId}
+        AND DATE_FORMAT(rfi.billMonth, '%Y-%m') = DATE_FORMAT(#{createTime}, '%Y-%m')),0)
+    </select>
+
+    <select id="getPayPriceByCompanyIdAndBillMonth" resultType="double">
+        SELECT IFNULL(
+        (select sum(rfi.companyTotalPay+rfi.memberTotalPay)
+        from company_son_bill_item csbi,reserved_funds_info rfi,company_son_total_bill cstb
+        WHERE
+        rfi.companySonBillItemId = csbi.id
+        AND rfi.companySonBillItemId = csbi.id
+        AND cstb.id = csbi.companySonTotalBillId
+        AND cstb.companyId = #{companyId}
+        AND DATE_FORMAT(cstb.billMonth, '%Y-%m') = DATE_FORMAT(#{billMonth}, '%Y-%m')),0)
+    </select>
+
+    <select id="getPracticalByCompanyIdAndBillMonth" resultType="double">
+        SELECT IFNULL(
+        (select (sum(rfi.companyTotalPay+rfi.memberTotalPay) - sum(rfi.practicalMemberTotalPay+rfi.practicalCompanyTotalPay))
+        from reserved_funds_info rfi,company_son_total_bill cstb,member_business mb,member_business_item mbi
+        WHERE
+        rfi.processingScheme = 1
+        AND mb.memberId = rfi.memberId
+        AND mbi.`type` = 1
+        AND mb.id = mbi.memberBusinessId
+        AND mbi.isReceivable = 1
+        AND rfi.companySonBillId = cstb.companySonBillId
+        <if test="companySonBillId != null">
+            AND rfi.companySonBillId = #{companySonBillId}
+        </if>
+        <if test="companyId != null">
+            AND cstb.companyId = #{companyId}
+        </if>
+        <if test="billMonth != null">
+            AND DATE_FORMAT(rfi.billMonth, '%Y-%m') <![CDATA[<]]> DATE_FORMAT(#{billMonth}, '%Y-%m')
+        </if>
+        <if test="createTime != null">
+            AND DATE_FORMAT(cstb.createTime, '%Y-%m') = DATE_FORMAT(#{createTime}, '%Y-%m')
+        </if>
+        AND DATE_FORMAT(cstb.billMonth, '%Y-%m') = DATE_FORMAT(#{billMonth}, '%Y-%m')),0)
+    </select>
+
+    <update id="updateList2">
+        update reserved_funds_info set companySonBillItemId = NULL
+        where
+        billMadeMethod = 1
+        AND companySonBillItemId IN (
+        SELECT csbi.id FROM company_son_bill_item csbi WHERE csbi.companySonTotalBillId IN
+        (<foreach collection="companySonTotalBillIds" item="id" separator=",">
+          #{id}
+        </foreach>)
+        )
+    </update>
+
+    <update id="updateList" parameterType="com.magic.daoyuan.business.entity.ReservedFundsInfo">
+        <foreach collection="list" item="r" separator=";">
+            UPDATE reserved_funds_info
+            <set>
+                <if test="r.taxPrice != null">
+                    taxPrice = #{r.taxPrice},
+                </if>
+                <if test="r.isUploadKaoPan != null">
+                    isUploadKaoPan = #{r.isUploadKaoPan},
+                </if>
+                <if test="r.realDoTime != null">
+                    realDoTime = #{r.realDoTime},
+                </if>
+                <if test="r.billMonth != null">
+                    billMonth = #{r.billMonth},
+                </if>
+                <if test="r.practicalCompanyTotalPay != null">
+                    practicalCompanyTotalPay = #{r.practicalCompanyTotalPay},
+                </if>
+                <if test="r.practicalMemberTotalPay != null">
+                    practicalMemberTotalPay = #{r.practicalMemberTotalPay},
+                </if>
+                <if test="r.memberNum != null and r.memberNum != ''">
+                    memberNum = #{r.memberNum},
+                </if>
+                <if test="r.transactorName != null and r.transactorName != ''">
+                    transactorName = #{r.transactorName},
+                </if>
+                <if test="r.organizationName != null and r.organizationName != ''">
+                    organizationName = #{r.organizationName},
+                </if>
+                <if test="r.isAudit != null and r.isAudit != ''">
+                    isAudit = #{r.isAudit},
+                </if>
+                <if test="r.companySonBillItemId != null">
+                    companySonBillItemId = #{r.companySonBillItemId},
+                </if>
+                <if test="r.processingScheme != null">
+                    processingScheme = #{r.processingScheme},
+                </if>
+            </set>
+            <where>
+                id = #{r.id}
+            </where>
+        </foreach>
+    </update>
+
+
+    <select id="auditList" resultMap="BaseResultMap" parameterType="map">
+        select rfi.*,cc.companyName from reserved_funds_info rfi ,member m,company cc,
+        company_son_total_bill cstb ,company_son_bill_item csbi
+        WHERE rfi.memberId = m.id
+        AND cc.id = m.companyId
+        AND cstb.id = csbi.companySonTotalBillId
+        AND rfi.companySonBillItemId = csbi.id
+        AND cstb.status = 2
+        AND rfi.isAudit = 1
+        AND rfi.processingScheme IS NULL
+        AND (rfi.practicalCompanyTotalPay <![CDATA[<>]]> rfi.companyTotalPay
+        OR rfi.practicalMemberTotalPay <![CDATA[<>]]> rfi.memberTotalPay)
+        <if test="null != companyId">
+            AND cc.id = #{companyId}
+        </if>
+        <if test="null != serviceNowYM">
+            AND DATE_FORMAT(rfi.serviceNowYM, '%Y-%m') = DATE_FORMAT(#{serviceNowYM}, '%Y-%m')
+        </if>
+        ORDER BY
+        <if test="pageArgs != null">
+            <if test="pageArgs.column != null and pageArgs.column != ''">
+                ${pageArgs.column} ${pageArgs.order},
+            </if>
+        </if>
+        rfi.id DESC
+        <if test="pageArgs != null">
+            limit #{pageArgs.pageStart}, #{pageArgs.pageSize}
+        </if>
+    </select>
+
+    <select id="auditListCount" resultType="integer" parameterType="map">
+        select COUNT(0) from reserved_funds_info rfi ,member m,company cc
+        WHERE rfi.memberId = m.id
+        AND cc.id = m.companyId
+        AND rfi.isAudit = 1
+        AND rfi.processingScheme IS NULL
+        AND (rfi.practicalCompanyTotalPay <![CDATA[<>]]> rfi.companyTotalPay
+        OR rfi.practicalMemberTotalPay <![CDATA[<>]]> rfi.memberTotalPay)
+        <if test="null != companyId">
+            AND cc.id = #{companyId}
+        </if>
+        <if test="null != serviceNowYM">
+            AND DATE_FORMAT(rfi.serviceNowYM, '%Y-%m') = DATE_FORMAT(#{serviceNowYM}, '%Y-%m')
+        </if>
+    </select>
+
+    <update id="update" parameterType="com.magic.daoyuan.business.entity.ReservedFundsInfo">
+        UPDATE reserved_funds_info
+        <set>
+            <if test="taxPrice != null">
+                taxPrice = #{taxPrice},
+            </if>
+            <if test="isUploadKaoPan != null">
+                isUploadKaoPan = #{isUploadKaoPan},
+            </if>
+            <if test="realDoTime != null">
+                realDoTime = #{realDoTime},
+            </if>
+            <if test="billMonth != null">
+                billMonth = #{billMonth},
+            </if>
+            <if test="practicalCompanyTotalPay != null">
+                practicalCompanyTotalPay = #{practicalCompanyTotalPay},
+            </if>
+            <if test="practicalMemberTotalPay != null">
+                practicalMemberTotalPay = #{practicalMemberTotalPay},
+            </if>
+            <if test="memberNum != null and memberNum != ''">
+                memberNum = #{memberNum},
+            </if>
+            <if test="isAudit != null">
+                isAudit = #{isAudit},
+            </if>
+            <if test="companySonBillItemId != null">
+                companySonBillItemId = #{companySonBillItemId},
+            </if>
+            <if test="processingScheme != null">
+                processingScheme = #{processingScheme},
+            </if>
+        </set>
+        <where>
+            id = #{id}
+        </where>
+    </update>
+
+    <select id="info" resultMap="BaseResultMap">
+        select * from reserved_funds_info rfi WHERE rfi.id = #{id}
+    </select>
+
+
+    <select id="listBySonBillItemId" resultMap="BaseResultMap">
+        SELECT
+        rfi.*
+        FROM
+        reserved_funds_info rfi
+        WHERE rfi.companySonBillItemId IN
+        <foreach collection="sonBillItemIds" item="billId" index="index" separator="," open="(" close=")">
+            #{billId}
+        </foreach>
+    </select>
+
+    <update id="updateAffirm">
+        UPDATE reserved_funds_info
+        SET processingScheme = 10,
+        affirmBillMonth = #{affirmBillMonth}
+        WHERE processingScheme = 1
+        AND DATE_FORMAT(billMonth, '%Y-%m') <![CDATA[<]]> DATE_FORMAT(#{affirmBillMonth}, '%Y-%m')
+        <if test="companySonBillId != null">
+            AND companySonBillId = #{companySonBillId}
+        </if>
+        <if test="companyId != null">
+            AND companySonBillId IN (
+            select csb.id from company_son_bill csb where csb.companyId = #{companyId}
+            )
+        </if>
+    </update>
+
+
+    <select id="getByMemberIdAndServiceNowYM" resultMap="BaseResultMap">
+        select * from reserved_funds_info rfi
+        WHERE
+        DATE_FORMAT(rfi.serviceNowYM, '%Y-%m') = DATE_FORMAT(#{serviceNowYM}, '%Y-%m')
+        AND rfi.memberId = #{memberId}
+    </select>
+
+    <select id="getCompanyIdAndServiceNowYMAndServiceFeeConfigId" resultMap="BaseResultMap">
+        select rfi.*,m.waysOfCooperation from reserved_funds_info rfi,company_son_bill csb,company_cooperation_method ccm,member m
+        WHERE
+        rfi.companySonBillId = csb.id
+        AND m.waysOfCooperation = ccm.cooperationMethodId
+        AND m.companyId = ccm.companyId
+        AND csb.companyId = ccm.id
+        AND ccm.serviceFeeConfigId = #{serviceFeeConfigId}
+        AND DATE_FORMAT(rfi.serviceNowYM, '%Y-%m') = DATE_FORMAT(#{serviceNowYM}, '%Y-%m')
+        AND csb.companyId = #{companyId}
+    </select>
+
+    <select id="getByCompanyAndBillMonth" resultMap="BaseResultMap">
+        select rfi.* from reserved_funds_info rfi ,company_son_total_bill cstb,company_son_bill_item csbi
+        WHERE rfi.companySonBillItemId = csbi.id
+        AND csbi.companySonTotalBillId = cstb.id
+        AND (rfi.companyTotalPay <![CDATA[ <> ]]> rfi.practicalCompanyTotalPay
+        OR rfi.memberTotalPay <![CDATA[ <> ]]> rfi.practicalMemberTotalPay
+        OR rfi.practicalCompanyTotalPay is null
+	    OR rfi.practicalMemberTotalPay is null)
+        AND DATE_FORMAT(cstb.billMonth, '%Y-%m') = DATE_FORMAT(#{billMonth}, '%Y-%m')
+        AND cstb.companyId = #{companyId}
+    </select>
+
+    <select id="getLastByMemberId" resultMap="BaseResultMap">
+        select * from reserved_funds_info rfi
+        WHERE rfi.memberId = #{memberId}
+        order by rfi.id desc
+        limit 0,1
+    </select>
+
+</mapper>

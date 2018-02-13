@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.ICompanyInsuranceMapper">
+
+
+    <resultMap id="BaseResultMap" type="com.magic.daoyuan.business.entity.CompanyInsurance">
+        <result column="id" property="id" javaType="java.lang.Integer"/>
+        <result column="companyId" property="companyId" javaType="java.lang.Integer"/>
+        <result column="insuranceId" property="insuranceId" javaType="java.lang.Integer"/>
+        <result column="insuranceLevelId" property="insuranceLevelId" javaType="java.lang.Integer"/>
+        <result column="coPayType" property="coPayType" javaType="java.lang.Integer" />
+        <result column="coPayPrice" property="coPayPrice" javaType="java.lang.Double" />
+        <result column="mePayType" property="mePayType" javaType="java.lang.Integer" />
+        <result column="mePayPrice" property="mePayPrice" javaType="java.lang.Double" />
+        <result column="insuranceName" property="insuranceName" javaType="java.lang.String" />
+        <result column="isValid" property="isValid" javaType="java.lang.Integer"/>
+        <result column="companyPayPlaceId" property="companyPayPlaceId" javaType="java.lang.Integer"/>
+    </resultMap>
+
+
+    <insert id="save">
+        insert into company_insurance (insuranceId, companyId, isValid, coPayType, coPayPrice, mePayType, mePayPrice
+        ,insuranceLevelId,companyPayPlaceId)
+        values 
+        <foreach collection="records" item="record" separator="," index="index" >
+            (#{record.insuranceId},#{record.companyId},1,#{record.coPayType},
+            #{record.coPayPrice},#{record.mePayType},#{record.mePayPrice},#{record.insuranceLevelId},#{record.companyPayPlaceId})
+        </foreach>
+    </insert>
+
+    <select id="info" resultMap="BaseResultMap">
+        select ci.*,i.insuranceName from company_insurance ci , insurance i
+        WHERE ci.insuranceId = i.id AND ci.companyId = #{companyId}
+    </select>
+
+    <update id="update" parameterType="com.magic.daoyuan.business.entity.CompanyInsurance" >
+        update company_insurance
+        <set>
+            <if test="isValid != null">
+                isValid = #{isValid},
+            </if>
+            <if test="coPayType != null">
+                coPayType = #{coPayType},
+            </if>
+            <if test="coPayPrice != null">
+                coPayPrice = #{coPayPrice},
+            </if>
+            <if test="mePayType != null">
+                mePayType = #{mePayType},
+            </if>
+            <if test="mePayPrice != null">
+                mePayPrice = #{mePayPrice},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <select id="list" resultMap="BaseResultMap" parameterType="map">
+        SELECT ci.*,i.insuranceName
+        FROM company_insurance ci , insurance i
+        WHERE ci.insuranceId = i.id
+        <if test="insuranceName != null and insuranceName != ''">
+            AND i.insuranceName Like '%${insuranceName}%'
+        </if>
+        <if test="isValid != null">
+            AND ci.isValid = #{isValid}
+        </if>
+        <if test="companyPayPlaceId != null">
+            AND ci.companyPayPlaceId = #{companyPayPlaceId}
+        </if>
+        <if test="mePayType != null">
+            AND ci.mePayType = #{mePayType}
+        </if>
+        <if test="coPayType != null">
+            AND ci.coPayType = #{coPayType}
+        </if>
+        AND ci.companyId = #{companyId}
+        ORDER BY
+        <if test="pageArgs != null">
+            <if test="pageArgs.column != null and pageArgs.column != ''">
+                ${pageArgs.column} ${pageArgs.order},
+            </if>
+        </if>
+        ci.id DESC
+        <if test="pageArgs != null">
+            limit #{pageArgs.pageStart}, #{pageArgs.pageSize}
+        </if>
+    </select>
+
+    <delete id="delete">
+        DELETE FROM company_insurance WHERE companyId = #{companyId} AND companyPayPlaceId = #{companyPayPlaceId}
+    </delete>
+</mapper>

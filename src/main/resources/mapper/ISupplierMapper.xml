@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.ISupplierMapper" >
+  <resultMap id="BaseResultMap" type="com.magic.daoyuan.business.entity.Supplier" >
+    <id column="id" property="id" javaType="java.lang.Integer" />
+    <result column="supplierName" property="supplierName" javaType="java.lang.String" />
+    <result column="serviceFeeConfigName" property="serviceFeeConfigName" javaType="java.lang.String" />
+    <result column="drawABillOrder" property="drawABillOrder" javaType="java.lang.Integer" />
+    <result column="serviceFeeCycle" property="serviceFeeCycle" javaType="java.lang.Integer" />
+    <result column="serviceFeeConfigId" property="serviceFeeConfigId" javaType="java.lang.Integer" />
+    <result column="isPercent" property="isPercent" javaType="java.lang.Integer" />
+    <result column="serviceFeeMin" property="serviceFeeMin" javaType="java.lang.Double" />
+    <result column="serviceFeeMax" property="serviceFeeMax" javaType="java.lang.Double" />
+    <result column="percent" property="percent" javaType="java.lang.Double" />
+    <result column="serviceFeeStartTime" property="serviceFeeStartTime" javaType="java.util.Date" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    id, isPercent,percent,supplierName, drawABillOrder,serviceFeeCycle,serviceFeeConfigId,serviceFeeMin,serviceFeeMax,serviceFeeStartTime,1 AS `type`
+  </sql>
+  <resultMap id="IncludeOther" type="com.magic.daoyuan.business.entity.Supplier" extends="BaseResultMap">
+    <association property="feeList" column="companyId=id,type=type" select="com.magic.daoyuan.business.mapper.ICompanyServiceFeeMapper.queryServiceFeeByCompany"/>
+    <association property="serviceFeeList" column="companyId=id,type=type" select="com.magic.daoyuan.business.mapper.IBusinessServiceFeeMapper.queryBusinessServiceFee"/>
+    <association property="servicePayPlaceList" column="companyId=id,type=type" select="com.magic.daoyuan.business.mapper.ICompanyServicePayPlaceMapper.queryCompanyServicePayPlace"/>
+  </resultMap>
+
+  <resultMap id="IncludePayPlaceList" type="com.magic.daoyuan.business.entity.Supplier" extends="BaseResultMap">
+    <association property="servicePayPlaceList" column="companyId=id,type=type" select="com.magic.daoyuan.business.mapper.ICompanyServicePayPlaceMapper.queryCompanyServicePayPlace"/>
+  </resultMap>
+
+  <select id="querySupplierByName" resultMap="BaseResultMap">
+    SELECT * FROM supplier WHERE supplierName = #{supplierName}
+  </select>
+
+  <select id="info" resultMap="IncludeOther" parameterType="java.lang.Integer" >
+    select 
+    <include refid="Base_Column_List" />
+    from supplier
+    where id = #{id}
+  </select>
+  <delete id="delete" parameterType="java.lang.Integer" >
+    delete from supplier
+    where id = #{id}
+  </delete>
+  <insert id="save" parameterType="com.magic.daoyuan.business.entity.Supplier" useGeneratedKeys="true" keyColumn="id" keyProperty="id">
+    insert into supplier ( supplierName, drawABillOrder, serviceFeeStartTime, serviceFeeCycle,
+    serviceFeeMin, serviceFeeMax, serviceFeeConfigId,isPercent,percent)
+    values (#{supplierName}, #{drawABillOrder},#{serviceFeeStartTime}, #{serviceFeeCycle}, #{serviceFeeMin},
+    #{serviceFeeMax}, #{serviceFeeConfigId},#{isPercent},#{percent})
+  </insert>
+
+  <update id="update" parameterType="com.magic.daoyuan.business.entity.Supplier" >
+    update supplier
+    <set >
+      <if test="isPercent != null" >
+        isPercent = #{isPercent},
+      </if>
+      <if test="percent != null" >
+        percent = #{percent},
+      </if>
+      <if test="serviceFeeConfigId != null" >
+        serviceFeeConfigId = #{serviceFeeConfigId},
+      </if>
+      <if test="serviceFeeMax != null" >
+        serviceFeeMax = #{serviceFeeMax},
+      </if>
+      <if test="serviceFeeMin != null" >
+        serviceFeeMin = #{serviceFeeMin},
+      </if>
+      <if test="serviceFeeCycle != null" >
+        serviceFeeCycle = #{serviceFeeCycle},
+      </if>
+      <if test="serviceFeeStartTime != null" >
+        serviceFeeStartTime = #{serviceFeeStartTime},
+      </if>
+      <if test="supplierName != null" >
+        supplierName = #{supplierName},
+      </if>
+      <if test="drawABillOrder != null" >
+        drawABillOrder = #{drawABillOrder},
+      </if>
+    </set>
+    where id = #{id}
+  </update>
+  <update id="updateAll" parameterType="com.magic.daoyuan.business.entity.Supplier" >
+    update supplier
+    set supplierName = #{supplierName},
+      drawABillOrder = #{drawABillOrder}
+    where id = #{id}
+  </update>
+
+
+
+
+  <select id="list" resultMap="IncludeOther" parameterType="map">
+    SELECT s.*,1 AS `type`,sfc.`describe` AS serviceFeeConfigName
+    FROM supplier s
+    LEFT JOIN service_fee_config sfc ON s.serviceFeeConfigId = sfc.id
+    WHERE 1 = 1
+    <if test="supplierName != null and supplierName != ''">
+      AND s.supplierName Like '%${supplierName}%'
+    </if>
+    <if test="drawABillOrder != null">
+      AND s.drawABillOrder = #{drawABillOrder}
+    </if>
+    ORDER BY
+    <if test="pageArgs != null">
+      <if test="pageArgs.column != null and pageArgs.column != ''">
+        ${pageArgs.column} ${pageArgs.order},
+      </if>
+    </if>
+    s.id DESC
+    <if test="pageArgs != null">
+      limit #{pageArgs.pageStart}, #{pageArgs.pageSize}
+    </if>
+  </select>
+
+  <select id="getAllList" resultType="com.magic.daoyuan.business.entity.Supplier">
+    SELECT s.* FROM supplier s
+  </select>
+
+  <select id="listCount" resultType="int" parameterType="map">
+    SELECT
+    COUNT(*)
+    FROM supplier s
+    WHERE 1 = 1
+    <if test="supplierName != null and supplierName != ''">
+      AND s.supplierName Like '%${supplierName}%'
+    </if>
+    <if test="drawABillOrder != null">
+      AND s.drawABillOrder = #{drawABillOrder}
+    </if>
+  </select>
+
+
+  <select id="getNOBindToSelect" resultMap="BaseResultMap">
+    select * from supplier s WHERE s.id NOT IN
+    (SELECT t.supplierId FROM organization o ,transactor t
+    WHERE o.id = t.organizationId AND o.id = #{organizationId} AND t.supplierId is not null
+    <if test="supplierId != null">
+      and t.supplierId not in (#{supplierId})
+    </if>
+    GROUP BY t.supplierId)
+  </select>
+</mapper>

@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.ISupplierAccountToBeCreditedMapper" >
+  <resultMap id="BaseResultMap" type="com.magic.daoyuan.business.entity.SupplierAccountToBeCredited" >
+    <id column="id" property="id" javaType="java.lang.Integer" />
+    <result column="accountName" property="accountName" javaType="java.lang.String" />
+    <result column="account" property="account" javaType="java.lang.String" />
+    <result column="bankName" property="bankName" javaType="java.lang.String" />
+    <result column="type" property="type" javaType="java.lang.Integer" />
+    <result column="bankId" property="bankId" javaType="java.lang.Integer" />
+    <result column="supplierId" property="supplierId" javaType="java.lang.Integer" />
+  </resultMap>
+
+
+
+  <select id="querySupplierBankInfo" resultType="int">
+    SELECT COUNT(0) FROM supplier_account_to_be_credited
+    WHERE
+    account = #{account}
+    AND accountName = #{accountName}
+    AND supplierId = #{supplerId}
+  </select>
+
+  <select id="info" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select 
+      *
+    from supplier_account_to_be_credited
+    where id = #{id}
+  </select>
+  <delete id="delete" parameterType="java.lang.Integer" >
+    delete from supplier_account_to_be_credited
+    where id = #{id}
+  </delete>
+  <insert id="save" parameterType="com.magic.daoyuan.business.entity.SupplierAccountToBeCredited" >
+    insert into supplier_account_to_be_credited (accountName, account, bankId, `type`,supplierId,bankName)
+    values (#{accountName},#{account},#{bankId},#{type},#{supplierId},#{bankName})
+  </insert>
+
+  <update id="update" parameterType="com.magic.daoyuan.business.entity.SupplierAccountToBeCredited" >
+    update supplier_account_to_be_credited
+    <set >
+      <if test="bankName != null" >
+        bankName = #{bankName},
+      </if>
+      <if test="accountName != null" >
+        accountName = #{accountName},
+      </if>
+      <if test="account != null" >
+        account = #{account},
+      </if>
+      <if test="bankId != null" >
+        bankId = #{bankId},
+      </if>
+      <if test="type != null" >
+        `type` = #{type},
+      </if>
+    </set>
+    where id = #{id}
+  </update>
+  <update id="updateAll" parameterType="com.magic.daoyuan.business.entity.SupplierAccountToBeCredited" >
+    update supplier_account_to_be_credited
+    set
+      accountName = #{accountName},
+      bankName = #{bankName},
+      account = #{account},
+      `type` = #{type}
+    where id = #{id}
+  </update>
+
+
+
+
+  <select id="list" resultMap="BaseResultMap" parameterType="map">
+    SELECT s.*
+    FROM supplier_account_to_be_credited s
+    WHERE 1=1
+    <if test="accountName != null and accountName != ''">
+      AND s.accountName Like '%${accountName}%'
+    </if>
+    <if test="account != null and account != ''">
+      AND s.account Like '%${account}%'
+    </if>
+    <if test="bankName != null and bankName != ''">
+      AND s.bankName Like '%${bankName}%'
+    </if>
+    <if test="type != null">
+      AND s.type = #{type}
+    </if>
+    <if test="supplierId != null">
+      AND s.supplierId = #{supplierId}
+    </if>
+    ORDER BY
+    <if test="pageArgs != null">
+      <if test="pageArgs.column != null and pageArgs.column != ''">
+        ${pageArgs.column} ${pageArgs.order},
+      </if>
+    </if>
+    s.id DESC
+    <if test="pageArgs != null">
+      limit #{pageArgs.pageStart}, #{pageArgs.pageSize}
+    </if>
+  </select>
+
+  <select id="getBySupplierId" resultType="com.magic.daoyuan.business.entity.SupplierAccountToBeCredited">
+    SELECT s.*
+    FROM supplier_account_to_be_credited s
+    WHERE s.supplierId = #{supplierId}
+  </select>
+
+  <select id="listCount" resultType="int" parameterType="map">
+    SELECT
+    COUNT(*)
+    FROM supplier_account_to_be_credited s
+    WHERE 1 = 1
+    <if test="accountName != null and accountName != ''">
+      AND s.accountName Like '%${accountName}%'
+    </if>
+    <if test="account != null and account != ''">
+      AND s.account Like '%${account}%'
+    </if>
+    <if test="bankName != null and bankName != ''">
+      AND s.bankName Like '%${bankName}%'
+    </if>
+    <if test="type != null">
+      AND s.type = #{type}
+    </if>
+    <if test="supplierId != null">
+      AND s.supplierId = #{supplierId}
+    </if>
+  </select>
+</mapper>

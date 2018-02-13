@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IInsuranceMapper">
+
+
+    <resultMap id="BaseInsurance" type="com.magic.daoyuan.business.entity.Insurance">
+        <result column="id" property="id" javaType="java.lang.Integer"/>
+        <result column="insuranceName" property="insuranceName" javaType="java.lang.String"/>
+        <result column="remark" property="remark" javaType="java.lang.String"/>
+        <result column="isValid" property="isValid" javaType="java.lang.Integer"/>
+        <result column="payPlaceId" property="payPlaceId" javaType="java.lang.Integer"/>
+    </resultMap>
+
+    <resultMap id="BaseInsurancePayTheWay" type="com.magic.daoyuan.business.entity.Insurance" extends="BaseInsurance">
+        <association property="payTheWays" columnPrefix="pt_"
+                     resultMap="com.magic.daoyuan.business.mapper.IPayTheWayMapper.BaseResultMap"/>
+    </resultMap>
+
+
+    <resultMap id="BaseInsurancePayTheWay2" type="com.magic.daoyuan.business.entity.Insurance" extends="BaseInsurance">
+        <association property="payTheWays" columnPrefix="pt_"
+                     resultMap="com.magic.daoyuan.business.mapper.IPayTheWayMapper.BaseResultMap"/>
+    </resultMap>
+
+    <select id="queryAllInsurance" resultMap="BaseInsurance">
+        SELECT * FROM insurance GROUP BY insuranceName ORDER BY id
+    </select>
+
+    <sql id="BasePayTheWay">
+        pt.id AS pt_id,
+        pt.coPayType AS pt_coPayType,
+        pt.coPayPrice AS pt_coPayPrice,
+        pt.coComputationalAccuracy AS pt_coComputationalAccuracy,
+        pt.coComputationRule AS pt_coComputationRule,
+        pt.isCMakeASupplementaryPayment AS pt_isCMakeASupplementaryPayment,
+        pt.mePayType AS pt_mePayType, pt.mePayPrice AS pt_mePayPrice,
+        pt.meComputationalAccuracy AS pt_meComputationalAccuracy,
+        pt.meComputationRule AS pt_meComputationRule,
+        pt.isMMakeASupplementaryPayment AS pt_isMMakeASupplementaryPayment,
+        pt.insuranceLevelId AS pt_insuranceLevelId,
+        pt.coMinScope AS pt_coMinScope, pt.coMaxScope AS pt_coMaxScope,
+        pt.meMinScope AS pt_meMinScope, pt.meMaxScope AS pt_meMaxScope,
+        pt.mePrecision AS pt_mePrecision,pt.coPrecision AS pt_coPrecision
+    </sql>
+
+    <select id="queryInsuranceById" resultMap="BaseInsurance">
+        SELECT * FROM insurance WHERE id = #{id}
+    </select>
+
+    <select id="countInsuranceByItems" resultType="java.lang.Integer" parameterType="map">
+        SELECT COUNT(0) FROM insurance i
+        WHERE
+        i.isValid = 1
+        <if test="payPlaceId != null">
+            AND i.payPlaceId = #{payPlaceId}
+        </if>
+    </select>
+
+    <select id="queryInsuranceByItems" resultMap="BaseInsurance" parameterType="map">
+        SELECT i.*
+        FROM insurance i
+        WHERE
+        i.isValid = 1
+        <if test="payPlaceId != null">
+            AND i.payPlaceId = #{payPlaceId}
+        </if>
+        ORDER BY i.id DESC
+        <if test="limit != null and limitSize != null">
+            LIMIT #{limit},#{limitSize}
+        </if>
+    </select>
+
+    <select id="getByPayPlaceId" resultMap="BaseInsurancePayTheWay">
+        SELECT i.*,il.levelName AS pt_insuranceLevelName ,
+        il.id AS pt_insuranceLevelId ,
+        ptw.mePayType AS pt_mePayType,
+        ptw.coPayType AS pt_coPayType
+        FROM insurance i ,pay_the_way ptw ,insurance_level il
+        WHERE
+        ptw.insuranceId = i.id
+        AND ptw.insuranceLevelId = il.id
+        AND (ptw.coPayType = 2 OR ptw.mePayType = 2)
+        AND i.payPlaceId = #{payPlaceId}
+    </select>
+
+    <update id="updateInsurance" parameterType="com.magic.daoyuan.business.entity.Insurance">
+
+        UPDATE insurance
+        <set>
+          <if test="insuranceName != null and insuranceName != ''">
+              insuranceName = #{insuranceName},
+          </if>
+          <if test="isValid != null">
+              isValid = #{isValid},
+          </if>
+          <if test="payPlaceId != null">
+              payPlaceId = #{payPlaceId},
+          </if>
+          <if test="remark != null">
+              remark = #{remark},
+          </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <insert id="addInsurance" keyProperty="id" useGeneratedKeys="true" keyColumn="id" parameterType="com.magic.daoyuan.business.entity.Insurance">
+        INSERT INTO insurance (insuranceName,isValid, payPlaceId, remark)
+        VALUES
+        (#{insuranceName},1, #{payPlaceId}, #{remark})
+    </insert>
+
+    <insert id="saveList" keyProperty="id" useGeneratedKeys="true" keyColumn="id"
+            parameterType="com.magic.daoyuan.business.entity.Insurance">
+        INSERT INTO insurance (insuranceName,isValid, payPlaceId, remark)
+        VALUES
+        <foreach collection="list" item="i" separator=",">
+            (#{i.insuranceName},1, #{i.payPlaceId}, #{i.remark})
+        </foreach>
+
+    </insert>
+
+    <resultMap id="BaseInsurancePayTheWay3" type="com.magic.daoyuan.business.entity.Insurance" extends="BaseInsurance">
+        <!--<association property="payTheWays" column="id"-->
+                     <!--select="com.magic.daoyuan.business.mapper.IPayTheWayMapper.queryPayTheWayByInsurance"/>-->
+        <association property="payTheWays" columnPrefix="pt_"
+                     resultMap="com.magic.daoyuan.business.mapper.IPayTheWayMapper.BaseResultMap"/>
+    </resultMap>
+
+    <select id="getOnlyTransactor" resultMap="BaseInsurancePayTheWay3">
+        SELECT
+            ii.*,
+            pt.id AS pt_id,
+            pt.coPayType AS pt_coPayType,
+            pt.coPayPrice AS pt_coPayPrice,
+            pt.coComputationalAccuracy AS pt_coComputationalAccuracy,
+            pt.coComputationRule AS pt_coComputationRule,
+            pt.isCMakeASupplementaryPayment AS pt_isCMakeASupplementaryPayment,
+            pt.mePayType AS t_mePayType, pt.mePayPrice AS pt_mePayPrice,
+            pt.meComputationalAccuracy AS pt_meComputationalAccuracy,
+            pt.meComputationRule AS pt_meComputationRule,
+            pt.isMMakeASupplementaryPayment AS pt_isMMakeASupplementaryPayment,
+            pt.insuranceLevelId AS pt_insuranceLevelId,
+            pt.coMinScope AS pt_coMinScope, pt.coMaxScope AS pt_coMaxScope,
+            pt.meMinScope AS pt_meMinScope, pt.meMaxScope AS pt_meMaxScope,
+            pt.mePrecision AS pt_mePrecision,pt.coPrecision AS pt_coPrecision,
+            il.levelName AS pt_insuranceLevelName
+        FROM
+            pay_place pp,
+            insurance ii,
+            pay_the_way pt,
+            insurance_level il
+        WHERE
+            pp.id = ii.payPlaceId
+        AND il.id = pt.insuranceLevelId
+        AND pt.id NOT IN
+        (SELECT til.payTheWayId FROM transactor_insurance_level til,pay_the_way ptw2
+        WHERE
+        til.payTheWayId = ptw2.id
+        <if test="insuranceLevelId != null">
+            AND ptw2.insuranceLevelId <![CDATA[<>]]> #{insuranceLevelId}
+        </if>
+        AND til.transactorId = #{transactorId} )
+        AND pp.id = #{payPlaceId}
+        AND ii.id = pt.insuranceId
+        AND ii.isValid = 1
+        AND (
+            pt.coPayType = 2
+            OR pt.mePayType = 2
+        )
+    </select>
+
+</mapper>

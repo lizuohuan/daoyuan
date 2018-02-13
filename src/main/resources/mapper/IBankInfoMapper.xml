@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IBankInfoMapper">
+
+
+
+    <select id="info" resultType="com.magic.daoyuan.business.entity.BankInfo">
+        SELECT * FROM bank_info WHERE id = #{id}
+    </select>
+
+
+    <select id="queryBankInfoByAccount" resultType="com.magic.daoyuan.business.entity.BankInfo">
+        SELECT * FROM bank_info WHERE accountName = #{accountName} AND companyId = #{companyId}
+        AND bankAccount = #{bankAccount}
+    </select>
+
+    <select id="queryBankInfoByConfirmRecord" resultType="com.magic.daoyuan.business.entity.BankInfo">
+        SELECT
+            b.*
+        FROM
+            bank_info b,
+            confirm_money_company cmc
+        WHERE
+            b.id = cmc.bankInfoId
+        AND cmc.companyId = #{companyId}
+        AND cmc.confirmMoneyRecordId = #{recordId}
+    </select>
+
+    <select id="queryBankInfo" resultType="com.magic.daoyuan.business.entity.BankInfo">
+        SELECT b.*,cc.beforeService AS serviceId FROM bank_info b,company cc WHERE
+        b.accountName = #{accountName}
+        AND b.bankAccount = #{bankAccount}
+        AND b.companyId = cc.id
+        AND b.companyId IN
+        <foreach collection="companyIds" index="index" item="companyId" open="(" close=")" separator=",">
+            #{companyId}
+        </foreach>
+    </select>
+
+
+    <select id="queryBankInfoByCompany" resultType="com.magic.daoyuan.business.entity.BankInfo">
+        SELECT * FROM bank_info WHERE companyId IN
+        <foreach collection="list" index="index" item="companyId" open="(" close=")" separator=",">
+            #{companyId}
+        </foreach>
+    </select>
+
+    <select id="queryAllBankInfo" resultType="com.magic.daoyuan.business.entity.BankInfo">
+        SELECT
+            bi.id,
+            bi.accountName,
+            bi.bankAccount,
+            bi.companyId,
+            bi.type,
+            cc.beforeService AS serviceId
+        FROM
+            bank_info bi,
+            company cc
+        WHERE
+            bi.companyId = cc.id
+    </select>
+
+    <select id="queryBankInfoByItems" parameterType="map" resultType="com.magic.daoyuan.business.entity.BankInfo">
+        SELECT
+            bi.*,
+            cc.companyName AS companyName
+        FROM
+            bank_info bi,
+            company cc
+        WHERE
+        bi.companyId = cc.id
+        AND bi.companyId = #{companyId}
+        <if test="limit != null and limitSize != null">
+            LIMIT #{limit},#{limitSize}
+        </if>
+    </select>
+
+    <select id="countBankInfoByItems" parameterType="map" resultType="int">
+        SELECT
+            COUNT(0)
+        FROM
+            bank_info bi,
+            company cc
+        WHERE
+        bi.companyId = cc.id
+        AND bi.companyId = #{companyId}
+    </select>
+
+
+    <insert id="addBankInfo" parameterType="com.magic.daoyuan.business.entity.BankInfo">
+
+        INSERT INTO bank_info ( accountName, bankName, bankAccount, isValid, companyId,`type`)
+        VALUES
+        ( #{accountName}, #{bankName}, #{bankAccount}, 1, #{companyId},#{type})
+    </insert>
+
+    <insert id="batchAddBankInfo" parameterType="com.magic.daoyuan.business.entity.BankInfo" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO bank_info ( accountName, bankName, bankAccount, isValid, companyId,`type`)
+        VALUES
+        <foreach collection="list" index="index" item="i" separator=",">
+            ( #{i.accountName}, #{i.bankName}, #{i.bankAccount}, 1, #{i.companyId},#{i.type})
+        </foreach>
+    </insert>
+
+    <update id="updateBankInfo" parameterType="com.magic.daoyuan.business.entity.BankInfo">
+
+        UPDATE bank_info
+        <set>
+          <if test="type != null">
+              `type` = #{type},
+          </if>
+          <if test="isValid != null">
+              isValid = #{isValid},
+          </if>
+          <if test="bankAccount != null">
+              bankAccount = #{bankAccount},
+          </if>
+            bankName = #{bankName},
+          <if test="accountName != null">
+              accountName = #{accountName},
+          </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="getByCompanyId" resultType="com.magic.daoyuan.business.entity.BankInfo" >
+        select * from bank_info bi WHERE bi.companyId = #{companyId} order by bi.id asc limit 0,1
+    </select>
+</mapper>

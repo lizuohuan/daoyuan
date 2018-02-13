@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.ICompanyCooperationMapper">
+
+
+    <update id="update" parameterType="com.magic.daoyuan.business.entity.CompanyCooperation">
+        UPDATE company_cooperation
+        <set>
+            <if test="cooperationStatus != null">
+                cooperationStatus = #{cooperationStatus},
+            </if>
+            <if test="isPeer != null">
+                isPeer = #{isPeer},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="info" resultType="com.magic.daoyuan.business.entity.CompanyCooperation">
+        SELECT
+          *
+        FROM
+          company_cooperation
+        WHERE
+        companyId = #{companyId}
+        AND DATE_FORMAT(createTime,'%y-%m-%d') =   DATE_FORMAT(#{date},'%y-%m-%d')
+    </select>
+
+    <select id="statistics" resultType="com.magic.daoyuan.business.entity.CompanyCooperation">
+
+        SELECT
+          coo.createTime,
+          COUNT(0) AS `count`
+        FROM
+          company_cooperation coo
+        WHERE
+        coo.cooperationStatus = 1
+        <if test="startTime != null">
+            AND coo.createTime >= #{startTime}
+        </if>
+        <if test="isPeer != null">
+            AND coo.isPeer = #{isPeer}
+        </if>
+        <if test="endTime != null">
+            <![CDATA[
+        AND coo.createTime <= #{endTime}
+            ]]>
+        </if>
+
+        <if test="flag == 0 or flag == 1">
+            GROUP BY DATE_FORMAT(coo.createTime,'%y-%m-%d')
+        </if>
+        <if test="flag == 2">
+            GROUP BY DATE_FORMAT(coo.createTime,'%y-%m')
+        </if>
+
+    </select>
+
+
+    <insert id="add" parameterType="com.magic.daoyuan.business.entity.CompanyCooperation">
+        INSERT INTO company_cooperation ( cooperationStatus, companyId, createTime,isInitiative,isPeer)
+        VALUES (#{cooperationStatus}, #{companyId}, NOW(),#{isInitiative},#{isPeer})
+    </insert>
+
+    <insert id="batchAdd" parameterType="com.magic.daoyuan.business.entity.CompanyCooperation">
+        INSERT INTO company_cooperation ( cooperationStatus, companyId, createTime,isInitiative,isPeer)
+        VALUES
+        <foreach collection="list" index="index" item="l" separator=",">
+            (#{l.cooperationStatus}, #{l.companyId}, NOW(),#{l.isInitiative},#{l.isPeer})
+        </foreach>
+    </insert>
+
+    <delete id="del">
+        DELETE FROM company_cooperation WHERE companyId = #{companyId} AND DATE_FORMAT(createTime,'%y-%m-%d') = DATE_FORMAT(#{date},'%y-%m-%d')
+    </delete>
+
+    <delete id="delAllByDate">
+        DELETE FROM company_cooperation WHERE DATE_FORMAT(createTime,'%y-%m-%d') = DATE_FORMAT(#{date},'%y-%m-%d')
+    </delete>
+
+</mapper>

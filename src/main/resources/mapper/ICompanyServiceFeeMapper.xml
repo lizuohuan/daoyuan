@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.ICompanyServiceFeeMapper">
+
+
+
+    <select id="queryServiceFeeByCompany" resultType="com.magic.daoyuan.business.entity.CompanyServiceFee">
+        SELECT csf.*,b.businessName AS businessName FROM
+        company_service_fee csf LEFT JOIN business b ON csf.businessId = b.id
+
+        WHERE csf.companyId = #{companyId}
+        AND csf.type = #{type}
+        ORDER BY csf.extent ASC
+    </select>
+
+    <delete id="delServiceFee">
+        DELETE FROM company_service_fee WHERE companyId = #{companyId} AND `type` = #{type}
+    </delete>
+
+    <insert id="addCompanyServiceFee" parameterType="com.magic.daoyuan.business.entity.CompanyServiceFee">
+        INSERT INTO company_service_fee (companyId, `price`, extent,businessId,`type`)
+        VALUES
+        (#{companyId}, #{price}, #{extent},#{businessId},#{type})
+    </insert>
+
+    <insert id="batchAddCompanyServiceFee">
+        INSERT INTO company_service_fee (companyId, `price`, extent,businessId,`type`)
+        VALUES
+        <foreach collection="serviceFees" index="index" item="serviceFee" separator=",">
+            (#{serviceFee.companyId}, #{serviceFee.price}, #{serviceFee.extent},
+            #{serviceFee.businessId},#{serviceFee.type})
+        </foreach>
+    </insert>
+
+
+
+</mapper>

@@ -1,0 +1,661 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.ICompanyMapper">
+
+
+    <resultMap id="BaseCompany" type="com.magic.daoyuan.business.entity.Company">
+        <result column="id" property="id" javaType="java.lang.Integer"/>
+        <result column="companyName" property="companyName" javaType="java.lang.String"/>
+        <result column="serialNumber" property="serialNumber" javaType="java.lang.String"/>
+        <result column="financialNum" property="financialNum" javaType="java.lang.String"/>
+        <result column="payTime" property="payTime" javaType="java.util.Date"/>
+        <result column="businessStartTime" property="businessStartTime" javaType="java.util.Date"/>
+        <result column="serviceFeeStartTime" property="serviceFeeStartTime" javaType="java.util.Date"/>
+        <result column="tradeId" property="tradeId" javaType="java.lang.Integer"/>
+        <result column="tradeName" property="tradeName" javaType="java.lang.String"/>
+        <result column="isFirstBill" property="isFirstBill" javaType="java.lang.Integer"/>
+        <result column="billType" property="billType" javaType="java.lang.Integer"/>
+        <result column="businessCycle" property="businessCycle" javaType="java.lang.Integer"/>
+        <result column="serviceFeeConfigId" property="serviceFeeConfigId" javaType="java.lang.Integer"/>
+        <result column="serviceFeeCycle" property="serviceFeeCycle" javaType="java.lang.Integer"/>
+        <result column="cooperationStatus" property="cooperationStatus" javaType="java.lang.Integer"/>
+        <result column="serviceFeeMin" property="serviceFeeMin" javaType="java.lang.Double"/>
+        <result column="serviceFeeMax" property="serviceFeeMax" javaType="java.lang.Double"/>
+        <result column="createTime" property="createTime" javaType="java.util.Date"/>
+        <result column="isValid" property="isValid" javaType="java.lang.Integer"/>
+        <result column="beforeService" property="beforeService" javaType="java.lang.Integer"/>
+        <result column="beforeServiceName" property="beforeServiceName" javaType="java.lang.String"/>
+        <result column="serviceFee" property="serviceFee" javaType="java.lang.String"/>
+        <result column="sales" property="sales" javaType="java.lang.Integer"/>
+        <result column="relevanceCompanyId" property="relevanceCompanyId" javaType="java.lang.Integer"/>
+        <result column="recommendCompanyId" property="recommendCompanyId" javaType="java.lang.Integer"/>
+        <result column="isPeer" property="isPeer" javaType="java.lang.Integer"/>
+        <result column="isPercent" property="isPercent" javaType="java.lang.Integer"/>
+        <result column="percent" property="percent" javaType="java.lang.Double"/>
+        <result column="pwd" property="pwd" javaType="java.lang.String"/>
+    </resultMap>
+
+    <resultMap id="IncludeBusiness" type="com.magic.daoyuan.business.entity.Company" extends="BaseCompany">
+        <association property="businesses" column="id" select="com.magic.daoyuan.business.mapper.IBusinessMapper.queryBusiness"/>
+        <association property="feeList" column="companyId=id,type=type" select="com.magic.daoyuan.business.mapper.ICompanyServiceFeeMapper.queryServiceFeeByCompany"/>
+        <association property="contractList" column="id" select="com.magic.daoyuan.business.mapper.IContractMapper.queryContractByCompanyASC"/>
+        <association property="salaryDateList" column="id" select="com.magic.daoyuan.business.mapper.ISalaryDateMapper.querySalaryDateByCompany"/>
+        <association property="servicePayPlaceList" column="companyId=id,type=type" select="com.magic.daoyuan.business.mapper.ICompanyServicePayPlaceMapper.queryCompanyServicePayPlace"/>
+        <association property="serviceFeeList" column="companyId=id,type=type" select="com.magic.daoyuan.business.mapper.IBusinessServiceFeeMapper.queryBusinessServiceFee"/>
+        <association property="cooperationMethodList" column="companyId=id" select="com.magic.daoyuan.business.mapper.ICompanyCooperationMethodMapper.queryCompanyCooperationMethod"/>
+        <association property="companyBusinessList" columnPrefix="cb_"
+                     resultMap="com.magic.daoyuan.business.mapper.ICompanyBusinessMapper.BaseCompanyBusiness"/>
+        <association property="companySonTotalBillList" columnPrefix="cstb_"
+                     resultMap="com.magic.daoyuan.business.mapper.ICompanySonTotalBillMapper.BaseResultMapOther2"/>
+        <association property="companySonBillList" columnPrefix="csb_"
+                     resultMap="com.magic.daoyuan.business.mapper.ICompanySonBillMapper.BaseResultMap"/>
+        <association property="memberList" columnPrefix="m_"
+                     resultMap="com.magic.daoyuan.business.mapper.IMemberMapper.BaseResultMap"/>
+    </resultMap>
+
+    <resultMap id="IncludeBusiness2" type="com.magic.daoyuan.business.entity.Company" extends="BaseCompany">
+        <!--<association property="businesses" column="id" select="com.magic.daoyuan.business.mapper.IBusinessMapper.queryBusiness"/>-->
+        <!--<association property="feeList" column="companyId=id,type=type" select="com.magic.daoyuan.business.mapper.ICompanyServiceFeeMapper.queryServiceFeeByCompany"/>-->
+        <!--<association property="contractList" column="id" select="com.magic.daoyuan.business.mapper.IContractMapper.queryContractByCompanyASC"/>-->
+        <!--<association property="salaryDateList" column="id" select="com.magic.daoyuan.business.mapper.ISalaryDateMapper.querySalaryDateByCompany"/>-->
+        <!--<association property="servicePayPlaceList" column="companyId=id,type=type" select="com.magic.daoyuan.business.mapper.ICompanyServicePayPlaceMapper.queryCompanyServicePayPlace"/>-->
+        <!--<association property="serviceFeeList" column="companyId=id,type=type" select="com.magic.daoyuan.business.mapper.IBusinessServiceFeeMapper.queryBusinessServiceFee"/>-->
+        <!--<association property="cooperationMethodList" column="companyId=id" select="com.magic.daoyuan.business.mapper.ICompanyCooperationMethodMapper.queryCompanyCooperationMethod"/>-->
+        <association property="companyBusinessList" columnPrefix="cb_"
+                     resultMap="com.magic.daoyuan.business.mapper.ICompanyBusinessMapper.BaseCompanyBusiness"/>
+        <association property="companySonTotalBillList" columnPrefix="cstb_"
+                     resultMap="com.magic.daoyuan.business.mapper.ICompanySonTotalBillMapper.BaseResultMapOther2"/>
+        <association property="companySonBillList" columnPrefix="csb_"
+                     resultMap="com.magic.daoyuan.business.mapper.ICompanySonBillMapper.BaseResultMap"/>
+        <association property="memberList" columnPrefix="m_"
+                     resultMap="com.magic.daoyuan.business.mapper.IMemberMapper.BaseResultMap"/>
+    </resultMap>
+
+    <resultMap id="IncludeCooperationMethod" type="com.magic.daoyuan.business.entity.Company" extends="BaseCompany">
+        <association property="cooperationMethodList" column="companyId=id" select="com.magic.daoyuan.business.mapper.ICompanyCooperationMethodMapper.queryCompanyCooperationMethod"/>
+    </resultMap>
+
+    <resultMap id="IncludeCooperationMethod_" type="com.magic.daoyuan.business.entity.Company" extends="BaseCompany">
+        <association property="cooperationMethodList" columnPrefix="ccm_" resultMap="com.magic.daoyuan.business.mapper.ICompanyCooperationMethodMapper.BaseMethod"/>
+    </resultMap>
+
+    <resultMap id="BaseCompanyOther" type="com.magic.daoyuan.business.entity.Company" extends="BaseCompany">
+        <association property="contactsList" column="id" select="com.magic.daoyuan.business.mapper.IContactsMapper.queryContactsByCompany"/>
+    </resultMap>
+
+
+    <select id="countCompany" resultType="map">
+        SELECT
+            (
+                SELECT
+                    COUNT(0)
+                FROM
+                    company
+                WHERE
+                    cooperationStatus = 1
+                AND DATE_FORMAT(createTime,'%y-%m') = DATE_FORMAT(#{date},'%y-%m')
+            ) AS cooperationCount,
+            (
+                SELECT
+                    COUNT(0)
+                FROM
+                    company_cooperation
+                WHERE
+                    cooperationStatus = 0
+                AND isInitiative = 1
+                AND DATE_FORMAT(createTime,'%y-%m') = DATE_FORMAT(#{date},'%y-%m')
+            ) AS unCooperationCount
+    </select>
+
+    <select id="countCompanyByMonth" resultType="int">
+        SELECT
+            COUNT(0)
+        FROM
+            company
+        WHERE
+            DATE_FORMAT(createTime,'%y-%m') = DATE_FORMAT(#{date},'%y-%m')
+    </select>
+
+    <select id="queryCompanyCooperation" resultMap="BaseCompany">
+        SELECT id,cooperationStatus,isPeer FROM company
+    </select>
+
+    <select id="queryCompanyByName" resultMap="BaseCompany">
+        SELECT id,companyName FROM company WHERE companyName = #{companyName} AND isValid = 1
+    </select>
+
+    <select id="queryOtherCompany" resultMap="BaseCompany">
+        SELECT id,companyName,businessStartTime,businessCycle,serialNumber
+        FROM company
+        WHERE isValid = 1
+        <if test="companyName != null">
+            AND companyName LIKE '%${companyName}%'
+        </if>
+        ORDER BY id DESC LIMIT #{limit},#{limitSize}
+    </select>
+
+    <select id="countOtherCompany" resultType="java.lang.Integer">
+        SELECT COUNT(0) FROM company
+        WHERE 1=1
+        <if test="companyName != null">
+            AND companyName LIKE '%${companyName}%'
+        </if>
+    </select>
+
+    <select id="queryAllCompanyCooperationMethod" resultMap="IncludeCooperationMethod_">
+        SELECT cc.id,ccm.cooperationMethodId AS ccm_cooperationMethodId,cc.companyName
+        FROM company cc
+        LEFT JOIN company_cooperation_method ccm ON cc.id = ccm.companyId
+    </select>
+
+    <select id="countBillAmountByCompany" resultType="com.magic.daoyuan.business.entity.BillAmountOfCompany">
+        SELECT
+            (SUM(csbi.totalPrice)
+                + IFNULL((SELECT SUM(IFNULL(si.salaryBeforeTax,0)) FROM salary_info si WHERE si.companySonTotalBillId = cstb.id),0)
+                + IFNULL((SELECT SUM(IFNULL(msf.serviceFee,0)) FROM month_service_fee msf WHERE msf.companySonTotalBillId = cstb.id),0)
+                + IFNULL((SELECT SUM(IFNULL(bii.price,0)) FROM business_insurance bi,business_insurance_item bii WHERE bi.id = bii.businessInsuranceId AND bii.companySonTotalBillId = cstb.id),0)
+                + IFNULL((SELECT SUM(IFNULL(byi.price,0)) FROM business_yc byy,business_yc_item byi WHERE byy.id = byi.businessYcId AND byi.companySonTotalBillId = cstb.id),0)
+            ) AS billAmount,
+            csb.companyId AS companyId,
+            cstb.id AS companySonTotalBillId
+        FROM
+            company_son_bill csb,
+            company_son_total_bill cstb,
+            company_son_bill_item csbi
+        WHERE
+            csb.id = cstb.companySonBillId
+        AND csbi.companySonTotalBillId = cstb.id
+        AND cstb.`status` = 2
+        AND cstb.id NOT IN (
+            SELECT
+                cftb.companySonTotalBillId
+            FROM
+                confirm_fund_total_bill cftb
+        )
+        AND csb.companyId IN (
+        <foreach collection="companyIds" index="index" item="companyId" separator=",">
+            #{companyId}
+        </foreach>
+        )
+        GROUP BY cstb.id
+        ORDER BY cstb.id ASC
+    </select>
+
+    <select id="queryCompanyByCompanySonTotalBillId" resultMap="BaseCompany">
+        SELECT
+            cc.id,cc.companyName,
+            cc.payTime
+        FROM
+            company_son_total_bill cstb,
+            company_son_bill csb,
+            company cc
+        WHERE
+            cstb.companySonBillId = csb.id
+        AND csb.companyId = cc.id
+        AND cstb.id = #{companySonTotalBillId}
+    </select>
+
+    <select id="queryAllCompany" resultMap="BaseCompany">
+        SELECT id,companyName FROM  company WHERE isValid = 1 ORDER BY id DESC
+    </select>
+
+    <select id="countCompanyByItems" resultType="java.lang.Integer">
+        SELECT
+            COUNT(0)
+        FROM
+            company cc
+        WHERE
+            cc.isValid = 1
+            <if test="cooperationStatus != null">
+                AND cc.cooperationStatus = #{cooperationStatus}
+            </if>
+            <if test="sales != null">
+                AND cc.sales = #{sales}
+            </if>
+            <if test="beforeService != null">
+                AND cc.beforeService = #{beforeService}
+            </if>
+            <if test="companyName != null">
+                AND cc.companyName LIKE '%${companyName}%'
+            </if>
+            <if test="serialNumber != null">
+                AND cc.serialNumber LIKE '%${serialNumber}%'
+            </if>
+            <if test="tradeId != null">
+                AND cc.tradeId = #{tradeId}
+            </if>
+            <if test="isPeer != null">
+                AND cc.isPeer = #{isPeer}
+            </if>
+    </select>
+
+    <select id="queryCompanyByItems" resultMap="IncludeBusiness">
+        SELECT
+            cc.*, t.tradeName AS tradeName,u.userName AS beforeServiceName,sfc.`describe` AS serviceFee,0 AS `type`
+        FROM
+            company cc
+        LEFT JOIN trade t ON cc.tradeId = t.id
+        LEFT JOIN users u ON u.id = cc.beforeService
+        LEFT JOIN service_fee_config sfc ON cc.serviceFeeConfigId = sfc.id
+        WHERE
+            cc.isValid = 1
+            <if test="cooperationStatus != null">
+                AND cc.cooperationStatus = #{cooperationStatus}
+            </if>
+            <if test="sales != null">
+                AND cc.sales = #{sales}
+            </if>
+            <if test="beforeService != null">
+                AND cc.beforeService = #{beforeService}
+            </if>
+            <if test="companyName != null">
+                AND cc.companyName LIKE '%${companyName}%'
+            </if>
+            <if test="serialNumber != null">
+                AND cc.serialNumber LIKE '%${serialNumber}%'
+            </if>
+            <if test="tradeId != null">
+                AND cc.tradeId = #{tradeId}
+            </if>
+            <if test="isPeer != null">
+                AND cc.isPeer = #{isPeer}
+            </if>
+            ORDER BY cc.id DESC
+            <if test="limit != null and limitSize != null">
+                LIMIT #{limit},#{limitSize}
+            </if>
+    </select>
+
+    <select id="queryCompanyName" resultMap="BaseCompany">
+        SELECT id,companyName,isFirstBill FROM  company WHERE  id = #{companyId}
+    </select>
+
+    <select id="countCompanyByItems2" resultType="java.lang.Integer">
+        SELECT
+            COUNT(0)
+        FROM
+            company cc
+        WHERE
+            cc.isValid = 1
+            <if test="cooperationStatus != null">
+                AND cc.cooperationStatus = #{cooperationStatus}
+            </if>
+            <if test="sales != null">
+                AND cc.sales = #{sales}
+            </if>
+            <if test="beforeService != null">
+                AND cc.beforeService = #{beforeService}
+            </if>
+            <if test="companyName != null">
+                AND cc.companyName LIKE '%${companyName}%'
+            </if>
+            <if test="serialNumber != null">
+                AND cc.serialNumber LIKE '%${serialNumber}%'
+            </if>
+            <if test="tradeId != null">
+                AND cc.tradeId = #{tradeId}
+            </if>
+            <if test="isPeer != null">
+                AND cc.isPeer = #{isPeer}
+            </if>
+    </select>
+
+    <select id="queryCompanyByItems2" resultMap="BaseCompany">
+        SELECT
+            cc.*
+        FROM
+            company cc
+        WHERE
+            cc.isValid = 1
+            <if test="cooperationStatus != null">
+                AND cc.cooperationStatus = #{cooperationStatus}
+            </if>
+            <if test="sales != null">
+                AND cc.sales = #{sales}
+            </if>
+            <if test="beforeService != null">
+                AND cc.beforeService = #{beforeService}
+            </if>
+            <if test="companyName != null">
+                AND cc.companyName LIKE '%${companyName}%'
+            </if>
+            <if test="serialNumber != null">
+                AND cc.serialNumber LIKE '%${serialNumber}%'
+            </if>
+            <if test="tradeId != null">
+                AND cc.tradeId = #{tradeId}
+            </if>
+            <if test="isPeer != null">
+                AND cc.isPeer = #{isPeer}
+            </if>
+            ORDER BY cc.id DESC
+            <if test="limit != null and limitSize != null">
+                LIMIT #{limit},#{limitSize}
+            </if>
+    </select>
+
+
+    <select id="info" resultMap="BaseCompany">
+        SELECT * FROM company WHERE id = #{id}
+    </select>
+
+    <select id="queryCompanyById" resultMap="IncludeBusiness">
+        SELECT
+            cc.*, t.tradeName AS tradeName,0 AS `type`,
+            cb.id AS cb_id,
+            cb.companyId AS cb_companyId,
+            cb.billMadeMethod AS cb_billMadeMethod,
+            cb.businessId AS cb_businessId,
+            cb.businessMethod AS cb_businessMethod,
+            bm.id AS cb_bm_id,
+            bm.companyBusinessId AS cb_bm_companyBusinessId,
+            bm.daiLi AS cb_bm_daiLi,
+            bm.tuoGuan AS cb_bm_tuoGuan
+        FROM
+            company cc
+        LEFT JOIN trade t ON cc.tradeId = t.id,
+        company_business cb
+        LEFT JOIN business_method bm ON cb.id = bm.companyBusinessId
+        WHERE
+          cb.companyId = cc.id
+          AND  cc.id = #{companyId}
+    </select>
+
+    <select id="queryCompanyById2" resultMap="IncludeBusiness">
+        SELECT
+            cc.*, t.tradeName AS tradeName,0 AS `type`,
+            cb.id AS cb_id,
+            cb.companyId AS cb_companyId,
+            cb.billMadeMethod AS cb_billMadeMethod,
+            cb.businessId AS cb_businessId,
+            cb.businessMethod AS cb_businessMethod,
+            bm.id AS cb_bm_id,
+            bm.companyBusinessId AS cb_bm_companyBusinessId,
+            bm.daiLi AS cb_bm_daiLi,
+            bm.tuoGuan AS cb_bm_tuoGuan,
+            cstb.id AS cstb_id,
+            cstb.companyId AS cstb_companyId,
+            cstb.billMonth AS cstb_billMonth,
+            cstb.isCreateBillMonth AS cstb_isCreateBillMonth,
+            msf.id AS cstb_msf_id,
+            msf.companyId AS cstb_msf_companyId,
+            msf.serviceFeeConfigId AS cstb_msf_serviceFeeConfigId,
+            msf.companySonTotalBillId AS cstb_msf_companySonTotalBillId,
+            msfd.id AS cstb_msf_msfd_id,
+            msfd.monthServiceFeeId AS cstb_msf_msfd_monthServiceFeeId,
+            msfd.memberId AS cstb_msf_msfd_memberId,
+            msfd.waysOfCooperation AS cstb_msf_msfd_waysOfCooperation,
+            msfd.companySonBillId AS cstb_msf_msfd_companySonBillId,
+            msfd.amount AS cstb_msf_msfd_amount
+        FROM
+            company cc
+        LEFT JOIN trade t ON cc.tradeId = t.id
+        LEFT JOIN company_son_total_bill cstb ON cstb.companyId = cc.id
+        LEFT JOIN month_service_fee msf ON msf.companySonTotalBillId = cstb.id
+        LEFT JOIN month_service_fee_detail msfd ON msfd.monthServiceFeeId = msf.id,
+        company_business cb
+        LEFT JOIN business_method bm ON cb.id = bm.companyBusinessId
+        WHERE
+          cb.companyId = cc.id
+          AND  cc.id = #{companyId}
+    </select>
+
+    <select id="queryCompanyByIds" resultMap="IncludeBusiness">
+        SELECT
+            cc.*, t.tradeName AS tradeName,0 AS `type`,
+            cb.id AS cb_id,
+            cb.companyId AS cb_companyId,
+            cb.billMadeMethod AS cb_billMadeMethod,
+            cb.businessId AS cb_businessId,
+            cb.businessMethod AS cb_businessMethod,
+            bm.id AS cb_bm_id,
+            bm.companyBusinessId AS cb_bm_companyBusinessId,
+            bm.daiLi AS cb_bm_daiLi,
+            bm.tuoGuan AS cb_bm_tuoGuan,
+            cstb.id AS cstb_id,
+            cstb.companyId AS cstb_companyId,
+            cstb.billMonth AS cstb_billMonth,
+            cstb.isCreateBillMonth AS cstb_isCreateBillMonth,
+            msf.id AS cstb_msf_id,
+            msf.companyId AS cstb_msf_companyId,
+            msf.serviceFeeConfigId AS cstb_msf_serviceFeeConfigId,
+            msf.companySonTotalBillId AS cstb_msf_companySonTotalBillId,
+            msfd.id AS cstb_msf_msfd_id,
+            msfd.monthServiceFeeId AS cstb_msf_msfd_monthServiceFeeId,
+            msfd.memberId AS cstb_msf_msfd_memberId,
+            msfd.waysOfCooperation AS cstb_msf_msfd_waysOfCooperation,
+            msfd.companySonBillId AS cstb_msf_msfd_companySonBillId,
+            msfd.amount AS cstb_msf_msfd_amount,
+            csb.id AS csb_id,
+            csb.companyId AS csb_companyId,
+            csb.companyBillInfoId AS csb_companyBillInfoId,
+            m.id AS m_id
+
+        FROM
+            company cc
+        LEFT JOIN trade t ON cc.tradeId = t.id
+        LEFT JOIN member m ON m.companyId = cc.id
+        LEFT JOIN company_son_bill csb ON csb.companyId = cc.id AND csb.isValid = 1
+        LEFT JOIN company_son_total_bill cstb ON cstb.companyId = cc.id AND csb.id = cstb.companySonBillId
+        LEFT JOIN month_service_fee msf ON msf.companySonTotalBillId = cstb.id
+        LEFT JOIN month_service_fee_detail msfd ON msfd.monthServiceFeeId = msf.id,
+        company_business cb
+        LEFT JOIN business_method bm ON cb.id = bm.companyBusinessId
+        WHERE
+        cb.companyId = cc.id
+        AND cc.id IN (
+            <foreach collection="companyIds" item="id" separator=",">
+                #{id}
+            </foreach>
+            )
+    </select>
+
+    <select id="queryCompanyAll" resultMap="IncludeBusiness">
+        SELECT
+            cc.*, t.tradeName AS tradeName,0 AS `type`,
+            cb.id AS cb_id,
+            cb.companyId AS cb_companyId,
+            cb.billMadeMethod AS cb_billMadeMethod,
+            cb.businessId AS cb_businessId,
+            cb.businessMethod AS cb_businessMethod,
+            bm.id AS cb_bm_id,
+            bm.companyBusinessId AS cb_bm_companyBusinessId,
+            bm.daiLi AS cb_bm_daiLi,
+            bm.tuoGuan AS cb_bm_tuoGuan,
+            cstb.id AS cstb_id,
+            cstb.companyId AS cstb_companyId,
+            cstb.billMonth AS cstb_billMonth,
+            cstb.isCreateBillMonth AS cstb_isCreateBillMonth,
+            msf.id AS cstb_msf_id,
+            msf.companyId AS cstb_msf_companyId,
+            msf.serviceFeeConfigId AS cstb_msf_serviceFeeConfigId,
+            msf.companySonTotalBillId AS cstb_msf_companySonTotalBillId,
+            msfd.id AS cstb_msf_msfd_id,
+            msfd.monthServiceFeeId AS cstb_msf_msfd_monthServiceFeeId,
+            msfd.memberId AS cstb_msf_msfd_memberId,
+            msfd.waysOfCooperation AS cstb_msf_msfd_waysOfCooperation,
+            msfd.companySonBillId AS cstb_msf_msfd_companySonBillId,
+            msfd.amount AS cstb_msf_msfd_amount,
+            csb.id AS csb_id,
+            csb.companyId AS csb_companyId,
+            csb.companyBillInfoId AS csb_companyBillInfoId ,
+            m.id AS m_id
+        FROM
+            company cc
+        LEFT JOIN trade t ON cc.tradeId = t.id
+        LEFT JOIN member m ON m.companyId = cc.id
+        LEFT JOIN company_son_bill csb ON csb.companyId = cc.id AND csb.isValid = 1
+        LEFT JOIN company_son_total_bill cstb ON cstb.companyId = cc.id AND csb.id = cstb.companySonBillId
+        LEFT JOIN month_service_fee msf ON msf.companySonTotalBillId = cstb.id
+        LEFT JOIN month_service_fee_detail msfd ON msfd.monthServiceFeeId = msf.id,
+        company_business cb
+        LEFT JOIN business_method bm ON cb.id = bm.companyBusinessId
+         WHERE
+        cb.companyId = cc.id
+    </select>
+
+    <select id="queryCompanyAll2" resultMap="IncludeBusiness2">
+        SELECT
+            cc.*, t.tradeName AS tradeName,0 AS `type`,
+            cb.id AS cb_id,
+            cb.companyId AS cb_companyId,
+            cb.billMadeMethod AS cb_billMadeMethod,
+            cb.businessId AS cb_businessId,
+            cb.businessMethod AS cb_businessMethod,
+            bm.id AS cb_bm_id,
+            bm.companyBusinessId AS cb_bm_companyBusinessId,
+            bm.daiLi AS cb_bm_daiLi,
+            bm.tuoGuan AS cb_bm_tuoGuan,
+            cstb.id AS cstb_id,
+            cstb.companyId AS cstb_companyId,
+            cstb.billMonth AS cstb_billMonth,
+            cstb.isCreateBillMonth AS cstb_isCreateBillMonth,
+            msf.id AS cstb_msf_id,
+            msf.companyId AS cstb_msf_companyId,
+            msf.serviceFeeConfigId AS cstb_msf_serviceFeeConfigId,
+            msf.companySonTotalBillId AS cstb_msf_companySonTotalBillId,
+            msfd.id AS cstb_msf_msfd_id,
+            msfd.monthServiceFeeId AS cstb_msf_msfd_monthServiceFeeId,
+            msfd.memberId AS cstb_msf_msfd_memberId,
+            msfd.waysOfCooperation AS cstb_msf_msfd_waysOfCooperation,
+            msfd.companySonBillId AS cstb_msf_msfd_companySonBillId,
+            msfd.amount AS cstb_msf_msfd_amount,
+            csb.id AS csb_id,
+            csb.companyId AS csb_companyId,
+            csb.companyBillInfoId AS csb_companyBillInfoId ,
+            m.id AS m_id
+        FROM
+            company cc
+        LEFT JOIN trade t ON cc.tradeId = t.id
+        LEFT JOIN member m ON m.companyId = cc.id
+        LEFT JOIN company_son_bill csb ON csb.companyId = cc.id AND csb.isValid = 1
+        LEFT JOIN company_son_total_bill cstb ON cstb.companyId = cc.id AND csb.id = cstb.companySonBillId
+        LEFT JOIN month_service_fee msf ON msf.companySonTotalBillId = cstb.id
+        LEFT JOIN month_service_fee_detail msfd ON msfd.monthServiceFeeId = msf.id,
+        company_business cb
+        LEFT JOIN business_method bm ON cb.id = bm.companyBusinessId
+         WHERE
+        cb.companyId = cc.id
+    </select>
+
+    <update id="updateCompany" parameterType="com.magic.daoyuan.business.entity.Company">
+        UPDATE company
+        <set>
+            <if test="pwd != null and pwd != ''">
+                pwd = #{pwd},
+            </if>
+            <if test="companyName != null">
+                companyName = #{companyName},
+            </if>
+            <if test="isValid != null">
+                isValid = #{isValid},
+            </if>
+            <if test="serialNumber != null">
+                serialNumber = #{serialNumber},
+            </if>
+            <if test="payTime != null">
+                payTime = #{payTime},
+            </if>
+            <if test="tradeId != null">
+                tradeId = #{tradeId},
+            </if>
+            <if test="isFirstBill != null">
+                isFirstBill = #{isFirstBill},
+            </if>
+            <if test="billType != null">
+                billType = #{billType},
+            </if>
+            <if test="businessStartTime != null">
+                businessStartTime = #{businessStartTime},
+            </if>
+            <if test="businessCycle != null">
+                businessCycle = #{businessCycle},
+            </if>
+            <if test="serviceFeeStartTime != null">
+                serviceFeeStartTime = #{serviceFeeStartTime},
+            </if>
+            <if test="serviceFeeConfigId != null">
+                serviceFeeConfigId = #{serviceFeeConfigId},
+            </if>
+            <if test="serviceFeeCycle != null">
+                serviceFeeCycle = #{serviceFeeCycle},
+            </if>
+            <if test="serviceFeeMin != null">
+                serviceFeeMin = #{serviceFeeMin},
+            </if>
+            <if test="serviceFeeMax != null">
+                serviceFeeMax = #{serviceFeeMax},
+            </if>
+
+            <if test="billTypeImg != null">
+                billTypeImg = #{billTypeImg},
+            </if>
+            <if test="license != null">
+                `license` = #{license},
+            </if>
+            <if test="licenseTranscript != null">
+                licenseTranscript = #{licenseTranscript},
+            </if>
+            <if test="subsidyProve != null">
+                subsidyProve = #{subsidyProve},
+            </if>
+            <if test="otherProve != null">
+                otherProve = #{otherProve},
+            </if>
+            <if test="financialNum != null">
+                financialNum = #{financialNum},
+            </if>
+            <if test="beforeService != null">
+                beforeService = #{beforeService},
+            </if>
+            <if test="sales != null">
+                sales = #{sales},
+            </if>
+            <if test="cooperationStatus != null">
+                cooperationStatus = #{cooperationStatus},
+            </if>
+            <if test="relevanceCompanyId != null">
+                relevanceCompanyId = #{relevanceCompanyId},
+            </if>
+            <if test="recommendCompanyId != null">
+                recommendCompanyId = #{recommendCompanyId},
+            </if>
+            <if test="isPeer != null">
+                isPeer = #{isPeer},
+            </if>
+            <if test="isPercent != null">
+                isPercent = #{isPercent},
+            </if>
+            <if test="percent != null">
+                percent = #{percent},
+            </if>
+
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <insert id="addCompany" parameterType="com.magic.daoyuan.business.entity.Company" useGeneratedKeys="true" keyColumn="id" keyProperty="id">
+        INSERT INTO company
+          (companyName, serialNumber, payTime, tradeId, isFirstBill, billType, businessStartTime, businessCycle, serviceFeeStartTime,
+          serviceFeeConfigId, serviceFeeCycle, serviceFeeMin, serviceFeeMax, createTime, isValid,
+          billTypeImg, license, licenseTranscript, taxpayerProve, subsidyProve, otherProve,financialNum,beforeService,sales,
+          cooperationStatus,relevanceCompanyId,recommendCompanyId,isPeer,isPercent,percent,pwd)
+        VALUES
+        (#{companyName}, #{serialNumber}, #{payTime}, #{tradeId}, #{isFirstBill}, #{billType}, #{businessStartTime}, #{businessCycle},
+         #{serviceFeeStartTime},
+          #{serviceFeeConfigId}, #{serviceFeeCycle}, #{serviceFeeMin}, #{serviceFeeMax}, NOW(), 1,
+          #{billTypeImg}, #{license}, #{licenseTranscript}, #{taxpayerProve}, #{subsidyProve}, #{otherProve},#{financialNum},
+          #{beforeService},#{sales},#{cooperationStatus},#{relevanceCompanyId},#{recommendCompanyId},#{isPeer},#{isPercent},#{percent},'96e79218965eb72c92a549dd5a330112')
+    </insert>
+
+
+    <select id="infoAndContactsList" resultMap="BaseCompanyOther">
+        SELECT * FROM company WHERE id = #{id}
+    </select>
+
+    <select id="hrLogin" resultMap="BaseCompany">
+        select * from company cc WHERE cc.companyName = #{companyName}
+    </select>
+
+</mapper>

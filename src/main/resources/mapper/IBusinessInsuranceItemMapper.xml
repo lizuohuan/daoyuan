@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IBusinessInsuranceItemMapper">
+
+
+    <resultMap id="BaseResult" type="com.magic.daoyuan.business.entity.BusinessInsuranceItem">
+        <result column="id" property="id" javaType="java.lang.Integer"/>
+        <result column="businessInsuranceId" property="businessInsuranceId" javaType="java.lang.Integer"/>
+        <result column="businessItemId" property="businessItemId" javaType="java.lang.Integer"/>
+        <result column="companySonBillId" property="companySonBillId" javaType="java.lang.Integer"/>
+        <result column="waysOfCooperation" property="waysOfCooperation" javaType="java.lang.Integer"/>
+        <result column="memberId" property="memberId" javaType="java.lang.Integer"/>
+        <result column="price" property="price" javaType="java.lang.Double"/>
+        <result column="taxPrice" property="taxPrice" javaType="java.lang.Double"/>
+        <association property="businessItem" columnPrefix="item_" resultMap="com.magic.daoyuan.business.mapper.IBusinessItemMapper.BaseResult"/>
+    </resultMap>
+
+
+    <select id="queryBusinessInsuranceItemByTotalBillId" resultMap="BaseResult">
+        SELECT
+            bii.*, bi.memberId,m.waysOfCooperation
+        FROM
+            business_insurance bi,
+            business_insurance_item bii,
+            member m
+        WHERE
+            bi.id = bii.businessInsuranceId
+        AND m.id = bi.memberId
+        AND bii.companySonTotalBillId IN
+        <foreach collection="list" index="index" item="billId" close=")" open="(" separator=",">
+            #{billId}
+        </foreach>
+    </select>
+
+    <insert id="batchAddBusinessInsuranceItem" parameterType="com.magic.daoyuan.business.entity.BusinessInsuranceItem">
+
+        INSERT INTO business_insurance_item (businessInsuranceId, businessItemId,price,
+        companySonBillId,companySonTotalBillId,taxPrice)
+        VALUES
+        <foreach collection="list" index="index" item="bii" separator=",">
+            (#{bii.businessInsuranceId},#{bii.businessItemId},#{bii.price},#{bii.companySonBillId},
+            #{bii.companySonTotalBillId},#{bii.taxPrice})
+        </foreach>
+
+    </insert>
+
+
+    <delete id="delBusinessInsuranceItemByIds">
+
+        DELETE FROM business_insurance_item WHERE businessInsuranceId IN
+
+        <foreach collection="ids" index="index" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+
+    </delete>
+
+    <select id="queryBusinessInsuranceItem" resultMap="BaseResult">
+        SELECT
+            bii.*, bi.businessId AS item_businessId,
+            bi.id AS item_id,
+            bi.chargeMethod AS item_chargeMethod,
+            bi.itemName AS item_itemName,
+            bi.serviceFee AS item_serviceFee,
+            bi.serviceFee AS item_price,
+            bi.type AS item_type,
+            b.businessName AS item_businessName
+        FROM
+            business_insurance_item bii,
+            business_items bi,
+            business b
+        WHERE
+            bii.businessItemId = bi.id
+        AND b.id = bi.businessId
+        AND bii.businessInsuranceId = #{businessInsuranceId}
+    </select>
+
+    <delete id="delBusinessInsuranceItem">
+        DELETE FROM business_insurance_item WHERE businessInsuranceId = #{businessInsuranceId}
+    </delete>
+
+
+
+</mapper>

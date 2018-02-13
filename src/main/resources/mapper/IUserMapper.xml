@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IUserMapper">
+
+
+    <select id="queryUserByAccount" resultType="com.magic.daoyuan.business.entity.User">
+        SELECT
+          u.*,r.roleName AS roleName
+        FROM
+          users u,role r
+        WHERE
+        u.roleId = r.id
+        AND u.account = #{account}
+    </select>
+
+    <select id="countUserByItems" resultType="java.lang.Integer">
+        SELECT
+          COUNT(0)
+        FROM
+          users u
+        WHERE
+        1=1
+        <if test="email != null">
+            AND u.email LIKE '%${email}%'
+        </if>
+        <if test="account != null">
+            AND u.account LIKE '%${account}%'
+        </if>
+        <if test="roleId != null">
+            AND u.roleId = #{roleId}
+        </if>
+        <if test="userName != null">
+            AND u.userName LIKE '%${userName}%'
+        </if>
+        <if test="workPhone != null">
+            AND (u.workPhone LIKE '%${workPhone}%' OR u.homePhone LIKE '%${workPhone}%')
+        </if>
+    </select>
+
+    <select id="queryUserByItems_" resultType="com.magic.daoyuan.business.entity.User">
+        SELECT
+        u.*,r.roleName AS roleName
+        FROM
+        users u,role r
+        WHERE
+        u.roleId = r.id
+        <if test="flag == 0">
+            AND u.roleId IN (5,9)
+        </if>
+        <if test="flag == 1">
+            AND u.roleId IN (13,16)
+        </if>
+        ORDER BY u.id DESC
+    </select>
+
+    <select id="queryUserByItems" resultType="com.magic.daoyuan.business.entity.User">
+        SELECT
+          u.*,r.roleName AS roleName
+        FROM
+          users u,role r
+        WHERE
+        u.roleId = r.id
+        <if test="email != null">
+            AND u.email LIKE '%${email}%'
+        </if>
+        <if test="account != null">
+            AND u.account LIKE '%${account}%'
+        </if>
+        <if test="roleId != null">
+            AND r.id = #{roleId}
+        </if>
+        <if test="userName != null">
+            AND u.userName LIKE '%${userName}%'
+        </if>
+        <if test="phone != null">
+            AND (u.workPhone LIKE '%${phone}%' OR u.homePhone LIKE '%${phone}%')
+        </if>
+        ORDER BY u.id DESC
+        <if test="limit != null and limitSize != null">
+            LIMIT #{limit},#{limitSize}
+        </if>
+    </select>
+
+    <select id="queryUserById" resultType="com.magic.daoyuan.business.entity.User">
+        SELECT
+          u.*,r.roleName AS roleName
+        FROM
+          users u,role r
+        WHERE
+        u.roleId = r.id
+        AND u.id = #{id}
+    </select>
+
+    <update id="updateUser" parameterType="com.magic.daoyuan.business.entity.User">
+        UPDATE users
+        <set>
+            <if test="isValid != null">
+                `isValid` = #{isValid},
+            </if>
+            <if test="homePhone != null">
+                `homePhone` = #{homePhone},
+            </if>
+            <if test="workPhone != null">
+                `workPhone` = #{workPhone},
+            </if>
+            <if test="email != null">
+                `email` = #{email},
+            </if>
+            <if test="userName != null">
+                `userName` = #{userName},
+            </if>
+            <if test="pwd != null">
+                `pwd` = #{pwd},
+            </if>
+            <if test="roleId != null">
+                `roleId` = #{roleId},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="updatePassword">
+        UPDATE users
+        <set>
+            <if test="password != null">
+                `pwd` = #{password},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <insert id="addUser" parameterType="com.magic.daoyuan.business.entity.User">
+        INSERT INTO users ( roleId, `account`, `pwd`, userName, `email`, workPhone, homePhone, isValid, createTime)
+        VALUES ( #{roleId}, #{account}, #{pwd}, #{userName}, #{email}, #{workPhone}, #{homePhone}, 1, NOW())
+    </insert>
+
+
+    <select id="getAuditUnDispose" resultType="com.magic.daoyuan.business.entity.User">
+        select cc.beforeService AS id from reserved_funds_info rfi ,company_son_bill csb,company cc
+        WHERE rfi.companySonBillId = csb.id
+        AND cc.id = csb.companyId
+        AND (rfi.isAudit = 0 OR rfi.isAudit IS NULL)
+        AND date_format(rfi.realDoTime,'%Y-%m') = date_format(#{date},'%Y-%m') union
+        select cc.beforeService AS id from social_security_info ssi ,company_son_bill csb,company cc
+        WHERE ssi.companySonBillId = csb.id
+        AND cc.id = csb.companyId
+        AND (ssi.isAudit = 0 OR ssi.isAudit IS NULL)
+        AND date_format(ssi.realDoTime,'%Y-%m') = date_format(#{date},'%Y-%m')
+    </select>
+
+    <select id="getWorkOrderUnDispose" resultType="com.magic.daoyuan.business.entity.User">
+        select u.* from users u ,work_order wo
+        WHERE u.id = wo.userId
+        AND date_format(wo.latestTime,'%Y-%m') <![CDATA[<]]> date_format(#{date},'%Y-%m')
+    </select>
+
+</mapper>

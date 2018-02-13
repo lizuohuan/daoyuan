@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IMemberSalaryMapper" >
+
+
+    <resultMap id="BaseResultMap" type="com.magic.daoyuan.business.entity.MemberSalary">
+        <id column="id" property="id" javaType="java.lang.Integer" />
+        <result column="nationality" property="nationality" javaType="java.lang.Integer" />
+        <result column="bankAccount" property="bankAccount" javaType="java.lang.String" />
+        <result column="bankName" property="bankName" javaType="java.lang.String" />
+        <result column="phone" property="phone" javaType="java.lang.String" />
+        <result column="memberId" property="memberId" javaType="java.lang.Integer" />
+        <result column="cityId" property="cityId" javaType="java.lang.Integer" />
+        <association property="city" columnPrefix="ci_"
+                     resultMap="com.magic.daoyuan.business.mapper.ICityMapper.BaseCity"/>
+    </resultMap>
+
+    <delete id="delMemberSalarys">
+        DELETE FROM member_salary WHERE memberId IN
+        <foreach collection="list" index="index" item="memberId" open="(" close=")" separator=",">
+            #{memberId}
+        </foreach>
+    </delete>
+
+    <delete id="delMemberSalary">
+        DELETE FROM member_salary WHERE memberId = #{memberId}
+    </delete>
+
+    <select id="queryMemberSalary" resultType="com.magic.daoyuan.business.entity.MemberSalary">
+        SELECT
+            ms.*,mb.companySonBillId AS companySonBillId
+        FROM
+            member_salary ms,
+            member_business mb
+        WHERE
+            1 = 1
+        AND ms.memberId = mb.memberId
+        AND mb.businessId = 5
+        AND ms.memberId = #{memberId}
+    </select>
+
+    <insert id="addMemberSalary" parameterType="com.magic.daoyuan.business.entity.MemberSalary">
+        INSERT INTO member_salary (nationality, bankAccount, bankName, phone, memberId,cityId)
+        VALUES (#{nationality}, #{bankAccount}, #{bankName}, #{phone}, #{memberId},#{cityId})
+    </insert>
+
+    <insert id="batchAddMemberSalary" parameterType="com.magic.daoyuan.business.entity.MemberSalary">
+        INSERT INTO member_salary (nationality, bankAccount, bankName, phone, memberId,cityId)
+        VALUES
+        <foreach collection="list" index="index" item="ms" separator=",">
+             (#{ms.nationality}, #{ms.bankAccount}, #{ms.bankName}, #{ms.phone}, #{ms.memberId},#{ms.cityId})
+        </foreach>
+
+
+    </insert>
+
+
+    <update id="batchUpdateMemberSalaryByMember">
+
+        <foreach collection="memberSalaryList" item="ms" separator=";">
+            UPDATE member_salary
+            <set>
+                <if test="ms.cityId != null">
+                    cityId = #{ms.cityId},
+                </if>
+                <if test="ms.nationality != null">
+                    nationality = #{ms.nationality},
+                </if>
+                <if test="ms.bankAccount != null">
+                    bankAccount = #{ms.bankAccount},
+                </if>
+                <if test="ms.bankName != null">
+                    bankName = #{ms.bankName},
+                </if>
+                <if test="ms.phone != null">
+                    phone = #{ms.phone},
+                </if>
+            </set>
+            WHERE memberId = #{ms.memberId}
+        </foreach>
+
+
+    </update>
+
+    <update id="updateMemberSalary" parameterType="com.magic.daoyuan.business.entity.MemberSalary">
+
+      UPDATE member_salary
+      <set>
+          <if test="cityId != null">
+              cityId = #{cityId},
+          </if>
+          <if test="nationality != null">
+              nationality = #{nationality},
+          </if>
+          <if test="bankAccount != null">
+              bankAccount = #{bankAccount},
+          </if>
+          <if test="bankName != null">
+              bankName = #{bankName},
+          </if>
+          <if test="phone != null">
+              phone = #{phone},
+          </if>
+          <if test="memberId != null">
+              memberId = #{memberId},
+          </if>
+      </set>
+      WHERE id = #{id}
+    </update>
+
+
+</mapper>

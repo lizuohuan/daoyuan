@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IWorkOrderMapper">
+
+    <select id="queryWorkOrderByItems" resultType="com.magic.daoyuan.business.entity.WorkOrder">
+        SELECT
+        w.*, cc.companyName AS companyName,
+        u.userName AS userName,
+        r.roleName AS roleName,
+        m.userName AS memberName,
+        us.userName AS proposerName
+        FROM
+        work_order w
+        LEFT JOIN users u ON w.userId = u.id
+        LEFT JOIN users us ON w.proposerId = us.id
+        LEFT JOIN role r ON w.roleId = r.id
+        LEFT JOIN company cc ON w.companyId = cc.id
+        LEFT JOIN member m ON w.memberId = m.id
+        WHERE
+        1 = 1
+        <if test="status != null">
+            AND w.status = #{status}
+        </if>
+        <if test="serviceType != null">
+            AND w.serviceType = #{serviceType}
+        </if>
+        <if test="companyName != null">
+            AND cc.companyName LIKE '%${companyName}%'
+        </if>
+        <if test="memberName != null">
+            AND m.userName LIKE '%${memberName}%'
+        </if>
+        <if test="proposerName != null">
+            AND us.userName LIKE '%${proposerName}%'
+        </if>
+        <if test="billMonth != null">
+            AND DATE_FORMAT(w.theBillingMonth,'%y-%m') = DATE_FORMAT(#{billMonth},'%y-%m')
+        </if>
+        ORDER BY w.id DESC
+        <if test="limit != null and limitSize != null">
+            LIMIT #{limit},#{limitSize}
+        </if>
+    </select>
+
+    <select id="findById" resultType="com.magic.daoyuan.business.entity.WorkOrder">
+        SELECT
+        w.*, c.companyName AS companyName,
+        u.userName AS userName,
+        r.roleName AS roleName,
+        m.userName AS memberName,
+        us.userName AS proposerName
+        FROM
+        work_order w
+        LEFT JOIN users u ON w.userId = u.id
+        LEFT JOIN users us ON w.proposerId = us.id
+        LEFT JOIN role r ON w.roleId = r.id
+        LEFT JOIN company c ON w.companyId = c.id
+        LEFT JOIN member m ON w.memberId = m.id
+        WHERE
+        w.id = #{id}
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id" parameterType="com.magic.daoyuan.business.entity.WorkOrder">
+        INSERT INTO work_order ( `serviceType`, `serviceName`, `companyId`, `memberId`, `number`, `theBillingMonth`, userId, roleId, accessory, remark, proposerId, status, createTime, latestTime)
+        VALUES ( #{serviceType}, #{serviceName}, #{companyId}, #{memberId}, #{number}, #{theBillingMonth}, #{userId}, #{roleId}, #{accessory}, #{remark}, #{proposerId}, #{status}, NOW(), #{latestTime})
+    </insert>
+
+    <select id="countWorkOrderByItems" resultType="java.lang.Integer">
+        SELECT
+        COUNT(0)
+        FROM
+        work_order w
+        LEFT JOIN users us ON w.proposerId = us.id
+        LEFT JOIN role r ON w.roleId = r.id
+        LEFT JOIN company cc ON w.companyId = cc.id
+        LEFT JOIN member m ON w.memberId = m.id
+        WHERE
+        1=1
+        <if test="status != null">
+            AND w.status = #{status}
+        </if>
+        <if test="serviceType != null">
+            AND w.serviceType = #{serviceType}
+        </if>
+        <if test="companyName != null">
+            AND cc.companyName LIKE '%${companyName}%'
+        </if>
+        <if test="memberName != null">
+            AND m.userName LIKE '%${memberName}%'
+        </if>
+        <if test="proposerName != null">
+            AND us.userName LIKE '%${proposerName}%'
+        </if>
+        <if test="billMonth != null">
+            AND DATE_FORMAT(w.theBillingMonth,'%y-%m') = DATE_FORMAT(#{billMonth},'%y-%m')
+        </if>
+    </select>
+
+    <update id="update" parameterType="com.magic.daoyuan.business.entity.WorkOrder">
+        UPDATE work_order
+        <set>
+            userId = #{userId},
+            roleId = #{roleId},
+            <if test="status != null">
+                status = #{status},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="getOverTime" resultType="com.magic.daoyuan.business.entity.WorkOrder" >
+        select * from work_order wo WHERE
+        wo.`status` = 0
+        AND wo.latestTime <![CDATA[<]]> #{date}
+    </select>
+
+</mapper>

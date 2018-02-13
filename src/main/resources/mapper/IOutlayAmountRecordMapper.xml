@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IOutlayAmountRecordMapper">
+
+
+    <select id="queryById" resultType="com.magic.daoyuan.business.entity.OutlayAmountRecord">
+        SELECT * FROM outlay_amount_record WHERE  id = #{id}
+    </select>
+
+    <select id="queryOutlayAmountRecordByItems" resultType="com.magic.daoyuan.business.entity.OutlayAmountRecord">
+        SELECT oar.* FROM outlay_amount_record oar
+        WHERE 1=1
+        <if test="status != null">
+            AND oar.`status` = #{status}
+        </if>
+        <if test="isUrgent != null">
+            AND oar.isUrgent = #{isUrgent}
+        </if>
+        <if test="userId != null">
+            AND oar.userId = #{userId}
+        </if>
+        <if test="remark != null">
+            AND oar.remark LIKE '%${remark}%'
+        </if>
+        <if test="accountName != null">
+            AND oar.accountName LIKE '%${accountName}%'
+        </if>
+        ORDER BY oar.id DESC
+        <if test="limit != null and limitSize != null">
+            LIMIT #{limit},#{limitSize}
+        </if>
+    </select>
+
+
+    <select id="countOutlayAmountRecordByItems" resultType="int">
+        SELECT COUNT(0) FROM outlay_amount_record oar
+        WHERE 1=1
+        <if test="status != null">
+            AND oar.`status` = #{status}
+        </if>
+        <if test="isUrgent != null">
+            AND oar.isUrgent = #{isUrgent}
+        </if>
+        <if test="userId != null">
+            AND oar.userId = #{userId}
+        </if>
+        <if test="remark != null">
+            AND oar.remark LIKE '%${remark}%'
+        </if>
+        <if test="accountName != null">
+            AND oar.accountName LIKE '%${accountName}%'
+        </if>
+    </select>
+
+    <insert id="addOutlayAmountRecord" parameterType="com.magic.daoyuan.business.entity.OutlayAmountRecord">
+
+        INSERT INTO outlay_amount_record (`type`, supplierId, supplierAccountToBeCreditedId, userId, bankInfoId, accountName, bankName, bankAccount, amount, isUrgent,
+         remark, `status`, confirmFundId, createTime, isValid,companyId,billMonth,type2,reason)
+        VALUES
+        (#{type}, #{supplierId}, #{supplierAccountToBeCreditedId}, #{userId}, #{bankInfoId}, #{accountName}, #{bankName}, #{bankAccount}, #{amount}, #{isUrgent},
+         #{remark}, #{status}, #{confirmFundId}, NOW(), 1,#{companyId},#{billMonth},#{type2},#{reason})
+    </insert>
+
+    <update id="updateOutlayAmountRecord"  parameterType="com.magic.daoyuan.business.entity.OutlayAmountRecord">
+        UPDATE outlay_amount_record
+        <set>
+            <if test="reason != null and reason != ''">
+                `reason` = #{reason},
+            </if>
+            <if test="type2 != null">
+                `type2` = #{type2},
+            </if>
+            <if test="billMonth != null">
+                `billMonth` = #{billMonth},
+            </if>
+            <if test="companyId != null">
+                `companyId` = #{companyId},
+            </if>
+            <if test="type != null">
+                `type` = #{type},
+            </if>
+            <if test="supplierId != null">
+                supplierId = #{supplierId},
+            </if>
+            <if test="supplierAccountToBeCreditedId != null">
+                supplierAccountToBeCreditedId = #{supplierAccountToBeCreditedId},
+            </if>
+            <if test="isValid != null">
+                isValid = #{isValid},
+            </if>
+            <if test="confirmFundId != null">
+                confirmFundId = #{confirmFundId},
+            </if>
+            <if test="status != null">
+                `status` = #{status},
+            </if>
+            <if test="remark != null">
+                remark = #{remark},
+            </if>
+            <if test="isUrgent != null">
+                isUrgent = #{isUrgent},
+            </if>
+            <if test="amount != null">
+                amount = #{amount},
+            </if>
+            <if test="bankAccount != null">
+                bankAccount = #{bankAccount},
+            </if>
+            <if test="bankName != null">
+                bankName = #{bankName},
+            </if>
+            <if test="accountName != null">
+                accountName = #{accountName},
+            </if>
+            <if test="bankInfoId != null">
+                bankInfoId = #{bankInfoId},
+            </if>
+            <if test="userId != null">
+                userId = #{userId},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+
+    <select id="getByBillMonthAndCompanyId" resultType="com.magic.daoyuan.business.entity.OutlayAmountRecord">
+        select * from outlay_amount_record oar
+        WHERE
+        type2 = 1
+        AND DATE_FORMAT(oar.billMonth, '%Y-%m') = DATE_FORMAT(#{billMonth}, '%Y-%m')
+        AND oar.companyId = #{companyId}
+    </select>
+
+</mapper>

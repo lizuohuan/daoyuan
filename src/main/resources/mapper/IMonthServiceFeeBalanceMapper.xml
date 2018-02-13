@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IMonthServiceFeeBalanceMapper">
+
+
+    <select id="getByCompanyIdAndBillMonth" resultType="com.magic.daoyuan.business.entity.MonthServiceFeeBalance">
+        select * from month_service_fee_balance msfb WHERE
+        date_format(msfb.billMonth,'%Y-%m') = date_format(#{billMonth},'%Y-%m')
+        AND msfb.companyId = #{companyId}
+    </select>
+
+    <select id="getByCompanyIdAndBillMonth2" resultType="com.magic.daoyuan.business.entity.MonthServiceFeeBalance">
+        select * from month_service_fee_balance msfb WHERE
+        date_format(msfb.billMonth,'%Y-%m') <![CDATA[<]]> date_format(#{billMonth},'%Y-%m')
+        AND msfb.companyId = #{companyId}
+        order by msfb.id desc
+        limit 0,1
+    </select>
+
+
+    <insert id="save" parameterType="com.magic.daoyuan.business.entity.MonthServiceFeeBalance"
+            keyProperty="id" keyColumn="id" useGeneratedKeys="true">
+        insert into month_service_fee_balance (companyId, billMonth, serviceFeeBalance)
+        values (#{companyId},#{billMonth},#{serviceFeeBalance})
+    </insert>
+
+
+    <update id="update" parameterType="com.magic.daoyuan.business.entity.MonthServiceFeeBalance">
+        update month_service_fee_balance set serviceFeeBalance = #{serviceFeeBalance}
+        where id = #{id}
+    </update>
+
+</mapper>

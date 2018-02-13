@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.ISalaryInfoMapper">
+
+
+    <resultMap id="BaseResultMap" type="com.magic.daoyuan.business.entity.SalaryInfo">
+        <result column="id" property="id" javaType="java.lang.Integer"/>
+        <result column="bankCard" property="bankCard" javaType="java.lang.String"/>
+        <result column="bankName" property="bankName" javaType="java.lang.String"/>
+        <result column="month" property="month" javaType="java.util.Date"/>
+        <result column="shouldSendSalary" property="shouldSendSalary" javaType="java.lang.Double"/>
+        <result column="shouldBeDeductPay" property="shouldBeDeductPay" javaType="java.lang.Double"/>
+        <result column="salaryBeforeTax" property="salaryBeforeTax" javaType="java.lang.Double"/>
+        <result column="individualIncomeTax" property="individualIncomeTax" javaType="java.lang.Double"/>
+        <result column="takeHomePay" property="takeHomePay" javaType="java.lang.Double"/>
+        <result column="companySonTotalBillId" property="companySonTotalBillId" javaType="java.lang.Integer"/>
+        <result column="memberId" property="memberId" javaType="java.lang.Integer"/>
+        <result column="salaryTypeId" property="salaryTypeId" javaType="java.lang.Integer"/>
+        <result column="createTime" property="createTime" javaType="java.util.Date"/>
+        <result column="pension" property="pension" javaType="java.lang.Double"/>
+        <result column="medical" property="medical" javaType="java.lang.Double"/>
+        <result column="unemployment" property="unemployment" javaType="java.lang.Double"/>
+        <result column="reserved" property="reserved" javaType="java.lang.Double"/>
+        <result column="waysOfCooperation" property="waysOfCooperation" javaType="java.lang.Integer"/>
+        <result column="companySonBillId" property="companySonBillId" javaType="java.lang.Integer"/>
+        <result column="userName" property="userName" javaType="java.lang.String"/>
+        <result column="certificateNumber" property="certificateNumber" javaType="java.lang.String"/>
+        <result column="taxPrice" property="taxPrice" javaType="java.lang.Double"/>
+        <association property="memberSalary" columnPrefix="ms_"
+                     resultMap="com.magic.daoyuan.business.mapper.IMemberSalaryMapper.BaseResultMap"/>
+    </resultMap>
+
+
+
+    <select id="countSalaryInfoByTotalBill" resultType="int">
+        SELECT
+            COUNT(0)
+        FROM
+            salary_info ssi,
+            member m,
+            company_son_total_bill cstb
+        WHERE
+            ssi.memberId = m.id
+        AND ssi.companySonTotalBillId = cstb.id
+        AND cstb.`status` = 2
+        AND m.companyId = #{companyId}
+        AND DATE_FORMAT(ssi.`month`,'%y-%m') = DATE_FORMAT(#{targetMonth},'%y-%m')
+    </select>
+
+    <select id="querySalaryInfoByMembersAndMonth" resultType="com.magic.daoyuan.business.entity.SalaryInfo">
+        SELECT * FROM salary_info WHERE  DATE_FORMAT(`month`,'%y-%m') = DATE_FORMAT(#{salaryMonth},'%y-%m')  AND memberId IN
+        <foreach collection="members" index="index" item="mId" open="(" close=")" separator=",">
+            #{mId}
+        </foreach>
+    </select>
+
+    <select id="querySalaryInfoByMembers" resultType="com.magic.daoyuan.business.entity.SalaryInfo">
+        SELECT
+            si.*, m.certificateNum AS certificateNumber
+        FROM
+            salary_info si,
+            member m,
+            company_son_total_bill cstb
+        WHERE
+            si.memberId = m.id
+        AND cstb.id = si.companySonTotalBillId
+        AND cstb.`status` = 2
+        AND si.salaryTypeId = 1  AND si.memberId IN
+        <foreach collection="list" index="index" item="mId" open="(" close=")" separator=",">
+            #{mId}
+        </foreach>
+    </select>
+
+
+    <select id="querySalaryInfoOfTotalBillByCompany" resultMap="BaseResultMap">
+        SELECT
+            si.*,m.certificateNum AS certificateNumber
+        FROM
+            salary_info si,
+            member m,
+            company cc,
+            company_son_total_bill cstb
+        WHERE
+            si.memberId = m.id
+        AND m.companyId = cc.id
+        AND cstb.id = si.companySonTotalBillId
+        AND cstb.`status` = 2
+        AND cc.id  = #{companyId}
+        AND DATE_FORMAT(si.`month`,'%y-%m') = DATE_FORMAT(#{salaryMonth},'%y-%m')
+    </select>
+
+    <select id="querySalaryInfoByTotalBillId" resultType="com.magic.daoyuan.business.entity.SalaryInfo">
+        SELECT
+            si.*,m.waysOfCooperation
+        FROM
+            salary_info si,
+            member m
+        WHERE
+          m.id = si.memberId
+        AND si.companySonTotalBillId IN
+        <foreach collection="list" index="index" item="billId" open="(" close=")" separator=",">
+            #{billId}
+        </foreach>
+    </select>
+
+    <select id="countSalaryInfoByCompany" resultType="java.lang.Integer">
+        SELECT
+            COUNT(0)
+        FROM
+            member m,
+            salary_info si
+        WHERE
+            m.id = si.memberId
+        AND m.companyId = #{companyId}
+        AND DATE_FORMAT(si.`month`, '%Y-%m') = DATE_FORMAT(#{month}, '%Y-%m')
+    </select>
+
+    <select id="countSalaryInfo" resultType="int">
+        SELECT
+            COUNT(0)
+        FROM
+            salary_info si,
+            member m,
+            member_business mb,
+        company_son_total_bill cstb
+        WHERE
+            si.memberId = m.id
+        AND mb.businessId = 5
+        AND cstb.id = si.companySonTotalBillId
+        AND mb.memberId = m.id
+        <if test="billMonth != null">
+            AND DATE_FORMAT(cstb.billMonth, '%Y-%m') = DATE_FORMAT(#{billMonth}, '%Y-%m')
+        </if>
+        <if test="companyId != null">
+            AND cstb.companyId = #{companyId}
+        </if>
+        <if test="null != companySonTotalBillId">
+            AND si.companySonTotalBillId = #{companySonTotalBillId}
+        </if>
+    </select>
+
+    <select id="querySalaryInfo" resultMap="BaseResultMap">
+        SELECT
+            mb.companySonBillId,
+            si.*, m.userName AS userName,
+            m.certificateNum AS certificateNumber,
+            ms.id AS ms_id,
+            ms.memberId AS ms_memberId,
+            ms.bankName AS ms_bankName,
+            ms.bankAccount AS ms_bankAccount,
+            ms.nationality AS ms_nationality,
+            ms.phone AS ms_phone,
+            ms.cityId AS ms_cityId,
+            ci.id AS ms_ci_id,
+            ci.name AS ms_ci_name,
+            ci.mergerName AS ms_ci_mergerName,
+            ci.shortName AS ms_ci_shortName
+        FROM
+            salary_info si
+            LEFT JOIN member_salary ms ON si.memberId = ms.memberId
+            LEFT JOIN citys ci ON ms.cityId = ci.id,
+            member m,
+            member_business mb,
+            company_son_total_bill cstb
+
+
+        WHERE
+            si.memberId = m.id
+        AND mb.businessId = 5
+        AND cstb.id = si.companySonTotalBillId
+        AND mb.memberId = m.id
+        <if test="billMonth != null">
+            AND DATE_FORMAT(cstb.billMonth, '%Y-%m') = DATE_FORMAT(#{billMonth}, '%Y-%m')
+        </if>
+        <if test="companyId != null">
+            AND cstb.companyId = #{companyId}
+        </if>
+        <if test="null != companySonTotalBillId">
+            AND si.companySonTotalBillId = #{companySonTotalBillId}
+        </if>
+
+        ORDER BY si.id DESC
+        <if test="limit != null and limitSize != null">
+            LIMIT #{limit},#{limitSize}
+        </if>
+    </select>
+
+    <select id="querySalaryInfoByCompanySonTotalBillId" resultType="com.magic.daoyuan.business.entity.SalaryInfo">
+        SELECT
+            mb.companySonBillId,
+            m.userName AS userName,
+            m.certificateNum AS certificateNumber,
+            cc.`name` AS cityName,
+            CASE ms.nationality WHEN 0 THEN '非中国大陆' ELSE '中国大陆' END AS nationality,
+            st.typeName AS salaryTypeName,
+            si.*
+        FROM
+            salary_info si
+        LEFT JOIN member m ON si.memberId = m.id
+        LEFT JOIN member_business mb ON mb.memberId = m.id
+        LEFT JOIN member_salary ms ON ms.memberId = m.id
+        LEFT JOIN citys cc ON cc.id = ms.cityId
+        LEFT JOIN salary_type st ON st.id = si.salaryTypeId
+        WHERE
+            mb.businessId = 5
+            AND si.companySonTotalBillId = #{companySonTotalBillId}
+        GROUP BY si.id
+    </select>
+
+
+    <select id="querySalaryInfoByCompany" resultType="com.magic.daoyuan.business.entity.SalaryInfo">
+        SELECT
+            mb.companySonBillId AS companySonBillId,
+            si.*, m.userName AS userName
+        FROM
+            salary_info si,
+            member m,
+            member_business mb
+        WHERE
+            si.memberId = m.id
+        AND mb.businessId = 5
+        AND mb.memberId = m.id
+        AND m.companyId = #{companyId}
+        <if test="null != month">
+            AND DATE_FORMAT(si.createTime, '%Y-%m') = DATE_FORMAT(#{month}, '%Y-%m')
+        </if>
+    </select>
+
+
+    <insert id="batchAddSalaryInfo" keyProperty="id" keyColumn="id" useGeneratedKeys="true"
+            parameterType="com.magic.daoyuan.business.entity.SalaryInfo">
+        INSERT INTO salary_info (bankCard, bankName, `month`, shouldSendSalary,
+        shouldBeDeductPay, salaryBeforeTax,
+        individualIncomeTax, takeHomePay, companySonTotalBillId, memberId,salaryTypeId,
+        createTime,pension,medical,unemployment,
+        reserved,companySonBillId,taxPrice)
+        VALUES
+        <foreach collection="list" index="index" item="salaryInfo" separator=",">
+            (#{salaryInfo.bankCard}, #{salaryInfo.bankName}, #{salaryInfo.month}, #{salaryInfo.shouldSendSalary}, #{salaryInfo.shouldBeDeductPay}, #{salaryInfo.salaryBeforeTax}, #{salaryInfo.individualIncomeTax},
+            #{salaryInfo.takeHomePay}, #{salaryInfo.companySonTotalBillId}, #{salaryInfo.memberId},#{salaryInfo.salaryTypeId}
+            ,#{salaryInfo.createTime},#{salaryInfo.pension},#{salaryInfo.medical},#{salaryInfo.unemployment},#{salaryInfo.reserved}
+            ,#{salaryInfo.companySonBillId},#{salaryInfo.taxPrice})
+        </foreach>
+
+    </insert>
+
+    <delete id="delSalaryInfoByCompanySonTotalBillId">
+        DELETE FROM salary_info WHERE companySonTotalBillId IN (
+        <foreach collection="companySonTotalBillIds" item="id" separator=",">
+            #{id}
+        </foreach>
+        )
+    </delete>
+
+    <update id="updateList" >
+        <foreach collection="list" separator=";" item="s" >
+            UPDATE salary_info
+            <set>
+                <if test="s.taxPrice != null">
+                    taxPrice = #{s.taxPrice},
+                </if>
+                <if test="s.companySonBillId != null and s.companySonBillId != ''">
+                    companySonBillId = #{s.companySonBillId},
+                </if>
+                <if test="s.reserved != null and s.reserved != ''">
+                    reserved = #{s.reserved},
+                </if>
+                <if test="s.unemployment != null and s.unemployment != ''">
+                    unemployment = #{s.unemployment},
+                </if>
+                <if test="s.medical != null and s.medical != ''">
+                    medical = #{s.medical},
+                </if>
+                <if test="s.pension != null and s.pension != ''">
+                    pension = #{s.pension},
+                </if>
+                <if test="s.bankCard != null and s.bankCard != ''">
+                    bankCard = #{s.bankCard},
+                </if>
+                <if test="s.bankName != null">
+                    bankName = #{s.bankName},
+                </if>
+                <if test="s.month != null">
+                    `month` = #{s.month},
+                </if>
+                <if test="s.shouldSendSalary != null">
+                    shouldSendSalary = #{s.shouldSendSalary},
+                </if>
+                <if test="s.shouldBeDeductPay != null">
+                    shouldBeDeductPay = #{s.shouldBeDeductPay},
+                </if>
+                <if test="s.salaryBeforeTax != null">
+                    salaryBeforeTax = #{s.salaryBeforeTax},
+                </if>
+                <if test="s.individualIncomeTax != null">
+                    individualIncomeTax = #{s.individualIncomeTax},
+                </if>
+                <if test="s.takeHomePay != null">
+                    takeHomePay = #{s.takeHomePay},
+                </if>
+                <if test="s.companySonTotalBillId != null">
+                    companySonTotalBillId = #{s.companySonTotalBillId},
+                </if>
+                <if test="s.salaryTypeId != null">
+                    salaryTypeId = #{s.salaryTypeId},
+                </if>
+            </set>
+            <where>
+                1 = 1
+                <if test="s.id != null">
+                    and id = #{s.id}
+                </if>
+            </where>
+        </foreach>
+    </update>
+
+
+    <update id="updateListByCompanySonTotalBillIds" >
+        UPDATE salary_info
+        set companySonTotalBillId = null
+        WHERE companySonTotalBillId IN (
+        <foreach collection="companySonTotalBillIds" item="cstbId" separator=",">
+            #{cstbId}
+        </foreach>)
+
+    </update>
+
+    <select id="getPayPriceByCompanySonBillItemIdAndCreateTime" resultType="double">
+        SELECT IFNULL(
+        (select sum(si.takeHomePay)
+        from salary_info si
+        WHERE
+        1 = 1
+        AND si.companySonTotalBillId = #{companySonTotalBillId}),0)
+    </select>
+
+    <select id="getPayPriceByCompanyIdAndBillMonth" resultType="double">
+        SELECT IFNULL(
+        (select sum(si.salaryBeforeTax)
+        from salary_info si,
+                member m,
+                member_business mb,
+                company_son_total_bill cstb
+        WHERE
+        	si.memberId = m.id
+        AND mb.businessId = 5
+        AND cstb.id = si.companySonTotalBillId
+        AND mb.memberId = m.id
+        AND cstb.companyId = #{companyId}
+        AND DATE_FORMAT(cstb.billMonth, '%Y-%m') = DATE_FORMAT(#{billMonth}, '%Y-%m'))
+        ,0)
+    </select>
+
+    <select id="getByMemberIdAndMonth" resultMap="BaseResultMap">
+        select * from salary_info si
+        WHERE
+        DATE_FORMAT(si.`month`, '%Y-%m') = DATE_FORMAT(#{month}, '%Y-%m')
+        AND si.memberId = #{memberId}
+    </select>
+
+    <select id="getCompanyIdAndServiceNowYMAndServiceFeeConfigId" resultMap="BaseResultMap">
+        select si.*,m.waysOfCooperation from salary_info si,company_son_bill csb,company_cooperation_method ccm,member m
+        WHERE
+        si.companySonBillId = csb.id
+        AND m.waysOfCooperation = ccm.cooperationMethodId
+        AND m.companyId = ccm.companyId
+        AND csb.companyId = ccm.id
+        AND ccm.serviceFeeConfigId = #{serviceFeeConfigId}
+        AND DATE_FORMAT(si.month, '%Y-%m') = DATE_FORMAT(#{serviceNowYM}, '%Y-%m')
+        AND csb.companyId = #{companyId}
+    </select>
+</mapper>

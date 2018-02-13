@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.ISocialSecurityInfoItemMapper">
+
+    <resultMap id="BaseResultMap" type="com.magic.daoyuan.business.entity.SocialSecurityInfoItem">
+        <id column="id" property="id" javaType="java.lang.Integer" />
+        <result column="insuranceName" property="insuranceName" javaType="java.lang.String" />
+        <result column="payPrice" property="payPrice" javaType="java.lang.Double"/>
+        <result column="practicalPayPrice" property="practicalPayPrice" javaType="java.lang.Double"/>
+        <result column="type" property="type" javaType="java.lang.Integer"/>
+        <result column="socialSecurityInfoId" property="socialSecurityInfoId" javaType="java.lang.Integer"/>
+    </resultMap>
+
+
+    <insert id="save" useGeneratedKeys="true" keyProperty="id" keyColumn="id"
+            parameterType="com.magic.daoyuan.business.entity.SocialSecurityInfoItem">
+        insert into social_security_info_item (insuranceName, payPrice, type, socialSecurityInfoId,practicalPayPrice)
+        values
+        <foreach collection="list" item="record" separator=",">
+            (#{record.insuranceName},#{record.payPrice},#{record.type},
+            #{record.socialSecurityInfoId},#{record.practicalPayPrice})
+        </foreach>
+    </insert>
+
+    <update id="updateList" parameterType="com.magic.daoyuan.business.entity.SocialSecurityInfoItem">
+        <foreach collection="list" separator=";" item="s">
+            UPDATE social_security_info_item
+            <set>
+              <if test="s.payPrice != null">
+                  payPrice = #{s.payPrice},
+              </if>
+              <if test="s.practicalPayPrice != null">
+                  practicalPayPrice = #{s.practicalPayPrice},
+              </if>
+            </set>
+            <where>
+                id = #{s.id}
+            </where>
+        </foreach>
+    </update>
+
+    <delete id="delList">
+        DELETE FROM social_security_info_item
+        WHERE socialSecurityInfoId IN (
+        SELECT ssi.id FROM social_security_info ssi,company_son_bill_item csbi
+        WHERE ssi.companySonBillItemId = csbi.id
+        AND csbi.companySonTotalBillId IN (
+        <foreach collection="companySonTotalBillIds" separator="," item="id">
+            #{id}
+        </foreach>
+        )
+        )
+    </delete>
+
+    <select id="listBySSIId" resultMap="BaseResultMap">
+        SELECT
+        ssii.id AS id,
+        ssii.insuranceName AS insuranceName,
+        ssii.type AS `type`,
+        ssii.socialSecurityInfoId
+        FROM social_security_info_item ssii
+        WHERE ssii.socialSecurityInfoId IN
+        <foreach collection="ssiIds" item="ssiId" index="index" separator="," open="(" close=")">
+            #{ssiId}
+        </foreach>
+    </select>
+
+</mapper>

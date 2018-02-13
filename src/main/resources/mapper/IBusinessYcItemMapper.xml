@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IBusinessYcItemMapper">
+
+
+    <select id="queryBusinessYcItemByTotalBillId" resultType="com.magic.daoyuan.business.entity.BusinessYcItem">
+        SELECT
+            byi.*,
+        CASE byi.flag WHEN 1 THEN
+            (SELECT MAX(ccm.cooperationMethodId) FROM company_cooperation_method ccm WHERE ccm.companyId = byi.memberId)
+        ELSE (SELECT m.waysOfCooperation FROM member m WHERE m.id = byi.memberId) END AS waysOfCooperation
+        FROM
+            business_yc_item byi
+        WHERE
+            1 = 1
+        AND byi.companySonTotalBillId IN
+        <foreach collection="list" item="billId" index="index" open="(" close=")" separator=",">
+            #{billId}
+        </foreach>
+    </select>
+
+    <delete id="del">
+        DELETE FROM business_insurance_item WHERE businessInsuranceId IN
+        <foreach collection="list" index="index" item="bid" open="(" close=")" separator=",">
+            #{bid}
+        </foreach>
+    </delete>
+
+    <insert id="batchAddBusinessYcItem" parameterType="com.magic.daoyuan.business.entity.BusinessYcItem">
+        INSERT INTO business_yc_item (memberId, price, businessYcId,companySonBillId,companySonTotalBillId,flag)
+        VALUES
+        <foreach collection="list" item="yci" index="index" separator=",">
+            (#{yci.memberId}, #{yci.price}, #{yci.businessYcId},#{yci.companySonBillId},#{yci.companySonTotalBillId},
+            #{yci.flag})
+        </foreach>
+    </insert>
+
+
+    <delete id="delBusinessYcItem">
+        DELETE FROM business_yc_item WHERE businessYcId = #{businessYcId}
+    </delete>
+
+    <select id="queryBusinessYcItem" resultType="com.magic.daoyuan.business.entity.BusinessYcItem">
+        SELECT
+            syi.*,
+            CASE syi.flag WHEN 0 THEN (SELECT m.certificateNum FROM member m WHERE m.id = syi.memberId) END AS certificateNum,
+            CASE syi.flag WHEN 0 THEN (SELECT m.userName FROM member m WHERE m.id = syi.memberId)
+                                        ELSE  (SELECT cc.companyName FROM company cc WHERE cc.id = syi.memberId) END AS userName
+        FROM
+            business_yc_item syi
+        WHERE
+            syi.businessYcId = #{businessYcId}
+            AND syi.companySonTotalBillId IS NOT NULL
+    </select>
+
+
+</mapper>

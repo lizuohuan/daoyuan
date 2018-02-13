@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IMemberMonthPayBusinessMapper">
+
+    <resultMap id="BaseResultMap" type="com.magic.daoyuan.business.entity.MemberMonthPayBusiness">
+        <id column="id" property="id" javaType="java.lang.Integer"/>
+        <result column="memberId" property="memberId" javaType="java.lang.Integer"/>
+        <result column="businessId" property="businessId" javaType="java.lang.Integer"/>
+        <result column="cityId" property="cityId" javaType="java.lang.Integer"/>
+        <result column="companySonBillId" property="companySonBillId" javaType="java.lang.Integer"/>
+        <result column="serviceMonth" property="serviceMonth" javaType="java.util.Date"/>
+        <result column="billMonth" property="billMonth" javaType="java.util.Date"/>
+        <result column="billType" property="billType" javaType="java.lang.Integer"/>
+        <result column="companyId" property="companyId" javaType="java.lang.Integer"/>
+        <result column="isValid" property="isValid" javaType="java.lang.Integer"/>
+    </resultMap>
+
+    <resultMap id="BaseResultMapDto" type="com.magic.daoyuan.business.dto.MemberMonthPayBusinessDto">
+        <result column="memberId" property="memberId" javaType="java.lang.Integer"/>
+        <result column="memberMonthPayBusinessStr" property="memberMonthPayBusinessStr" javaType="java.lang.String"/>
+        <result column="serviceMonth" property="serviceMonth" javaType="java.util.Date"/>
+    </resultMap>
+
+    <insert id="saveList" parameterType="com.magic.daoyuan.business.entity.MemberMonthPayBusiness">
+        insert into member_month_pay_business (memberId, businessId, serviceMonth,billMonth,
+        companySonBillId,cityId,billType,companyId,isValid)
+        values
+        <foreach collection="list" item="m" separator=",">
+            (#{m.memberId},#{m.businessId},#{m.serviceMonth},#{m.billMonth},
+            #{m.companySonBillId},#{m.cityId},#{m.billType},#{m.companyId},1)
+        </foreach>
+
+    </insert>
+
+
+    <delete id="delList">
+        DELETE FROM member_month_pay_business WHERE
+        billType = 0
+        AND companyId = #{companyId}
+        AND DATE_FORMAT(billMonth,'%Y-%m') = DATE_FORMAT(#{billMonth},'%Y-%m')
+
+    </delete>
+
+
+    <delete id="delList2">
+        <foreach collection="companyDateMapList" item="map" separator=";">
+            DELETE FROM member_month_pay_business WHERE
+            billType = 0
+            AND companyId = #{map.companyId}
+            AND DATE_FORMAT(billMonth,'%Y-%m') = DATE_FORMAT(#{map.billMonth},'%Y-%m')
+        </foreach>
+    </delete>
+
+</mapper>

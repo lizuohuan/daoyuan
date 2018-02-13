@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IMemberBaseChangeMapper">
+
+
+    <insert id="batchAdd" >
+        INSERT INTO member_base_change (recordItemId, `type`, content, targetId)
+        VALUES 
+        <foreach collection="list" index="index" item="l" separator=",">
+            (#{l.recordItemId}, #{l.type}, #{l.content}, #{l.targetId})
+        </foreach>
+    </insert>
+
+
+    <select id="queryMemberBaseChange" resultType="com.magic.daoyuan.business.entity.MemberBaseChange">
+        SELECT * FROM member_base_change WHERE recordItemId = #{recordItem}
+    </select>
+
+</mapper>

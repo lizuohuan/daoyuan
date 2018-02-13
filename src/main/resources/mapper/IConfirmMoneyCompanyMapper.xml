@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IConfirmMoneyCompanyMapper">
+
+
+    <resultMap id="BaseResult" type="com.magic.daoyuan.business.entity.ConfirmMoneyCompany">
+        <result column="id" property="id" javaType="java.lang.Integer"/>
+        <result column="confirmMoneyRecordId" property="confirmMoneyRecordId" javaType="java.lang.Integer"/>
+        <result column="companyId" property="companyId" javaType="java.lang.Integer"/>
+        <result column="serviceId" property="serviceId" javaType="java.lang.Integer"/>
+        <result column="bankInfoId" property="bankInfoId" javaType="java.lang.Integer"/>
+        <result column="companyName" property="companyName" javaType="java.lang.String"/>
+        <result column="serviceUserName" property="serviceUserName" javaType="java.lang.String"/>
+        <result column="confirmAmount" property="confirmAmount" javaType="java.lang.Double"/>
+    </resultMap>
+
+
+    <select id="queryConfirmMoneyCompanyByRecordId" resultMap="BaseResult">
+        SELECT * FROM confirm_money_company WHERE confirmMoneyRecordId = #{recordId}
+    </select>
+
+    <insert id="batchAddConfirmMoneyCompany" parameterType="com.magic.daoyuan.business.entity.ConfirmMoneyCompany">
+
+        INSERT INTO confirm_money_company (confirmMoneyRecordId, companyId, serviceId,bankInfoId)
+        VALUES
+        <foreach collection="list" index="index" item="cr" separator=",">
+            (#{cr.confirmMoneyRecordId}, #{cr.companyId}, #{cr.serviceId},#{cr.bankInfoId})
+        </foreach>
+
+    </insert>
+
+
+    <select id="queryConfirmMoneyCompany" parameterType="map" resultType="com.magic.daoyuan.business.entity.ConfirmMoneyCompany">
+        SELECT
+            cmc.*, cc.companyName AS companyName,
+            u.userName AS serviceUserName
+        FROM
+            confirm_money_company cmc,
+            company cc,
+            users u
+        WHERE
+            cmc.companyId = cc.id
+        AND cmc.serviceId = u.id
+        AND cmc.confirmMoneyRecordId = #{confirmMoneyRecordId}
+        ORDER BY cmc.id DESC
+        <if test="limit != null and limitSize != null">
+            LIMIT #{limit},#{limitSize}
+        </if>
+    </select>
+
+
+
+    <select id="countConfirmMoneyCompany" parameterType="map" resultType="int">
+        SELECT
+            COUNT(0)
+        FROM
+            confirm_money_company cmc,
+            company cc,
+            users u
+        WHERE
+            cmc.companyId = cc.id
+        AND cmc.serviceId = u.id
+        AND cmc.confirmMoneyRecordId = #{confirmMoneyRecordId}
+    </select>
+
+
+</mapper>

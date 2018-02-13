@@ -1,0 +1,477 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IMemberBusinessUpdateRecordItemMapper">
+
+
+    <resultMap id="BaseResult" type="com.magic.daoyuan.business.entity.MemberBusinessUpdateRecordItem">
+        <result column="id" property="id" javaType="java.lang.Integer"/>
+        <result column="memberBusinessUpdateRecordId" property="memberBusinessUpdateRecordId" javaType="java.lang.Integer" />
+        <result column="reason" property="reason" javaType="java.lang.String" />
+        <result column="updateContent" property="updateContent" javaType="java.lang.String" />
+        <result column="serviceMonth" property="serviceMonth" javaType="java.util.Date" />
+        <result column="isNowCreate" property="isNowCreate" javaType="java.lang.Integer" />
+        <result column="status" property="status" javaType="java.lang.Integer" />
+        <result column="createTime" property="createTime" javaType="java.util.Date" />
+        <result column="serviceStatus" property="serviceStatus" javaType="java.lang.Integer"/>
+        <result column="payPlaceId" property="payPlaceId" javaType="java.lang.Integer"/>
+        <result column="organizationId" property="organizationId" javaType="java.lang.Integer"/>
+        <result column="transactorId" property="transactorId" javaType="java.lang.Integer"/>
+        <result column="insuranceLevelId" property="insuranceLevelId" javaType="java.lang.Integer"/>
+        <result column="payPlaceName" property="payPlaceName" javaType="java.lang.String"/>
+        <result column="organizationName" property="organizationName" javaType="java.lang.String"/>
+        <result column="transactorName" property="transactorName" javaType="java.lang.String"/>
+        <result column="insuranceLevelName" property="insuranceLevelName" javaType="java.lang.String"/>
+        <result column="remark" property="remark" javaType="java.lang.String"/>
+        <result column="isCalculate" property="isCalculate" javaType="java.lang.Integer"/>
+        <result column="serveMethod" property="serveMethod" javaType="java.lang.Integer"/>
+        <result column="ratio" property="ratio" javaType="java.lang.Double"/>
+        <result column="baseNumber" property="baseNumber" javaType="java.lang.Double"/>
+        <result column="baseType" property="baseType" javaType="java.lang.Integer"/>
+        <result column="updateContentFlag" property="updateContentFlag" javaType="java.lang.Integer"/>
+        <result column="userId" property="userId" javaType="java.lang.Integer"/>
+        <result column="createUserId" property="createUserId" javaType="java.lang.Integer"/>
+        <result column="memberId" property="memberId" javaType="java.lang.Integer"/>
+        <result column="companyId" property="companyId" javaType="java.lang.Integer"/>
+        <result column="createUserName" property="createUserName" javaType="java.lang.String"/>
+    </resultMap>
+
+
+    <resultMap id="IncludeChange" type="com.magic.daoyuan.business.entity.MemberBusinessUpdateRecordItem" extends="BaseResult">
+        <association property="baseChangeList" column="id" select="com.magic.daoyuan.business.mapper.IMemberBaseChangeMapper.queryMemberBaseChange"/>
+    </resultMap>
+
+
+    <select id="queryRecordItemByRecords" resultMap="BaseResult">
+        SELECT id,`status` FROM member_business_update_record_item WHERE status = 0 AND memberBusinessUpdateRecordId IN
+        <foreach collection="ids" index="index" item="recordId" open="(" close=")" separator=",">
+            #{recordId}
+        </foreach>
+    </select>
+
+    <select id="queryValidRecordItem" resultMap="IncludeChange">
+        SELECT * FROM member_business_update_record_item WHERE memberBusinessUpdateRecordId = #{recordId} ORDER BY id DESC
+    </select>
+
+    <select id="queryMemberBusinessUpdateRecordItem" resultMap="BaseResult">
+        SELECT * FROM member_business_update_record_item WHERE memberBusinessUpdateRecordId = #{recordId}
+    </select>
+
+    <select id="queryCommonTransactByItem" resultType="com.magic.daoyuan.business.vo.CommonTransact"
+        parameterType="map">
+        SELECT
+            m.userName AS memberName,
+            mburi.id AS mburiId,
+            m.id AS memberId,
+            mbur.remark,
+            CASE m.certificateType WHEN 0 THEN '身份证'
+                                                         WHEN 1 THEN '护照'
+                                                         WHEN 2 THEN '通行证'
+                                                         ELSE '其他' END AS idCardType,
+            m.certificateNum AS idCard,
+            IFNULL(m.phone,'--') AS phone,
+            CASE m.education  WHEN 0 THEN '博士'
+                                WHEN 1 THEN '硕士'
+                                WHEN 2 THEN '本科'
+                                WHEN 3 THEN '大专'
+                                WHEN 4 THEN '高中及以下'
+                                ELSE '其他' END AS educationName,
+            CASE mbur.serviceType WHEN 0 THEN '社保'
+                                                        WHEN 1 THEN '公积金'
+                                                        ELSE '其他' END AS serviceType,
+            CASE mburi.serviceStatus WHEN 0 THEN '增员'
+                                                             WHEN 1 THEN '减员'
+                                                             WHEN 2 THEN '变更'
+                                                             ELSE '其他' END AS serviceName,
+            mburi.updateContent AS contentOfChange,
+            IFNULL(mbur.serviceNumber,'--') AS serialNumber,
+            CASE mburi.serveMethod WHEN 0 THEN (SELECT cc.`name` FROM pay_place py,citys cc
+                                                                                                                     WHERE py.id = mburi.payPlaceId AND cc.id = py.cityId AND py.type = mbur.serviceType)
+                                                         WHEN 1 THEN (SELECT cc.`name` FROM pay_place py,citys cc,company_pay_place cpp
+                                                                                                                     WHERE py.cityId = cc.id AND py.id = cpp.payPlaceId AND cpp.id =mburi.payPlaceId AND py.type = mbur.serviceType)
+                                                         ELSE '暂无' END AS payPlaceName,
+            CASE mburi.serveMethod WHEN 0 THEN (SELECT org.organizationName FROM organization org WHERE org.id = mburi.organizationId)
+                                                         WHEN 1 THEN (SELECT CASE cpp.type WHEN 0 THEN organizationName WHEN 1 THEN (SELECT o.organizationName FROM organization o WHERE o.id = cpp.organizationId) END
+                                                                                                    FROM company_pay_place cpp WHERE cpp.id = mburi.organizationId) END AS orgnaizationName,
+            CASE mburi.serveMethod WHEN 0 THEN (SELECT s.supplierName FROM transactor t,supplier s WHERE s.id = t.supplierId AND t.id = mburi.transactorId)
+                                                         WHEN 1 THEN (SELECT cpp.transactorName FROM company_pay_place cpp WHERE cpp.id = mburi.payPlaceId) END AS transactName,
+            CASE mbur.serviceType WHEN 0 THEN (SELECT il.levelName FROM insurance_level il  WHERE il.id = mburi.insuranceLevelId)
+                                                        WHEN 1 THEN mburi.ratio END AS levelName,
+           <!-- CASE mburi.baseType WHEN 0 THEN (CASE mbur.serviceType WHEN 0 THEN (SELECT ptw.meMinScope FROM pay_the_way ptw WHERE ptw.insuranceLevelId = mburi.insuranceLevelId ORDER BY ptw.meMinScope ASC LIMIT 0,1)
+                                                                                                                         WHEN 1 THEN  (SELECT o.minCardinalNumber FROM organization o WHERE o.id = mburi.organizationId) END)
+                                                    WHEN 1 THEN (CASE mbur.serviceType WHEN 0 THEN (SELECT ptw.meMaxScope FROM pay_the_way ptw WHERE ptw.insuranceLevelId = mburi.insuranceLevelId ORDER BY ptw.meMaxScope DESC LIMIT 0,1)
+                                                                                                                         WHEN 1 THEN  (SELECT o.maxCardinalNumber FROM organization o WHERE o.id = mburi.organizationId) END)
+                                                    WHEN 2 THEN mburi.baseNumber END AS baseNumber, -->
+
+        CASE mburi.baseType WHEN 0 THEN (CASE mbur.`serviceType` WHEN 0 THEN (CASE mburi.serveMethod WHEN 0 THEN (SELECT MIN(ptw.meMinScope) FROM pay_the_way ptw WHERE ptw.insuranceLevelId = mburi.insuranceLevelId)
+        ELSE (SELECT MIN(ptw.meMinScope) FROM pay_the_way ptw,company_pay_place cpp,insurance_level il
+        WHERE cpp.id = mburi.payPlaceId AND ptw.insuranceLevelId = il.id AND il.payPlaceId = cpp.payPlaceId) END)
+        ELSE (CASE mburi.serveMethod WHEN 0 THEN (SELECT MIN(o.minCardinalNumber) FROM organization o WHERE o.id = mburi.organizationId)
+        ELSE (SELECT MIN(o.minCardinalNumber) FROM company_pay_place cpp,organization o WHERE cpp.id = mburi.payPlaceId
+        AND cpp.organizationId = o.id) END) END)
+        WHEN 1 THEN  (CASE mbur.`serviceType` WHEN 0 THEN (CASE mburi.serveMethod WHEN 0 THEN (SELECT MAX(ptw.meMaxScope) FROM pay_the_way ptw WHERE ptw.insuranceLevelId = mburi.insuranceLevelId)
+        ELSE (SELECT MAX(ptw.meMaxScope) FROM pay_the_way ptw,company_pay_place cpp,insurance_level il
+        WHERE cpp.id = mburi.payPlaceId AND ptw.insuranceLevelId = il.id AND il.payPlaceId = cpp.payPlaceId) END)
+        ELSE (CASE mburi.serveMethod WHEN 0 THEN (SELECT MAX(o.maxCardinalNumber) FROM organization o WHERE o.id = mburi.organizationId)
+        ELSE (SELECT MAX(o.maxCardinalNumber) FROM company_pay_place cpp,organization o WHERE cpp.id = mburi.payPlaceId
+        AND cpp.organizationId = o.id) END) END)
+        ELSE mburi.baseNumber	END AS baseNumber,
+
+
+            CASE mbur.serviceType WHEN 0 THEN (SELECT mbi.serviceStartTime FROM member_business mb,member_business_item mbi
+                                                                                                    WHERE mb.memberId = mbur.memberId AND mb.businessId = 3 AND mb.id = mbi.memberBusinessId)
+                                                        WHEN 1 THEN (SELECT mbi.serviceStartTime FROM member_business mb,member_business_item mbi
+                                                                                                    WHERE mb.memberId = mbur.memberId AND mb.businessId = 4 AND mb.id = mbi.memberBusinessId) END AS serviceStartMonth,
+            mburi.createTime
+
+
+        FROM
+            member_business_update_record mbur,
+            member_business_update_record_item mburi,
+            member m
+            <if test="target == 0 and flag == 1">
+                ,member_number mn
+            </if>
+        WHERE
+            mbur.id = mburi.memberBusinessUpdateRecordId
+        AND mbur.memberId = m.id
+        AND mburi.`status` = 1
+        <if test="null != serviceStatus">
+            AND mburi.serviceStatus = #{serviceStatus}
+        </if>
+        <if test="isTuo != 1 and payPlaceId != null">
+            AND ((mburi.payPlaceId = #{payPlaceId} AND mburi.serveMethod = 0) OR
+            (SELECT cpp.payPlaceId FROM company_pay_place cpp  WHERE cpp.id = mburi.payPlaceId AND mburi.serveMethod = 1) = #{payPlaceId} )
+        </if>
+        <if test="isTuo == 1 and payPlaceId != null">
+            AND mburi.payPlaceId = #{payPlaceId} AND mburi.serveMethod = 1
+        </if>
+        <if test="organizationId != null">
+            AND mburi.organizationId = #{organizationId}
+        </if>
+        <if test="transactorId != null">
+            AND mburi.transactorId = #{transactorId}
+        </if>
+        <if test="companyId != null">
+            AND m.companyId = #{companyId}
+        </if>
+        <if test="flag != null">
+            AND mburi.serviceStatus = #{flag}
+        </if>
+        <if test="target != null">
+            AND mbur.serviceType = #{target}
+        </if>
+        <if test="target == 0 and flag == 1">
+            AND mn.memberId = m.id
+            AND CASE mburi.serveMethod WHEN 0 THEN mn.payPlaceId = mburi.payPlaceId
+            ELSE mn.payPlaceId = (SELECT cpp.payPlaceId FROM company_pay_place cpp WHERE cpp.id = mburi.payPlaceId) END
+        </if>
+    </select>
+
+    <insert id="save" parameterType="com.magic.daoyuan.business.entity.MemberBusinessUpdateRecordItem"
+    useGeneratedKeys="true" keyColumn="id" keyProperty="id">
+        insert into member_business_update_record_item (memberBusinessUpdateRecordId, reason, updateContent,
+        serviceMonth, isNowCreate, status, createTime,payPlaceId,
+        organizationId, transactorId,insuranceLevelId,remark,serviceStatus,isCalculate,serveMethod,ratio,baseType,baseNumber,
+        updateContentFlag,createUserId,billMonth,companyId)
+        values
+        <foreach collection="list" item="m" separator=",">
+          (#{m.memberBusinessUpdateRecordId},#{m.reason},#{m.updateContent},#{m.serviceMonth},0,#{m.status},now(),
+            #{m.payPlaceId},#{m.organizationId},#{m.transactorId},#{m.insuranceLevelId},#{m.remark},#{m.serviceStatus},0,#{m.serveMethod},
+            #{m.ratio},#{m.baseType},#{m.baseNumber},#{m.updateContentFlag},#{m.createUserId},#{m.billMonth},#{m.companyId})
+        </foreach>
+    </insert>
+
+    <select id="info" resultMap="BaseResult">
+         SELECT
+                    mburi.id,
+                    CASE mburi.serveMethod WHEN 1 THEN (SELECT cc.`name` FROM company_pay_place cpp,pay_place pp,citys cc
+                                                                                                                             WHERE cpp.id = mburi.payPlaceId AND cpp.payPlaceId = pp.id AND pp.cityId = cc.id)
+                                                                 ELSE (SELECT cc.`name` FROM pay_place pp,citys cc WHERE pp.id = mburi.payPlaceId AND pp.cityId = cc.id) END AS payPlaceName,
+                    CASE mburi.serveMethod WHEN 1 THEN (CASE mbur.serviceType WHEN 0 THEN (SELECT cpp.organizationName FROM company_pay_place cpp WHERE cpp.id = mburi.payPlaceId)
+                                                                                                                                        ELSE (SELECT o.organizationName FROM organization o,company_pay_place cpp
+                                                                                                                                                                                                        WHERE cpp.id = mburi.payPlaceId AND cpp.organizationId = o.id) END)
+                                                                 ELSE (SELECT o.organizationName FROM organization o WHERE o.id = mburi.organizationId) END AS organizationName,
+                    CASE mburi.serveMethod WHEN 1 THEN (SELECT cpp.transactorName FROM company_pay_place cpp WHERE cpp.id = mburi.payPlaceId)
+                                                                 ELSE (SELECT s.supplierName FROM transactor t,supplier s WHERE t.supplierId = s.id AND t.id = mburi.transactorId) END AS transactorName,
+                    (SELECT il.levelName FROM insurance_level il WHERE mburi.insuranceLevelId = il.id) AS insuranceLevelName,
+
+                    CASE mbur.serviceType WHEN 0 THEN CASE CASE mburi.serveMethod WHEN 1 THEN (SELECT pp.cityId FROM company_pay_place cpp,pay_place pp
+                        WHERE cpp.id = mburi.payPlaceId AND cpp.payPlaceId = pp.id )
+                        ELSE (SELECT pp.cityId FROM pay_place pp WHERE pp.id = mburi.payPlaceId ) END
+                        WHEN 510100 THEN (SELECT mburi.createTime FROM  member_business_update_record_item mburii
+                        WHERE
+                        mburii.memberBusinessUpdateRecordId = mbur.id
+                        AND mburii.`status` = 2 AND mburii.serviceStatus = 0 ORDER BY mburii.id DESC LIMIT 0,1)
+                        ELSE  (SELECT mbi.serviceStartTime FROM member_business mb,member_business_item mbi
+                        WHERE mb.memberId = mbur.memberId AND mb.businessId = 3 AND mb.id = mbi.memberBusinessId) END
+                        WHEN 1 THEN (SELECT mbi.serviceStartTime FROM member_business mb,member_business_item mbi
+                        WHERE mb.memberId = mbur.memberId AND mb.businessId = 4 AND mb.id = mbi.memberBusinessId) END AS serviceMonth,
+
+                    mburi.createTime,mburi.`status`,mburi.serviceStatus,mburi.serviceMonth,mburi.updateContent,mburi.reason,
+                    mburi.remark,mburi.baseNumber,u.userName AS createUserName
+                FROM
+                    member_business_update_record_item mburi
+                LEFT JOIN member_business_update_record mbur ON mburi.memberBusinessUpdateRecordId = mbur.id
+                LEFT JOIN users u ON u.id = mburi.createUserId
+                WHERE mburi.id = #{id}
+    </select>
+
+    <update id="update" parameterType="com.magic.daoyuan.business.entity.MemberBusinessUpdateRecordItem">
+        UPDATE member_business_update_record_item
+        <set>
+            <if test="billMonth != null">
+                billMonth = #{billMonth},
+            </if>
+            <if test="updateContentFlag != null and updateContentFlag != ''">
+                updateContentFlag = #{updateContentFlag},
+            </if>
+            <if test="createUserId != null ">
+                createUserId = #{createUserId},
+            </if>
+            <if test="baseNumber != null and baseNumber != ''">
+                baseNumber = #{baseNumber},
+            </if>
+            <if test="baseType != null and baseType != ''">
+                baseType = #{baseType},
+            </if>
+            <if test="ratio != null and ratio != ''">
+                ratio = #{ratio},
+            </if>
+            <if test="serveMethod != null and serveMethod != ''">
+                serveMethod = #{serveMethod},
+            </if>
+            <if test="reason != null and reason != ''">
+                reason = #{reason},
+            </if>
+            <if test="remark != null and remark != ''">
+                remark = #{remark},
+            </if>
+            <if test="updateContent != null and updateContent != ''">
+                updateContent = #{updateContent},
+            </if>
+            <if test="isNowCreate != null">
+                isNowCreate = #{isNowCreate},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+            <if test="payPlaceId != null">
+                `payPlaceId` = #{payPlaceId},
+            </if>
+            <if test="organizationId != null">
+                `organizationId` = #{organizationId},
+            </if>
+            <if test="transactorId != null">
+                `transactorId` = #{transactorId},
+            </if>
+            <if test="insuranceLevelId != null">
+                `insuranceLevelId` = #{insuranceLevelId},
+            </if>
+            <if test="isCalculate != null">
+                `isCalculate` = #{isCalculate},
+            </if>
+        </set>
+        <where>
+            id = #{id}
+        </where>
+    </update>
+
+    <update id="updateList" parameterType="com.magic.daoyuan.business.entity.MemberBusinessUpdateRecordItem">
+        <foreach collection="list" separator=";" item="m" >
+            UPDATE member_business_update_record_item
+            <set>
+                <if test="m.billMonth != null">
+                    billMonth = #{m.billMonth},
+                </if>
+                <if test="m.updateContentFlag != null and m.updateContentFlag != ''">
+                    updateContentFlag = #{m.updateContentFlag},
+                </if>
+                <if test="m.createUserId != null ">
+                    createUserId = #{m.createUserId},
+                </if>
+                <if test="m.baseNumber != null and m.baseNumber != ''">
+                    baseNumber = #{m.baseNumber},
+                </if>
+                <if test="m.baseType != null and m.baseType != ''">
+                    baseType = #{m.baseType},
+                </if>
+                <if test="m.ratio != null and m.ratio != ''">
+                    ratio = #{m.ratio},
+                </if>
+                <if test="m.serveMethod != null and m.serveMethod != ''">
+                    serveMethod = #{m.serveMethod},
+                </if>
+                <if test="m.reason != null and m.reason != ''">
+                    reason = #{m.reason},
+                </if>
+                <if test="m.remark != null and m.remark != ''">
+                    remark = #{m.remark},
+                </if>
+                <if test="m.updateContent != null and m.updateContent != ''">
+                    updateContent = #{m.updateContent},
+                </if>
+                <if test="m.isNowCreate != null">
+                    isNowCreate = #{m.isNowCreate},
+                </if>
+                <if test="m.status != null">
+                    status = #{m.status},
+                </if>
+                <if test="m.payPlaceId != null">
+                    `payPlaceId` = #{m.payPlaceId},
+                </if>
+                <if test="m.organizationId != null">
+                    `organizationId` = #{m.organizationId},
+                </if>
+                <if test="m.transactorId != null">
+                    `transactorId` = #{m.transactorId},
+                </if>
+                <if test="m.insuranceLevelId != null">
+                    `insuranceLevelId` = #{m.insuranceLevelId},
+                </if>
+                <if test="m.isCalculate != null">
+                    `isCalculate` = #{m.isCalculate},
+                </if>
+            </set>
+            <where>
+                id = #{m.id}
+            </where>
+        </foreach>
+    </update>
+
+    <update id="update2">
+        update member_business_update_record_item set isCalculate = 0
+        where DATE_FORMAT(billMonth,'%Y-%m') = DATE_FORMAT(#{billMonth},'%Y-%m') AND companyId = #{companyId}
+    </update>
+
+    <update id="update2ListMap">
+        <foreach collection="companyDateMapList" separator=";" item="map">
+            update member_business_update_record_item set isCalculate = 0
+            where DATE_FORMAT(billMonth,'%Y-%m') = DATE_FORMAT(#{map.billMonth},'%Y-%m') AND companyId = #{map.companyId}
+        </foreach>
+    </update>
+
+    <update id="batchUpdateStatus" parameterType="com.magic.daoyuan.business.entity.MemberBusinessUpdateRecordItem">
+        <foreach collection="list" separator=";" item="m" >
+            UPDATE member_business_update_record_item SET `status` = #{m.status} WHERE id = #{m.id}
+        </foreach>
+    </update>
+
+    <select id="list" resultMap="BaseResult" parameterType="map">
+        SELECT
+            mburi.id,
+            CASE mburi.serveMethod WHEN 1 THEN (SELECT cc.`name` FROM company_pay_place cpp,pay_place pp,citys cc
+                                                                                                                     WHERE cpp.id = mburi.payPlaceId AND cpp.payPlaceId = pp.id AND pp.cityId = cc.id)
+                                                         ELSE (SELECT cc.`name` FROM pay_place pp,citys cc WHERE pp.id = mburi.payPlaceId AND pp.cityId = cc.id) END AS payPlaceName,
+            CASE mburi.serveMethod WHEN 1 THEN (CASE mbur.serviceType WHEN 0 THEN (SELECT cpp.organizationName FROM company_pay_place cpp WHERE cpp.id = mburi.payPlaceId)
+                                                                                                                                ELSE (SELECT o.organizationName FROM organization o,company_pay_place cpp
+                                                                                                                                                                                                WHERE cpp.id = mburi.payPlaceId AND cpp.organizationId = o.id) END)
+                                                         ELSE (SELECT o.organizationName FROM organization o WHERE o.id = mburi.organizationId) END AS organizationName,
+            CASE mburi.serveMethod WHEN 1 THEN (SELECT cpp.transactorName FROM company_pay_place cpp WHERE cpp.id = mburi.payPlaceId)
+                                                         ELSE (SELECT s.supplierName FROM transactor t,supplier s WHERE t.supplierId = s.id AND t.id = mburi.transactorId) END AS transactorName,
+            (SELECT il.levelName FROM insurance_level il WHERE mburi.insuranceLevelId = il.id) AS insuranceLevelName,
+
+
+        CASE mbur.serviceType WHEN 0 THEN CASE CASE mburi.serveMethod WHEN 1 THEN (SELECT pp.cityId FROM company_pay_place cpp,pay_place pp
+        WHERE cpp.id = mburi.payPlaceId AND cpp.payPlaceId = pp.id )
+        ELSE (SELECT pp.cityId FROM pay_place pp WHERE pp.id = mburi.payPlaceId ) END
+        WHEN 510100 THEN (SELECT mburi.createTime FROM  member_business_update_record_item mburii
+        WHERE
+        mburii.memberBusinessUpdateRecordId = mbur.id
+        AND mburii.`status` = 2 AND mburii.serviceStatus = 0 ORDER BY mburii.id DESC LIMIT 0,1)
+        ELSE  (SELECT mbi.serviceStartTime FROM member_business mb,member_business_item mbi
+        WHERE mb.memberId = mbur.memberId AND mb.businessId = 3 AND mb.id = mbi.memberBusinessId) END
+        WHEN 1 THEN (SELECT mbi.serviceStartTime FROM member_business mb,member_business_item mbi
+        WHERE mb.memberId = mbur.memberId AND mb.businessId = 4 AND mb.id = mbi.memberBusinessId) END AS serviceMonth,
+
+
+            mburi.createTime,mburi.`status`,mburi.serviceStatus,mburi.baseNumber,u.userName AS createUserName
+        FROM
+            member_business_update_record_item mburi
+        LEFT JOIN member_business_update_record mbur ON mburi.memberBusinessUpdateRecordId = mbur.id
+        LEFT JOIN users u ON u.id = mburi.createUserId
+        WHERE 1=1
+        <if test="serviceStatus != null">
+            AND mburi.serviceStatus = #{serviceStatus}
+        </if>
+        <if test="payPlaceId != null">
+            AND (mburi.payPlaceId = #{payPlaceId} OR (SELECT cpp.payPlaceId FROM company_pay_place cpp  WHERE cpp.id = mburi.payPlaceId) = #{payPlaceId} )
+        </if>
+        <if test="organizationId != null">
+            AND mburi.organizationId = #{organizationId}
+        </if>
+        <if test="memberBusinessUpdateRecordId != null">
+            AND mburi.memberBusinessUpdateRecordId = #{memberBusinessUpdateRecordId}
+        </if>
+        <if test="transactorId != null">
+            AND mburi.transactorId = #{transactorId}
+        </if>
+        <if test="status != null">
+            AND mburi.status = #{status}
+        </if>
+        ORDER BY
+        <if test="pageArgs != null">
+            <if test="pageArgs.column != null and pageArgs.column != ''">
+                ${pageArgs.column} ${pageArgs.order},
+            </if>
+        </if>
+        mburi.id DESC
+        <if test="pageArgs != null">
+            limit #{pageArgs.pageStart}, #{pageArgs.pageSize}
+        </if>
+    </select>
+
+    <select id="listCount" resultType="int" parameterType="map">
+        SELECT
+        COUNT(0)
+        FROM  member_business_update_record_item mburi
+        LEFT JOIN pay_place pp ON mburi.payPlaceId = pp.id
+        LEFT JOIN organization o ON mburi.organizationId = o.id
+        LEFT JOIN transactor t ON mburi.transactorId = t.id
+        LEFT JOIN supplier s ON s.id = t.supplierId
+        LEFT JOIN insurance_level il ON il.id = mburi.insuranceLevelId
+        WHERE
+        1 = 1
+        <if test="serviceStatus != null">
+            AND mburi.serviceStatus = #{serviceStatus}
+        </if>
+        <if test="payPlaceId != null">
+            AND (mburi.payPlaceId = #{payPlaceId} OR (SELECT cpp.payPlaceId FROM company_pay_place cpp  WHERE cpp.id = mburi.payPlaceId) = #{payPlaceId} )
+        </if>
+        <if test="organizationId != null">
+            AND mburi.organizationId = #{organizationId}
+        </if>
+        <if test="memberBusinessUpdateRecordId != null">
+            AND mburi.memberBusinessUpdateRecordId = #{memberBusinessUpdateRecordId}
+        </if>
+        <if test="transactorId != null">
+            AND mburi.transactorId = #{transactorId}
+        </if>
+        <if test="status != null">
+            AND mburi.status = #{status}
+        </if>
+    </select>
+
+    <update id="allApplyFor" >
+        UPDATE member_business_update_record_item SET `status` = 1 WHERE `status` = 0
+    </update>
+
+
+    <select id="getUpdateRecordStatus" resultMap="BaseResult">
+        select mburi.*,pp.cityId,cc.beforeService AS userId from member_business_update_record mbur ,
+        member_business_update_record_item mburi,
+        organization o,pay_place pp,member m,company cc
+        WHERE mbur.id = mburi.memberBusinessUpdateRecordId
+        AND o.id = mburi.organizationId
+        AND pp.id = mburi.payPlaceId
+        AND m.id = mbur.memberId
+        AND cc.id = m.companyId
+        AND mburi.status = #{status}
+        <if test="status == 0">
+            AND o.remindTime = #{date}
+        </if>
+        <if test="status == 1">
+            AND o.inTheEndTime = #{date}
+        </if>
+    </select>
+</mapper>

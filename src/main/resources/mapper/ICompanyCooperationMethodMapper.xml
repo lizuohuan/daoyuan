@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.ICompanyCooperationMethodMapper">
+
+
+    <resultMap id="BaseResult" type="com.magic.daoyuan.business.entity.CompanyCooperationMethod">
+        <result column="id" property="id" javaType="java.lang.Integer"/>
+        <result column="companyId" property="companyId" javaType="java.lang.Integer"/>
+        <result column="cooperationMethodId" property="cooperationMethodId" javaType="java.lang.Integer"/>
+        <result column="serviceFeeConfigId" property="serviceFeeConfigId" javaType="java.lang.Integer"/>
+        <result column="serviceFeeCycle" property="serviceFeeCycle" javaType="java.lang.Integer"/>
+        <result column="isPercent" property="isPercent" javaType="java.lang.Integer"/>
+        <result column="serviceFeeMin" property="serviceFeeMin" javaType="java.lang.Double"/>
+        <result column="serviceFeeMax" property="serviceFeeMax" javaType="java.lang.Double"/>
+        <result column="percent" property="percent" javaType="java.lang.Double"/>
+        <result column="baseFee" property="baseFee" javaType="java.lang.Double"/>
+        <result column="serviceFeeStartTime" property="serviceFeeStartTime" javaType="java.util.Date"/>
+        <association property="businessServiceFeeList" column="id" select="com.magic.daoyuan.business.mapper.ICompanyCooperationBusinessServiceFeeMapper.queryByCompanyCooperationMethodId"/>
+        <association property="serviceFeeList" column="id" select="com.magic.daoyuan.business.mapper.ICompanyCooperationServiceFeeMapper.queryByCompanyCooperationMethodId"/>
+        <association property="payPlaceList" column="id" select="com.magic.daoyuan.business.mapper.ICompanyCooperationServicePayPlaceMapper.queryByCompanyCooperationMethodId"/>
+    </resultMap>
+
+    <resultMap id="BaseMethod" type="com.magic.daoyuan.business.entity.CompanyCooperationMethod">
+        <result column="id" property="id" javaType="java.lang.Integer"/>
+        <result column="companyId" property="companyId" javaType="java.lang.Integer"/>
+        <result column="cooperationMethodId" property="cooperationMethodId" javaType="java.lang.Integer"/>
+        <result column="serviceFeeConfigId" property="serviceFeeConfigId" javaType="java.lang.Integer"/>
+        <result column="serviceFeeConfigName" property="serviceFeeConfigName" javaType="java.lang.String"/>
+        <result column="serviceFeeCycle" property="serviceFeeCycle" javaType="java.lang.Integer"/>
+        <result column="isPercent" property="isPercent" javaType="java.lang.Integer"/>
+        <result column="serviceFeeMin" property="serviceFeeMin" javaType="java.lang.Double"/>
+        <result column="serviceFeeMax" property="serviceFeeMax" javaType="java.lang.Double"/>
+        <result column="baseFee" property="baseFee" javaType="java.lang.Double"/>
+        <result column="percent" property="percent" javaType="java.lang.Double"/>
+        <result column="serviceFeeStartTime" property="serviceFeeStartTime" javaType="java.util.Date"/>
+    </resultMap>
+
+
+    <select id="queryCompanyCooperationMethod" resultMap="BaseResult">
+        SELECT ccm.*,sfc.`describe` AS serviceFeeConfigName
+        FROM company_cooperation_method ccm,service_fee_config sfc
+        WHERE  ccm.companyId = #{companyId} AND ccm.serviceFeeConfigId = sfc.id
+    </select>
+
+    <select id="queryCompanyCooperationMethod2" resultMap="BaseResult">
+        SELECT ccm.*,sfc.`describe` AS serviceFeeConfigName
+        FROM company_cooperation_method ccm,service_fee_config sfc
+        WHERE  ccm.serviceFeeConfigId = sfc.id AND
+         ccm.companyId IN (
+         <foreach collection="companyIdSet" item="companyId" separator=",">
+             #{companyId}
+         </foreach>
+         )
+    </select>
+
+
+    <select id="queryBaseCooperationMethod" resultType="com.magic.daoyuan.business.entity.CompanyCooperationMethod">
+        SELECT * FROM company_cooperation_method WHERE companyId = #{companyId}
+    </select>
+
+
+    <delete id="del">
+        DELETE FROM company_cooperation_method WHERE companyId = #{companyId}
+    </delete>
+
+
+    <insert id="add" keyProperty="id" useGeneratedKeys="true" keyColumn="id"
+            parameterType="com.magic.daoyuan.business.entity.CompanyCooperationMethod">
+        INSERT INTO company_cooperation_method (companyId, cooperationMethodId, serviceFeeConfigId,
+        serviceFeeStartTime, serviceFeeCycle, serviceFeeMin, serviceFeeMax, isPercent, percent)
+        VALUES
+        (#{companyId}, #{cooperationMethodId}, #{serviceFeeConfigId},
+        #{serviceFeeStartTime}, #{serviceFeeCycle}, #{serviceFeeMin}, #{serviceFeeMax}, #{isPercent}, #{percent})
+    </insert>
+
+    <insert id="batchAdd" useGeneratedKeys="true" keyColumn="id" keyProperty="id"
+            parameterType="com.magic.daoyuan.business.entity.CompanyCooperationMethod">
+        INSERT INTO company_cooperation_method (companyId, cooperationMethodId, serviceFeeConfigId,
+        serviceFeeStartTime, serviceFeeCycle, serviceFeeMin, serviceFeeMax, isPercent, percent,baseFee)
+        VALUES
+        <foreach collection="list" index="index" item="coo" separator=",">
+            (#{coo.companyId}, #{coo.cooperationMethodId}, #{coo.serviceFeeConfigId},
+            #{coo.serviceFeeStartTime}, #{coo.serviceFeeCycle}, #{coo.serviceFeeMin}, #{coo.serviceFeeMax}, #{coo.isPercent}, #{coo.percent},#{coo.baseFee})
+        </foreach>
+    </insert>
+
+
+</mapper>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.ICompanyBusinessItemMapper">
+
+
+    <resultMap id="BaseResult" type="com.magic.daoyuan.business.entity.CompanyBusinessItem">
+        <result column="id" property="id" javaType="java.lang.Integer"/>
+        <result column="businessCompanyId" property="businessCompanyId" javaType="java.lang.Integer"/>
+        <result column="businessItemId" property="businessItemId" javaType="java.lang.Integer"/>
+        <result column="sonBillId" property="sonBillId" javaType="java.lang.Integer"/>
+        <result column="price" property="price" javaType="java.lang.Double"/>
+    </resultMap>
+
+
+    <delete id="del">
+        DELETE FROM company_business_item WHERE  id IN
+        <foreach collection="list" index="index" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </delete>
+
+    <select id="queryBusinessItemByBusiness" resultType="com.magic.daoyuan.business.entity.BusinessItem">
+        SELECT * FROM  business_items WHERE businessId = #{businessId}
+    </select>
+
+
+    <select id="queryBusinessItems" resultType="com.magic.daoyuan.business.entity.BusinessItem">
+        SELECT
+            bi.*,
+            CASE bi.type WHEN 0 THEN bi.serviceFee
+                                     WHEN 1 THEN cbi.price END
+            AS price
+        FROM
+            company_business_item cbi,
+            business_items bi
+        WHERE
+            cbi.businessItemId = bi.id
+        AND cbi.businessCompanyId = #{companyBusinessId}
+    </select>
+
+
+    <insert id="batchAddCompanyBusinessItem">
+        INSERT INTO company_business_item ( businessCompanyId, businessItemId,price,sonBillId)
+        VALUES
+        <foreach collection="items" index="index" item="p" separator=",">
+            ( #{p.businessCompanyId}, #{p.businessItemId},#{p.price},#{p.sonBillId})
+        </foreach>
+    </insert>
+
+
+    <select id="queryItemByCompany" resultType="com.magic.daoyuan.business.entity.BusinessItem">
+        SELECT
+            bi.*, cbi.sonBillId AS companySonBillId
+        FROM
+            company_business cb,
+            company_business_item cbi,
+            business_items bi
+        WHERE
+            cb.id = cbi.businessCompanyId
+        AND cbi.businessItemId = bi.id
+        AND cb.businessId = #{businessId}
+        AND cb.companyId = #{companyId}
+    </select>
+
+    <delete id="delCompanyBusinessItem">
+        DELETE FROM company_business_item WHERE businessCompanyId IN(
+        <foreach collection="companyBusinessItemIds" index="index" item="companyBusinessItemId" separator=",">
+            #{companyBusinessItemId}
+        </foreach>
+        )
+    </delete>
+
+</mapper>

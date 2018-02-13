@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IMonthServiceFeeDetailMapper">
+
+
+    <resultMap id="BaseResultMap" type="com.magic.daoyuan.business.entity.MonthServiceFeeDetail">
+        <id column="id" property="id" javaType="java.lang.Integer" />
+        <result column="monthServiceFeeId" property="monthServiceFeeId" javaType="java.lang.Integer" />
+        <result column="amount" property="amount" javaType="java.lang.Double" />
+        <result column="memberId" property="memberId" javaType="java.lang.Integer" />
+        <result column="companySonBillId" property="companySonBillId" javaType="java.lang.Integer" />
+        <result column="waysOfCooperation" property="waysOfCooperation" javaType="java.lang.Integer" />
+        <result column="businessStr" property="businessStr" javaType="java.lang.String" />
+    </resultMap>
+
+    <insert id="batchAdd" parameterType="com.magic.daoyuan.business.entity.MonthServiceFeeDetail">
+        INSERT INTO month_service_fee_detail ( monthServiceFeeId, amount, memberId,companySonBillId,waysOfCooperation,businessStr)
+        VALUES
+        <foreach collection="list" index="index" item="l" separator=",">
+            ( #{l.monthServiceFeeId}, #{l.amount}, #{l.memberId}, #{l.companySonBillId}, #{l.waysOfCooperation}, #{l.businessStr})
+        </foreach>
+    </insert>
+
+    <delete id="del">
+        DELETE FROM month_service_fee_detail WHERE monthServiceFeeId = #{monthServiceFeeId}
+    </delete>
+
+    <delete id="delete">
+        DELETE FROM month_service_fee_detail WHERE monthServiceFeeId IN
+        (select msf.id from month_service_fee msf WHERE msf.companySonTotalBillId IN (
+        <foreach collection="companySonTotalBillIds" separator="," item="id">
+            #{id}
+        </foreach>
+        ))
+    </delete>
+
+    <select id="getByMemberIdAndMonth" resultMap="BaseResultMap">
+        select * from month_service_fee_detail msfd ,month_service_fee msf
+        WHERE msf.id = msfd.monthServiceFeeId
+        AND DATE_FORMAT(msf.month, '%Y-%m') = DATE_FORMAT(#{date}, '%Y-%m')
+        AND msfd.memberId = #{memberId}
+    </select>
+
+</mapper>

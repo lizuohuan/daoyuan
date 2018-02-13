@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IBankMapper">
+
+
+
+    <select id="queryAllBank" resultType="com.magic.daoyuan.business.entity.Bank">
+        SELECT * FROM bank WHERE isValid = 1
+    </select>
+
+    <select id="queryBankById" resultType="com.magic.daoyuan.business.entity.Bank">
+        SELECT * FROM bank WHERE id = #{id}
+    </select>
+
+    <select id="queryBank" resultType="com.magic.daoyuan.business.entity.Bank">
+        SELECT * FROM bank WHERE 1 = 1
+        ORDER BY id DESC
+        <if test="limit != null and limitSize != null">
+            LIMIT #{limit},#{limitSize}
+        </if>
+    </select>
+
+    <select id="countCount" resultType="java.lang.Integer">
+        SELECT COUNT(0) FROM bank WHERE 1 = 1
+    </select>
+
+    <insert id="addBank" parameterType="com.magic.daoyuan.business.entity.Bank">
+        INSERT INTO bank ( bankName, isValid)
+        VALUES
+        (#{bankName}, 1)
+    </insert>
+
+    <update id="updateBank" parameterType="com.magic.daoyuan.business.entity.Bank">
+        UPDATE bank
+        <set>
+            <if test="bankName != null">
+                bankName = #{bankName},
+            </if>
+            <if test="isValid != null">
+                isValid = #{isValid},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+
+</mapper>

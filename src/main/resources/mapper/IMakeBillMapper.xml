@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IMakeBillMapper">
+
+
+
+    <resultMap id="BaseMakeBill" type="com.magic.daoyuan.business.entity.MakeBill">
+        <result column="id" property="id" javaType="java.lang.Integer"/>
+        <result column="confirmFundId" property="confirmFundId" javaType="java.lang.Integer"/>
+        <result column="status" property="status" javaType="java.lang.Integer"/>
+        <result column="companyBillInfoId" property="companyBillInfoId" javaType="java.lang.Integer"/>
+        <result column="shopNameId" property="shopNameId" javaType="java.lang.Integer"/>
+        <result column="makeBillDate" property="makeBillDate" javaType="java.util.Date"/>
+        <result column="billMonth" property="billMonth" javaType="java.util.Date"/>
+        <result column="createTime" property="createTime" javaType="java.util.Date"/>
+        <result column="expressNumber" property="expressNumber" javaType="java.lang.String"/>
+        <result column="invoiceNumber" property="invoiceNumber" javaType="java.lang.String"/>
+        <result column="remark" property="remark" javaType="java.lang.String"/>
+        <result column="amountOfBill" property="amountOfBill" javaType="java.lang.Double"/>
+        <result column="amount" property="amount" javaType="java.lang.Double"/>
+        <result column="expressInfoId" property="expressInfoId" javaType="java.lang.Integer"/>
+        <association property="billInfo" columnPrefix="i_" resultMap="com.magic.daoyuan.business.mapper.ICompanyBillInfoMapper.BaseResultMap"/>
+    </resultMap>
+
+    <delete id="delMakeBill">
+        DELETE FROM make_bill WHERE  id IN
+        <foreach collection="list" index="index" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </delete>
+
+    <select id="queryMakeBill" resultMap="BaseMakeBill">
+        SELECT
+            mb.*,cbi.companyId
+        FROM
+            make_bill mb,
+            company_bill_info cbi
+        WHERE
+            mb.companyBillInfoId = cbi.id
+        <if test="billMonth != null">
+            AND DATE_FORMAT(mb.billMonth,'%y-%m') = DATE_FORMAT(#{billMonth},'%y-%m')
+        </if>
+        <if test="companyId != null">
+            AND cbi.companyId = #{companyId}
+        </if>
+    </select>
+
+    <select id="queryMakeBillForExport" resultMap="BaseMakeBill">
+        SELECT
+            mb.*,
+            cbi.accountName AS i_accountName,
+            cbi.bankAccount AS i_bankAccount,
+            cbi.title AS i_title,
+            cbi.taxNumber AS i_taxNumber,
+            cbi.address AS i_address,
+            cbi.billType AS i_billType,
+            cbi.phone AS i_phone
+        FROM
+            make_bill mb,
+            company_bill_info cbi
+        WHERE
+            mb.companyBillInfoId = cbi.id
+        AND mb.`status` NOT IN (3004)
+        <if test="status != null">
+            AND mb.`status` = #{status}
+        </if>
+    </select>
+
+
+    <select id="queryMakeBillByItems" resultType="com.magic.daoyuan.business.entity.MakeBill">
+        SELECT
+            cc.companyName AS companyName,
+            u.userName AS serviceName,
+            ei.orderNumber AS expressNumber,
+            mb.invoiceNumber AS invoiceNumber,
+            mb.billMonth AS billMonth,
+            mb.amount AS amount,
+            mb.makeBillDate AS makeBillDate,
+            mb.`status` AS `status`,
+            mb.shopNameId AS shopNameId,
+            mb.amountOfBill AS amountOfBill,
+            mb.id,
+            cc.id AS companyId,
+            cbi.billType AS billType
+        FROM
+            make_bill mb
+        LEFT JOIN company_bill_info cbi ON mb.companyBillInfoId = cbi.id
+        LEFT JOIN company cc ON cc.id = cbi.companyId
+        LEFT JOIN users u ON u.id = cc.beforeService
+        LEFT JOIN express_info ei ON ei.id = mb.expressInfoId
+        WHERE 1=1
+        <if test="companyId != null">
+            AND cc.id = #{companyId}
+        </if>
+        <if test="status != null">
+            AND mb.`status` = #{status}
+        </if>
+        <if test="billNumber != null">
+            AND cbi.taxNumber LIKE '%${billNumber}%'
+        </if>
+        <if test="orderNumber != null">
+            AND ei.orderNumber LIKE '%${orderNumber}%'
+        </if>
+        <if test="beforeService != null">
+            AND cc.beforeService = #{beforeService}
+        </if>
+        <if test="billMonth != null">
+            AND DATE_FORMAT(mb.billMonth,'%y-%m') = DATE_FORMAT(#{billMonth},'%y-%m')
+        </if>
+        ORDER BY mb.id DESC
+        <if test="limit != null and limitSize != null">
+            LIMIT #{limit},#{limitSize}
+        </if>
+    </select>
+
+    <select id="countMakeBillByItems" resultType="int">
+        SELECT
+            COUNT(0)
+        FROM
+            make_bill mb
+        LEFT JOIN company_bill_info cbi ON mb.companyBillInfoId = cbi.id
+        LEFT JOIN company cc ON cc.id = cbi.companyId
+        LEFT JOIN users u ON u.id = cc.beforeService
+        LEFT JOIN express_info ei ON ei.id = mb.expressInfoId
+        WHERE 1=1
+        <if test="companyId != null">
+            AND cc.id = #{companyId}
+        </if>
+        <if test="status != null">
+            AND mb.`status` = #{status}
+        </if>
+        <if test="billNumber != null">
+            AND cbi.taxNumber LIKE '%${billNumber}%'
+        </if>
+        <if test="orderNumber != null">
+            AND ei.orderNumber LIKE '%${orderNumber}%'
+        </if>
+        <if test="beforeService != null">
+            AND cc.beforeService = #{beforeService}
+        </if>
+        <if test="billMonth != null">
+            AND DATE_FORMAT(mb.billMonth,'%y-%m') = DATE_FORMAT(#{billMonth},'%y-%m')
+        </if>
+
+    </select>
+
+
+    <select id="queryMakeBillById" resultType="com.magic.daoyuan.business.entity.MakeBill">
+        SELECT * FROM make_bill WHERE  id = #{id}
+    </select>
+
+    <update id="updateMakeBill" parameterType="com.magic.daoyuan.business.entity.MakeBill">
+        UPDATE make_bill
+        <set>
+            <if test="expressInfoId != null">
+                expressInfoId = #{expressInfoId},
+            </if>
+            <if test="billMonth != null">
+                billMonth = #{billMonth},
+            </if>
+            <if test="makeBillDate != null">
+                makeBillDate = #{makeBillDate},
+            </if>
+            <if test="expressNumber != null">
+                expressNumber = #{expressNumber},
+            </if>
+            <if test="invoiceNumber != null">
+                invoiceNumber = #{invoiceNumber},
+            </if>
+            <if test="status != null">
+                `status` = #{status},
+            </if>
+            <if test="companyBillInfoId != null">
+                `companyBillInfoId` = #{companyBillInfoId},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="batchUpdateMakeBill">
+        <foreach collection="list" index="index" item="mb" separator=";">
+            UPDATE make_bill
+            <set>
+                <if test="mb.expressInfoId != null">
+                    expressInfoId = #{mb.expressInfoId},
+                </if>
+                <if test="mb.billMonth != null">
+                    billMonth = #{mb.billMonth},
+                </if>
+                <if test="mb.makeBillDate != null">
+                    makeBillDate = #{mb.makeBillDate},
+                </if>
+                <if test="mb.expressNumber != null">
+                    expressNumber = #{mb.expressNumber},
+                </if>
+                <if test="mb.invoiceNumber != null">
+                    invoiceNumber = #{mb.invoiceNumber},
+                </if>
+                <if test="mb.status != null">
+                    `status` = #{mb.status},
+                </if>
+                <if test="mb.companyBillInfoId != null">
+                    `companyBillInfoId` = #{mb.companyBillInfoId},
+                </if>
+            </set>
+            WHERE id = #{mb.id}
+        </foreach>
+    </update>
+
+    <insert id="addMakeBill" parameterType="com.magic.daoyuan.business.entity.MakeBill">
+        INSERT INTO make_bill (confirmFundId, makeBillDate, expressNumber, invoiceNumber, `status`, createTime, companyBillInfoId,amountOfBill,
+        amount,shopNameId,remark,billMonth)
+        VALUES
+        (#{confirmFundId}, #{makeBillDate}, #{expressNumber}, #{invoiceNumber}, #{status}, now(), #{companyBillInfoId},#{amountOfBill},
+        #{amount},#{shopNameId},#{remark},#{billMonth})
+    </insert>
+
+    <insert id="batchAddMakeBill" parameterType="com.magic.daoyuan.business.entity.MakeBill">
+        INSERT INTO make_bill (confirmFundId, makeBillDate, expressNumber, invoiceNumber, `status`, createTime, companyBillInfoId,amountOfBill,
+        amount,shopNameId,remark,billMonth)
+        VALUES
+        <foreach collection="list" index="index" item="l" separator=",">
+            (#{l.confirmFundId}, #{l.makeBillDate}, #{l.expressNumber}, #{l.invoiceNumber}, #{l.status}, now(), #{l.companyBillInfoId},#{l.amountOfBill},
+            #{l.amount},#{l.shopNameId},#{l.remark},#{l.billMonth})
+        </foreach>
+    </insert>
+
+    <select id="getMakeBillUnDispose" resultType="int">
+        select COUNT(0) from make_bill mb WHERE mb.status = 3001
+    </select>
+
+</mapper>

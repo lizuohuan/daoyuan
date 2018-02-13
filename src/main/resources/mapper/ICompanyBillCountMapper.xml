@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.ICompanyBillCountMapper">
+
+
+    <insert id="add" parameterType="com.magic.daoyuan.business.entity.CompanyBillCount">
+        INSERT INTO company_bill_count ( companyId, billMonth, `type`, createTime)
+        VALUES ( #{companyId}, #{billMonth}, #{type}, NOW())
+    </insert>
+
+
+    <select id="info" resultType="com.magic.daoyuan.business.entity.CompanyBillCount">
+        SELECT * FROM company_bill_count WHERE companyId = #{companyId}
+        AND DATE_FORMAT(billMonth,'%y-%m') = DATE_FORMAT(#{billMonth},'%y-%m')
+        AND `type` = #{type}
+    </select>
+
+    <delete id="del">
+        DELETE FROM company_bill_count WHERE companyId = #{companyId}
+        AND DATE_FORMAT(billMonth,'%y-%m') = DATE_FORMAT(#{billMonth},'%y-%m')
+        AND `type` = #{type}
+    </delete>
+
+    <select id="countCompanyBillCount" resultType="com.magic.daoyuan.business.entity.CompanyBillCount">
+        SELECT
+            cbc.*,cc.isPeer
+        FROM
+            company_bill_count cbc
+        LEFT JOIN company_cooperation cc ON cbc.companyId = cc.companyId
+                  AND  DATE_FORMAT(cbc.createTime,'%y-%m-%d') >= DATE_FORMAT(cc.createTime,'%y-%m-%d')
+        WHERE
+        1=1
+        <if test="type != null">
+            AND cbc.`type` = #{type}
+        </if>
+        <if test="month != null">
+            AND DATE_FORMAT(cbc.createTime,'%y-%m') >= DATE_FORMAT(#{month},'%-y-%m')
+        </if>
+        <if test="startTime != null">
+            AND DATE_FORMAT(cbc.createTime,'%y-%m-%d') >= DATE_FORMAT(#{startTime},'%y-%m-%d')
+        </if>
+        <if test="endTime != null">
+            AND DATE_FORMAT(#{endTime},'%y-%m-%d') >= DATE_FORMAT(cbc.createTime,'%y-%m-%d')
+        </if>
+        <if test="more != null">
+            AND (SELECT COUNT(0) FROM member_count mc WHERE DATE_FORMAT(mc.createTime,'%y-%m-%d') = DATE_FORMAT(cbc.createTime,'%y-%m-%d')
+            AND mc.companyId = cbc.companyId AND mc.stateCooperation = 1) >= #{more}
+        </if>
+        <if test="less != null">
+            AND #{less} >= (SELECT COUNT(0) FROM member_count mc WHERE DATE_FORMAT(mc.createTime,'%y-%m-%d') = DATE_FORMAT(cbc.createTime,'%y-%m-%d')
+            AND mc.companyId = cbc.companyId AND mc.stateCooperation = 1)
+        </if>
+        <if test="serviceAmount != null">
+            AND (SELECT SUM(msf.serviceFee) FROM company_son_total_bill cstb,month_service_fee msf
+            WHERE cstb.id = msf.companySonTotalBillId AND cstb.companyId = cbc.companyId
+            AND DATE_FORMAT(cstb.billMonth,'%y-%m') = DATE_FORMAT(cbc.billMonth,'%y-%m')) > #{serviceAmount}
+        </if>
+    </select>
+
+</mapper>

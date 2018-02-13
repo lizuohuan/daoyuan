@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IMemberBusinessItemMapper">
+
+    <resultMap id="BaseResultMap" type="com.magic.daoyuan.business.entity.MemberBusinessItem" >
+        <id column="id" property="id" javaType="java.lang.Integer" />
+        <result column="type" property="type" javaType="java.lang.Integer" />
+        <result column="serveMethod" property="serveMethod" javaType="java.lang.Integer" />
+        <result column="isReceivable" property="isReceivable" javaType="java.lang.Integer" />
+        <result column="payPlaceId" property="payPlaceId" javaType="java.lang.Integer" />
+        <result column="organizationId" property="organizationId" javaType="java.lang.Integer" />
+        <result column="transactorId" property="transactorId" javaType="java.lang.Integer" />
+        <result column="insuranceLevelId" property="insuranceLevelId" javaType="java.lang.Integer" />
+        <result column="memberBusinessId" property="memberBusinessId" javaType="java.lang.Integer" />
+        <result column="ratio" property="ratio" javaType="java.lang.Double" />
+        <result column="baseType" property="baseType" javaType="java.lang.Integer" />
+        <result column="baseNumber" property="baseNumber" javaType="java.lang.Double" />
+        <result column="serviceStartTime" property="serviceStartTime" javaType="java.util.Date" />
+        <result column="billStartTime" property="billStartTime" javaType="java.util.Date" />
+        <result column="serviceEndTime" property="serviceEndTime" javaType="java.util.Date" />
+        <result column="organizationName" property="organizationName" javaType="java.lang.String" />
+        <result column="payPlaceName" property="payPlaceName" javaType="java.lang.String" />
+        <result column="transactorName" property="transactorName" javaType="java.lang.String" />
+        <result column="coding" property="coding" javaType="java.lang.String" />
+        <result column="insuranceLevelName" property="insuranceLevelName" javaType="java.lang.String" />
+        <result column="isFirstPay" property="isFirstPay" javaType="java.lang.Integer" />
+        <result column="firstPayBillMonth" property="firstPayBillMonth" javaType="java.util.Date" />
+        <result column="computationalAccuracy" property="computationalAccuracy" javaType="java.lang.Integer" />
+        <result column="computationRule" property="computationRule" javaType="java.lang.Integer" />
+        <result column="minCardinalNumber" property="minCardinalNumber" javaType="java.lang.Double" />
+        <result column="maxCardinalNumber" property="maxCardinalNumber" javaType="java.lang.Double" />
+        <result column="precision" property="precision" javaType="java.lang.Integer" />
+        <result column="cityId" property="cityId" javaType="java.lang.Integer" />
+        <result column="businessId" property="businessId" javaType="java.lang.Integer" />
+        <result column="billMadeMethod" property="billMadeMethod" javaType="java.lang.Integer" />
+        <result column="certificateNum" property="certificateNum" javaType="java.lang.String" />
+        <result column="memberId" property="memberId" javaType="java.lang.Integer" />
+    </resultMap>
+    
+    <resultMap id="BaseResultOther" type="com.magic.daoyuan.business.entity.MemberBusinessItem" extends="BaseResultMap">
+        <association property="payTheWays" columnPrefix="pt_"
+                     resultMap="com.magic.daoyuan.business.mapper.IPayTheWayMapper.BaseResultOther"/>
+    </resultMap>
+
+
+    <select id="queryMemberBusinessItem" resultMap="BaseResultMap">
+        SELECT
+            mbi.*,
+            mb.memberId,
+            m.certificateNum,
+            mb.businessId
+        FROM
+            member_business mb,
+            member_business_item mbi,
+            member m
+        WHERE
+            mb.id = mbi.memberBusinessId
+        AND m.id = mb.memberId
+        AND m.id IN
+        <foreach collection="list" index="index" item="i" open="(" close=")" separator=",">
+            #{i}
+        </foreach>
+    </select>
+
+    <select id="queryMemberBusinessItemByMembers" resultMap="BaseResultMap">
+        SELECT
+            mbi.id,
+            mb.memberId,
+            m.certificateNum,
+            CASE mbi.serveMethod WHEN 0 THEN (SELECT cc.`name` FROM pay_place pp,citys cc  WHERE pp.id = mbi.payPlaceId AND cc.id = pp.cityId)
+                                                     ELSE (SELECT cc.`name` FROM company_pay_place cpp,pay_place pp,citys cc WHERE cpp.payPlaceId = pp.id AND cc.id = pp.cityId AND cpp.id = mbi.payPlaceId)
+                                                     END AS payPlaceName,
+            CASE mbi.serveMethod WHEN 0 THEN mbi.payPlaceId
+                                        ELSE (SELECT cpp.payPlaceId FROM company_pay_place cpp WHERE  cpp.id = mbi.payPlaceId)
+                                        END AS payPlaceId,
+            CASE mbi.serveMethod WHEN 0 THEN (SELECT o.organizationName FROM organization o WHERE o.id = mbi.organizationId)
+                                                     ELSE (SELECT cpp.organizationName FROM company_pay_place cpp WHERE cpp.id = mbi.payPlaceId) END AS organizationName,
+            CASE mbi.serveMethod WHEN 0 THEN (SELECT s.supplierName FROM transactor t,supplier s WHERE t.id = mbi.transactorId AND s.id = t.supplierId)
+                                                     ELSE (SELECT cpp.transactorName FROM company_pay_place cpp WHERE cpp.id = mbi.payPlaceId ) END AS transactorName,
+            (SELECT il.levelName FROM insurance_level il WHERE il.id = mbi.insuranceLevelId) AS insuranceLevelName,
+            CASE mbi.baseType WHEN 0 THEN (SELECT ptw.meMinScope FROM pay_the_way ptw WHERE ptw.insuranceLevelId = mbi.insuranceLevelId ORDER BY ptw.meMinScope ASC LIMIT 0,1)
+                                                    WHEN 1 THEN (SELECT ptw.meMaxScope FROM pay_the_way ptw WHERE ptw.insuranceLevelId = mbi.insuranceLevelId ORDER BY ptw.meMaxScope DESC LIMIT 0,1)
+                                                    WHEN 2 THEN mbi.baseNumber END AS baseNumber
+        FROM
+            member_business mb,
+            member_business_item mbi,
+            member m
+        WHERE
+            mb.id = mbi.memberBusinessId
+        AND m.id = mb.memberId
+        AND mb.businessId = 3
+        AND m.certificateNum IN
+        <foreach collection="list" index="index" item="i" open="(" close=")" separator=",">
+            #{i}
+        </foreach>
+    </select>
+
+
+    <delete id="delMemberBusinessItemByMember">
+        DELETE
+        FROM
+            member_business_item
+        WHERE
+            memberBusinessId IN (
+                SELECT
+                    mb.id
+                FROM
+                    member_business mb
+                WHERE
+                    mb.memberId = #{memberId}
+            )
+    </delete>
+
+    <delete id="batchDelMemberBusinessItemByMember">
+        DELETE
+        FROM
+            member_business_item
+        WHERE
+            memberBusinessId IN (
+                SELECT
+                    mb.id
+                FROM
+                    member_business mb
+                WHERE
+                    mb.memberId IN
+                    <foreach collection="list" index="index" item="memberId" open="(" close=")" separator=",">
+                        #{memberId}
+                    </foreach>
+            )
+    </delete>
+
+    <select id="queryMemberBusinessItemByBusinessMember" resultType="com.magic.daoyuan.business.entity.MemberBusinessItem">
+        SELECT
+                CASE mbi.`type` WHEN 1 THEN  (CASE mbi.serveMethod WHEN 1 THEN (SELECT cpp.organizationId FROM company_pay_place cpp WHERE cpp.id = mbi.payPlaceId)
+                                                                          ELSE mbi.organizationId END)
+                                                             ELSE mbi.organizationId END AS organizationId,
+                CASE mbi.`serveMethod` WHEN 0 THEN (SELECT cc.`name` FROM pay_place pp,citys cc WHERE pp.cityId = cc.id AND pp.id = mbi.payPlaceId)
+                                                             ELSE (SELECT cc.`name` FROM pay_place pp,citys cc,company_pay_place cpp WHERE pp.id = cpp.payPlaceId
+                                                                            AND pp.cityId = cc.id AND cpp.id = mbi.payPlaceId) END AS payPlaceName,
+                CASE mbi.`serveMethod` WHEN 0 THEN (SELECT o.organizationName FROM organization o WHERE o.id = mbi.organizationId)
+                                                             ELSE (CASE mbi.`type` WHEN 1 THEN (SELECT o.organizationName FROM company_pay_place cpp,organization o
+                                                                                                                                    WHERE cpp.organizationId = o.id AND cpp.id = mbi.payPlaceId)
+                                                                                                         ELSE (SELECT cpp.organizationName FROM company_pay_place cpp WHERE cpp.id = mbi.payPlaceId) END) END AS organizationName,
+                CASE mbi.serveMethod WHEN 0 THEN (SELECT s.supplierName FROM transactor t,supplier s WHERE t.id = mbi.transactorId AND t.supplierId = s.id )
+                                                         ELSE (SELECT cpp.transactorName FROM company_pay_place cpp WHERE cpp.id = mbi.payPlaceId) END AS transactorName,
+                (SELECT il.levelName FROM insurance_level il WHERE il.id = mbi.insuranceLevelId) AS insuranceLevelName,
+                CASE mbi.baseType WHEN 0 THEN (CASE mbi.`type` WHEN 0 THEN (CASE mbi.serveMethod WHEN 0 THEN (SELECT MIN(ptw.meMinScope) FROM pay_the_way ptw WHERE ptw.insuranceLevelId = mbi.insuranceLevelId)
+                                                                                                                                                                        ELSE (SELECT MIN(ptw.meMinScope) FROM pay_the_way ptw,company_pay_place cpp,insurance_level il
+                                                                                                                                                                                    WHERE cpp.id = mbi.payPlaceId AND ptw.insuranceLevelId = il.id AND il.payPlaceId = cpp.payPlaceId) END)
+                                                                                                             ELSE (CASE mbi.serveMethod WHEN 0 THEN (SELECT MIN(o.minCardinalNumber) FROM organization o WHERE o.id = mbi.organizationId)
+                                                                                                                                                                    ELSE (SELECT MIN(o.minCardinalNumber) FROM company_pay_place cpp,organization o WHERE cpp.id = mbi.payPlaceId
+                                                                                                                                                                                                            AND cpp.organizationId = o.id) END) END)
+                                  WHEN 1 THEN  (CASE mbi.`type` WHEN 0 THEN (CASE mbi.serveMethod WHEN 0 THEN (SELECT MAX(ptw.meMaxScope) FROM pay_the_way ptw WHERE ptw.insuranceLevelId = mbi.insuranceLevelId)
+                                                                                                                                                    ELSE (SELECT MAX(ptw.meMaxScope) FROM pay_the_way ptw,company_pay_place cpp,insurance_level il
+                                                                                                                                                                WHERE cpp.id = mbi.payPlaceId AND ptw.insuranceLevelId = il.id AND il.payPlaceId = cpp.payPlaceId) END)
+                                                                                         ELSE (CASE mbi.serveMethod WHEN 0 THEN (SELECT MAX(o.maxCardinalNumber) FROM organization o WHERE o.id = mbi.organizationId)
+                                                                                                                                                ELSE (SELECT MAX(o.maxCardinalNumber) FROM company_pay_place cpp,organization o WHERE cpp.id = mbi.payPlaceId
+                                                                                                                                                                                        AND cpp.organizationId = o.id) END) END)
+                                  ELSE mbi.baseNumber	END AS baseNumber,
+                (SELECT csb.sonBillName FROM company_son_bill csb WHERE csb.id = mb.companySonBillId) AS sonBillName,
+                mbi.*
+        FROM
+                member_business_item mbi,member_business mb
+        WHERE
+        mbi.memberBusinessId = mb.id
+        AND mbi.memberBusinessId = #{businessMemberId}
+        AND mbi.`type` = #{type}
+    </select>
+
+    <select id="listByMemberId" resultMap="BaseResultMap">
+        select * from member_business_item mbi ,member_business mb
+        WHERE mbi.memberBusinessId = mb.id
+        AND mb.memberId = #{memberId}
+    </select>
+
+    <select id="info" resultType="com.magic.daoyuan.business.entity.MemberBusinessItem" parameterType="java.lang.Integer" >
+        select
+          *
+        from member_business_item
+        where id = #{id}
+    </select>
+
+    <insert id="save">
+        insert into member_business_item (`type`, serveMethod, isReceivable, payPlaceId, organizationId,
+        transactorId, insuranceLevelId, ratio, baseNumber, memberBusinessId,
+        serviceStartTime,billStartTime,serviceEndTime,baseType,coding,isFirstPay,firstPayBillMonth)
+        values
+        <foreach collection="records" item="record" separator=",">
+            (#{record.type},#{record.serveMethod},#{record.isReceivable},#{record.payPlaceId},#{record.organizationId},
+             #{record.transactorId},#{record.insuranceLevelId},#{record.ratio},#{record.baseNumber},#{record.memberBusinessId}
+            ,#{record.serviceStartTime},#{record.billStartTime},
+            #{record.serviceEndTime},#{record.baseType},#{record.coding},#{record.isFirstPay},#{record.firstPayBillMonth})
+        </foreach>
+    </insert>
+
+    <update id="update" parameterType="com.magic.daoyuan.business.entity.MemberBusinessItem" >
+        update member_business_item
+        <set >
+            <if test="serviceEndTime != null" >
+                `serviceEndTime` = #{serviceEndTime},
+            </if>
+            <if test="billStartTime != null" >
+                `billStartTime` = #{billStartTime},
+            </if>
+            <if test="serviceStartTime != null" >
+                `serviceStartTime` = #{serviceStartTime},
+            </if>
+            <if test="type != null" >
+                `type` = #{type},
+            </if>
+            <if test="serveMethod != null" >
+                serveMethod = #{serveMethod},
+            </if>
+            <if test="isReceivable != null" >
+                isReceivable = #{isReceivable},
+            </if>
+            <if test="payPlaceId != null" >
+                payPlaceId = #{payPlaceId},
+            </if>
+            <if test="organizationId != null" >
+                organizationId = #{organizationId},
+            </if>
+            <if test="transactorId != null" >
+                transactorId = #{transactorId},
+            </if>
+            <if test="insuranceLevelId != null" >
+                insuranceLevelId = #{insuranceLevelId},
+            </if>
+            <if test="ratio != null" >
+                ratio = #{ratio},
+            </if>
+            <if test="baseType != null" >
+                baseType = #{baseType},
+            </if>
+            <if test="baseNumber != null" >
+                baseNumber = #{baseNumber},
+            </if>
+            <if test="memberBusinessId != null" >
+                memberBusinessId = #{memberBusinessId},
+            </if>
+            <if test="coding != null and coding != ''" >
+                coding = #{coding},
+            </if>
+            <if test="isFirstPay != null" >
+                isFirstPay = #{isFirstPay},
+            </if>
+            firstPayBillMonth = #{firstPayBillMonth}
+        </set>
+        where id = #{id}
+    </update>
+
+
+    <update id="updateList" parameterType="com.magic.daoyuan.business.entity.MemberBusinessItem" >
+
+        <foreach collection="list" separator=";" item="m">
+            update member_business_item
+            <set >
+                <if test="m.serviceEndTime != null" >
+                    `serviceEndTime` = #{m.serviceEndTime},
+                </if>
+                <if test="m.billStartTime != null" >
+                    `billStartTime` = #{m.billStartTime},
+                </if>
+                <if test="m.serviceStartTime != null" >
+                    `serviceStartTime` = #{m.serviceStartTime},
+                </if>
+                <if test="m.type != null" >
+                    `type` = #{m.type},
+                </if>
+                <if test="m.serveMethod != null" >
+                    serveMethod = #{m.serveMethod},
+                </if>
+                <if test="m.isReceivable != null" >
+                    isReceivable = #{m.isReceivable},
+                </if>
+                <if test="m.payPlaceId != null" >
+                    payPlaceId = #{m.payPlaceId},
+                </if>
+                <if test="m.organizationId != null" >
+                    organizationId = #{m.organizationId},
+                </if>
+                <if test="m.transactorId != null" >
+                    transactorId = #{m.transactorId},
+                </if>
+                <if test="m.insuranceLevelId != null" >
+                    insuranceLevelId = #{m.insuranceLevelId},
+                </if>
+                <if test="m.ratio != null" >
+                    ratio = #{m.ratio},
+                </if>
+                <if test="m.baseType != null" >
+                    baseType = #{m.baseType},
+                </if>
+                <if test="m.baseNumber != null" >
+                    baseNumber = #{m.baseNumber},
+                </if>
+                <if test="m.memberBusinessId != null" >
+                    memberBusinessId = #{m.memberBusinessId},
+                </if>
+                <if test="m.coding != null and m.coding != ''" >
+                    coding = #{m.coding},
+                </if>
+                <if test="m.isFirstPay != null" >
+                    isFirstPay = #{m.isFirstPay},
+                </if>
+                firstPayBillMonth = #{m.firstPayBillMonth}
+            </set>
+            where id = #{m.id}
+        </foreach>
+    </update>
+    
+    
+    <update id="updateIsFirstPay">
+        UPDATE member_business_item SET isFirstPay = 1
+        WHERE memberBusinessId IN
+        (select mb.id from member_business mb , member m WHERE mb.memberId = m.id AND m.companyId = #{companyId})
+        AND DATE_FORMAT(firstPayBillMonth, '%Y-%m') = DATE_FORMAT(#{month}, '%Y-%m')
+    </update>
+
+    <update id="updateIsFirstPay2">
+        <foreach collection="companyDateMapList" separator=";" item="map">
+        UPDATE member_business_item SET isFirstPay = 1
+        WHERE memberBusinessId IN
+        (select mb.id from member_business mb , member m WHERE mb.memberId = m.id AND
+            m.companyId = #{map.companyId})
+            AND DATE_FORMAT(firstPayBillMonth, '%Y-%m') = DATE_FORMAT(#{map.billMonth}, '%Y-%m')
+        </foreach>
+
+    </update>
+    
+</mapper>

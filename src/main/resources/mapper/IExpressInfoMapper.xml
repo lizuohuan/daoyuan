@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IExpressInfoMapper">
+
+
+    <select id="countExpressInfo" resultType="java.lang.Integer">
+        SELECT
+        COUNT(0)
+        FROM express_info ei,express_company ec,company cc
+        WHERE ei.companyId = cc.id
+        AND ei.expressCompanyId = ec.id
+        AND ei.isValid = 1
+        <if test="companyId != null">
+            AND ei.companyId = #{companyId}
+        </if>
+        <if test="expressCompanyId != null">
+            AND ei.expressCompanyId = #{expressCompanyId}
+        </if>
+        <if test="isReceive != null">
+            AND ei.isReceive = #{isReceive}
+        </if>
+        <if test="orderNumber != null">
+            AND ei.orderNumber LIKE '%${orderNumber}%'
+        </if>
+    </select>
+
+    <select id="queryExpressInfo" resultType="com.magic.daoyuan.business.entity.ExpressInfo">
+        SELECT
+        ei.*,ec.expressCompanyName,cc.companyName,epi.personName AS expressPersonName,ec.url AS expressUrl
+        FROM express_info ei,express_company ec,company cc,express_person_info epi
+        WHERE ei.companyId = cc.id
+        AND ei.expressCompanyId = ec.id
+        AND epi.id = ei.expressPersonId
+        AND ei.isValid = 1
+        <if test="companyId != null">
+            AND ei.companyId = #{companyId}
+        </if>
+        <if test="expressCompanyId != null">
+            AND ei.expressCompanyId = #{expressCompanyId}
+        </if>
+        <if test="isReceive != null">
+            AND ei.isReceive = #{isReceive}
+        </if>
+        <if test="orderNumber != null">
+            AND ei.orderNumber LIKE '%${orderNumber}%'
+        </if>
+        ORDER BY ei.id DESC
+        <if test="limit != null and limitSize != null">
+            LIMIT #{limit},#{limitSize}
+        </if>
+    </select>
+
+
+    <select id="queryExpressInfoById" resultType="com.magic.daoyuan.business.entity.ExpressInfo">
+        SELECT
+        ei.*,ec.expressCompanyName,cc.companyName,epi.personName AS expressPersonName
+        FROM express_info ei,express_company ec,company cc,express_person_info epi
+        WHERE ei.companyId = cc.id
+        AND ei.expressCompanyId = ec.id
+        AND epi.id = ei.expressPersonId
+        AND ei.isValid = 1
+        AND ei.id = #{id}
+    </select>
+
+
+    <select id="queryExpressInfoByContent"  resultType="com.magic.daoyuan.business.entity.ExpressInfo">
+        SELECT * FROM  express_info WHERE  orderNumber = #{orderNumber}
+        AND expressPersonId = #{expressPersonId} AND expressCompanyId = #{expressCompanyId}
+    </select>
+
+    <update id="updateExpressInfo" parameterType="com.magic.daoyuan.business.entity.ExpressInfo">
+
+        UPDATE express_info
+        <set>
+            <if test="receiveDate != null">
+                receiveDate = #{receiveDate},
+            </if>
+            <if test="orderNumber != null">
+                orderNumber = #{orderNumber},
+            </if>
+            <if test="expressCompanyId != null">
+                expressCompanyId = #{expressCompanyId},
+            </if>
+            <if test="content != null">
+                content = #{content},
+            </if>
+            <if test="isReceive != null">
+                isReceive = #{isReceive},
+            </if>
+            <if test="companyId != null">
+                companyId = #{companyId},
+            </if>
+            <if test="expressPersonId != null">
+                expressPersonId = #{expressPersonId},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <insert id="addExpressInfo" parameterType="com.magic.daoyuan.business.entity.ExpressInfo" useGeneratedKeys="true"
+        keyColumn="id" keyProperty="id">
+        INSERT INTO express_info ( orderNumber, expressCompanyId, content, isReceive, isValid, companyId,expressPersonId)
+        VALUES
+        ( #{orderNumber}, #{expressCompanyId}, #{content}, #{isReceive}, 1, #{companyId},#{expressPersonId})
+    </insert>
+
+</mapper>

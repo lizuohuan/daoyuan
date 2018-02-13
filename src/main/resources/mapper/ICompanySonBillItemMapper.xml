@@ -1,0 +1,491 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.magic.daoyuan.business.mapper.ICompanySonBillItemMapper">
+
+    <resultMap id="BaseResultMap" type="com.magic.daoyuan.business.entity.CompanySonBillItem">
+        <id column="id" property="id" javaType="java.lang.Integer" />
+        <result column="companySonTotalBillId" property="companySonTotalBillId" javaType="java.lang.Integer" />
+        <result column="totalPrice" property="totalPrice" javaType="java.lang.Double" />
+        <result column="receivablePrice" property="receivablePrice" javaType="java.lang.Double" />
+        <result column="balanceOfCancelAfterVerification" property="balanceOfCancelAfterVerification" javaType="java.lang.Double" />
+        <result column="isAudit" property="isAudit" javaType="java.lang.Integer" />
+        <result column="auditTheDifference" property="auditTheDifference" javaType="java.lang.Double" />
+        <result column="createTime" property="createTime" javaType="java.util.Date" />
+        <result column="serviceMonth" property="serviceMonth" javaType="java.util.Date" />
+        <result column="status" property="status" javaType="java.lang.Integer"/>
+        <result column="isValid" property="isValid" javaType="java.lang.Integer"/>
+        <result column="isTotalBill" property="isTotalBill" javaType="java.lang.Integer"/>
+        <result column="isSocialSecurityAudit" property="isSocialSecurityAudit" javaType="java.lang.Integer"/>
+        <result column="isReservedFundAudit" property="isReservedFundAudit" javaType="java.lang.Integer"/>
+        <result column="socialSecurityPracticalPrice" property="socialSecurityPracticalPrice" javaType="java.lang.Double"/>
+        <result column="reservedFundPracticalPrice" property="reservedFundPracticalPrice" javaType="java.lang.Double"/>
+        <result column="companyId" property="companyId" javaType="java.lang.Integer"/>
+        <result column="companySonBillId" property="companySonBillId" javaType="java.lang.Integer"/>
+        <result column="billMonth" property="billMonth" javaType="java.util.Date"/>
+        <result column="ssPaidInPrice" property="ssPaidInPrice" javaType="java.lang.Double"/>
+        <result column="rfPaidInPrice" property="rfPaidInPrice" javaType="java.lang.Double"/>
+        <result column="isUploadKaoPanS" property="isUploadKaoPanS" javaType="java.lang.Integer"/>
+        <result column="isUploadKaoPanR" property="isUploadKaoPanR" javaType="java.lang.Integer"/>
+        <result column="companyId" property="companyId" javaType="java.lang.Integer"/>
+    </resultMap>
+
+
+    <resultMap id="BaseResultOther" type="com.magic.daoyuan.business.entity.CompanySonBillItem" extends="BaseResultMap">
+        <association property="socialSecurityInfos" columnPrefix="ssi_"
+                     resultMap="com.magic.daoyuan.business.mapper.ISocialSecurityInfoMapper.BaseResultItem"/>
+        <association property="reservedFundsInfoList" columnPrefix="rfi_"
+                     resultMap="com.magic.daoyuan.business.mapper.IReservedFundsInfoMapper.BaseResultMap"/>
+
+    </resultMap>
+
+    <resultMap id="BaseResultOther2" type="com.magic.daoyuan.business.entity.CompanySonBillItem" extends="BaseResultMap">
+        <association property="companySonTotalBill" columnPrefix="cstb_"
+                     resultMap="com.magic.daoyuan.business.mapper.ICompanySonTotalBillMapper.BaseResultMap"/>
+    </resultMap>
+
+    <insert id="save" keyProperty="id" keyColumn="id" parameterType="com.magic.daoyuan.business.entity.CompanySonBillItem"
+            useGeneratedKeys="true">
+        insert into company_son_bill_item (companySonTotalBillId,totalPrice,
+        receivablePrice, balanceOfCancelAfterVerification, isAudit,
+        auditTheDifference, createTime,isValid,serviceMonth,
+        isTotalBill,isSocialSecurityAudit,isReservedFundAudit,
+        socialSecurityPracticalPrice,reservedFundPracticalPrice,companySonBillId,ssPaidInPrice,rfPaidInPrice)
+        values
+        <foreach collection="list" item="record" separator=",">
+            (#{record.companySonTotalBillId},#{record.totalPrice},#{record.receivablePrice},
+            #{record.balanceOfCancelAfterVerification},#{record.isAudit},
+            #{record.auditTheDifference},now(),1,#{record.serviceMonth},0,0,0,
+            #{record.socialSecurityPracticalPrice},#{record.reservedFundPracticalPrice},
+            #{record.companySonBillId},#{record.ssPaidInPrice},#{record.rfPaidInPrice})
+        </foreach>
+    </insert>
+
+    <update id="update" parameterType="com.magic.daoyuan.business.entity.CompanySonBillItem">
+        update company_son_bill_item
+        <set>
+            <if test="isUploadKaoPanS != null">
+                `isUploadKaoPanS` = #{isUploadKaoPanS},
+            </if>
+            <if test="isUploadKaoPanR != null">
+                `isUploadKaoPanR` = #{isUploadKaoPanR},
+            </if>
+            <if test="receivablePrice != null">
+                `receivablePrice` = #{receivablePrice},
+            </if>
+            <if test="rfPaidInPrice != null">
+                `rfPaidInPrice` = #{rfPaidInPrice},
+            </if>
+            <if test="rfPaidInPrice != null">
+                `rfPaidInPrice` = #{rfPaidInPrice},
+            </if>
+            <if test="socialSecurityPracticalPrice != null">
+                `socialSecurityPracticalPrice` = #{socialSecurityPracticalPrice},
+            </if>
+            <if test="reservedFundPracticalPrice != null">
+                `reservedFundPracticalPrice` = #{reservedFundPracticalPrice},
+            </if>
+            <if test="isSocialSecurityAudit != null">
+                `isSocialSecurityAudit` = #{isSocialSecurityAudit},
+            </if>
+            <if test="isReservedFundAudit != null">
+                `isReservedFundAudit` = #{isReservedFundAudit},
+            </if>
+            <if test="totalPrice != null">
+                totalPrice = #{totalPrice},
+            </if>
+            <if test="receivablePrice != null">
+                receivablePrice = #{receivablePrice},
+            </if>
+            <if test="balanceOfCancelAfterVerification != null">
+                balanceOfCancelAfterVerification = #{balanceOfCancelAfterVerification},
+            </if>
+            <if test="isAudit != null">
+                isAudit = #{isAudit},
+            </if>
+            <if test="auditTheDifference != null">
+                `auditTheDifference` = #{auditTheDifference},
+            </if>
+            <if test="isValid != null">
+                `isValid` = #{isValid},
+            </if>
+            <if test="isTotalBill != null">
+                `isTotalBill` = #{isTotalBill},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+    <update id="updateList">
+        <foreach collection="records" item="cs" separator=";">
+            update company_son_bill_item
+            <set>
+                <if test="cs.isUploadKaoPanS != null">
+                    `isUploadKaoPanS` = #{cs.isUploadKaoPanS},
+                </if>
+                <if test="cs.isUploadKaoPanR != null">
+                    `isUploadKaoPanR` = #{cs.isUploadKaoPanR},
+                </if>
+                <if test="cs.receivablePrice != null">
+                    `receivablePrice` = #{cs.receivablePrice},
+                </if>
+                <if test="cs.rfPaidInPrice != null">
+                    `rfPaidInPrice` = #{cs.rfPaidInPrice},
+                </if>
+                <if test="cs.ssPaidInPrice != null">
+                    `ssPaidInPrice` = #{cs.ssPaidInPrice},
+                </if>
+                <if test="cs.socialSecurityPracticalPrice != null">
+                    `socialSecurityPracticalPrice` = #{cs.socialSecurityPracticalPrice},
+                </if>
+                <if test="cs.reservedFundPracticalPrice != null">
+                    `reservedFundPracticalPrice` = #{cs.reservedFundPracticalPrice},
+                </if>
+                <if test="cs.isSocialSecurityAudit != null">
+                    `isSocialSecurityAudit` = #{cs.isSocialSecurityAudit},
+                </if>
+                <if test="cs.isReservedFundAudit != null">
+                    `isReservedFundAudit` = #{cs.isReservedFundAudit},
+                </if>
+                <if test="cs.companySonTotalBillId != null">
+                    `companySonTotalBillId` = #{cs.companySonTotalBillId},
+                </if>
+                <if test="cs.totalPrice != null">
+                    totalPrice = #{cs.totalPrice},
+                </if>
+                <if test="cs.receivablePrice != null">
+                    receivablePrice = #{cs.receivablePrice},
+                </if>
+                <if test="cs.balanceOfCancelAfterVerification != null">
+                    balanceOfCancelAfterVerification = #{cs.balanceOfCancelAfterVerification},
+                </if>
+                <if test="cs.isAudit != null">
+                    isAudit = #{cs.isAudit},
+                </if>
+                <if test="cs.auditTheDifference != null">
+                    `auditTheDifference` = #{cs.auditTheDifference},
+                </if>
+                <if test="cs.isValid != null">
+                    `isValid` = #{cs.isValid},
+                </if>
+                <if test="cs.isTotalBill != null">
+                    `isTotalBill` = #{cs.isTotalBill},
+                </if>
+            </set>
+            where id = #{cs.id}
+        </foreach>
+
+    </update>
+
+    <select id="info" resultMap="BaseResultMap">
+        select csbi.*,cstb.companyId from company_son_bill_item csbi,company_son_total_bill cstb
+        WHERE
+        csbi.companySonTotalBillId = cstb.id
+        AND csbi.id = #{id}
+    </select>
+
+
+    <select id="getByCompanySonBillIdAndCreateTime" resultMap="BaseResultMap">
+        select csbi.* from company_son_bill_item csbi,company_son_total_bill cstb WHERE
+        DATE_FORMAT(cstb.billMonth, '%Y-%m') = DATE_FORMAT(#{createTime}, '%Y-%m')
+        AND cstb.id = csbi.companySonTotalBillId
+        AND csbi.companySonTotalBillId = #{companySonTotalBillId}
+    </select>
+
+
+    <select id="list" resultMap="BaseResultMap" parameterType="map">
+        SELECT csbi.*,csb.sonBillName,cp.companyName
+        FROM company_son_bill_item csbi ,company_son_total_bill cstb ,company_son_bill csb ,company cp
+        WHERE csbi.companySonTotalBillId = cstb.id
+        AND csb.id = cstb.companySonBillId
+        AND csb.companyId = cp.id
+        AND csbi.isValid = 1
+        AND csb.isValid = 1
+        <!--<if test="companyName != null and companyName != ''">
+            AND cp.companyName Like '%${companyName}%'
+        </if>-->
+        <if test="companyId != null">
+            AND csb.companyId = #{companyId}
+        </if>
+        <if test="companySonTotalBillId != null">
+            AND csbi.companySonTotalBillId = #{companySonTotalBillId}
+        </if>
+        <if test="isAudit != null">
+            AND csbi.isAudit = #{isAudit}
+        </if>
+        <if test="isTotalBill != null">
+            AND csbi.isTotalBill = #{isTotalBill}
+        </if>
+        <if test="startTime != null">
+            AND csbi.createTime <![CDATA[ >= ]]> #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND csbi.createTime <![CDATA[ <= ]]> #{endTime}
+        </if>
+        ORDER BY
+        <if test="pageArgs != null">
+            <if test="pageArgs.column != null and pageArgs.column != ''">
+                ${pageArgs.column} ${pageArgs.order},
+            </if>
+        </if>
+        csbi.id DESC
+        <if test="pageArgs != null">
+            limit #{pageArgs.pageStart}, #{pageArgs.pageSize}
+        </if>
+    </select>
+
+    <select id="listCount" resultType="int" parameterType="map">
+        SELECT
+        COUNT(*)
+        FROM company_son_bill_item csbi ,company_son_total_bill cstb ,company_son_bill csb ,company cp
+        WHERE csbi.companySonTotalBillId = cstb.id
+        AND csb.id = cstb.companySonBillId
+        AND csb.companyId = cp.id
+        AND csbi.isValid = 1
+        AND csb.isValid = 1
+        <!--<if test="companyName != null and companyName != ''">
+            AND cp.companyName Like '%${companyName}%'
+        </if>-->
+        <if test="companyId != null">
+            AND csb.companyId = #{companyId}
+        </if>
+        <if test="companySonTotalBillId != null">
+            AND csbi.companySonTotalBillId = #{companySonTotalBillId}
+        </if>
+        <if test="isAudit != null">
+            AND csbi.isAudit = #{isAudit}
+        </if>
+        <if test="isTotalBill != null">
+            AND csbi.isTotalBill = #{isTotalBill}
+        </if>
+        <if test="startTime != null">
+            AND csbi.createTime <![CDATA[ >= ]]> #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND csbi.createTime <![CDATA[ <= ]]> #{endTime}
+        </if>
+    </select>
+
+
+    <select id="listByCompanyIdAndServiceMonth" resultMap="BaseResultMap">
+        select csbi.* from company_son_bill_item csbi,company_son_bill csb ,company_son_total_bill cstb
+        WHERE
+        1 = 1
+        AND csbi.companySonTotalBillId = cstb.id
+        AND cstb.companySonBillId = csb.id
+        AND csb.companyId = #{companyId}
+        AND csbi.isTotalBill = 0
+        AND DATE_FORMAT(csbi.serviceMonth, '%Y-%m') = DATE_FORMAT(#{serviceMonth}, '%Y-%m')
+    </select>
+
+    <select id="getByCompanyIdAndServiceMonthCount" resultType="int">
+        select COUNT(0) from company_son_bill_item csbi,company_son_bill csb ,company_son_total_bill cstb
+        WHERE
+        1 = 1
+        AND csbi.companySonTotalBillId = cstb.id
+        AND cstb.companySonBillId = csb.id
+        AND csb.companyId = #{companyId}
+        AND DATE_FORMAT(csbi.serviceMonth, '%Y-%m') = DATE_FORMAT(#{serviceMonth}, '%Y-%m')
+    </select>
+
+    <delete id="deleteByCompanySonTotalBillId">
+        DELETE FROM company_son_bill_item WHERE
+       /* isSocialSecurityAudit = 0 AND isReservedFundAudit = 0
+        AND */companySonTotalBillId IN
+        <foreach collection="companySonTotalBillIds" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <update id="updateList2">
+        update company_son_bill_item set companySonTotalBillId = null
+        where isSocialSecurityAudit = 0 or isReservedFundAudit = 0
+    </update>
+
+
+    <update id="updateList3">
+        update company_son_bill_item set
+        isSocialSecurityAudit = 1 ,
+        isReservedFundAudit = 1
+        where
+        <if test="companySonTotalBillId != null">
+            companySonTotalBillId = #{companySonTotalBillId}
+        </if>
+        <if test="companyId != null">
+            companySonTotalBillId IN
+            (select cstb.id from company_son_total_bill cstb
+            WHERE cstb.companyId = #{companyId}
+            AND DATE_FORMAT(cstb.billMonth, '%Y-%m') = DATE_FORMAT(#{billMonth}, '%Y-%m'))
+        </if>
+
+    </update>
+
+    <select id="getByServiceMonthRFI" resultMap="BaseResultOther">
+        SELECT csbi.*,csb.companyId,
+        cstb.billMonth,
+        rfi.id AS rfi_id,
+        rfi.idCard AS rfi_idCard,
+        rfi.serviceNowYM AS rfi_serviceNowYM,
+        rfi.companyTotalPay AS rfi_companyTotalPay,
+        rfi.memberTotalPay AS rfi_memberTotalPay
+        FROM company_son_bill_item csbi
+        LEFT JOIN reserved_funds_info rfi ON csbi.id = rfi.companySonBillItemId,
+        company_business cb,
+        business_method bm,
+        company_son_bill csb ,
+        company_son_total_bill cstb
+        WHERE csb.companyId = cb.companyId
+        AND bm.companyBusinessId = cb.id
+        AND cstb.companySonBillId = csb.id
+        AND cstb.id = csbi.companySonTotalBillId
+        AND cstb.status NOT IN (2)
+        <if test="billMonth != null">
+            AND DATE_FORMAT(cstb.billMonth, '%Y-%m') = DATE_FORMAT(#{billMonth}, '%Y-%m')
+        </if>
+
+        AND (bm.tuoGuan = #{billMadeMethod} OR bm.daiLi = #{billMadeMethod})
+        AND csbi.isAudit = 0
+        <if test="serviceMonth != null and serviceMonth.size > 0">
+            AND (
+            <foreach collection="serviceMonth" separator="or" item="month">
+                DATE_FORMAT(csbi.serviceMonth, '%Y-%m') = DATE_FORMAT(#{month}, '%Y-%m')
+            </foreach>
+            )
+        </if>
+
+    </select>
+    <select id="getByServiceMonth" resultMap="BaseResultMap">
+        SELECT csbi.*,cb.companyId,
+        cstb.billMonth,cstb.status
+        FROM company_son_bill_item csbi,
+        company_business cb,
+        business_method bm,
+        company_son_bill csb ,
+        company_son_total_bill cstb
+        WHERE csb.companyId = cb.companyId
+        AND bm.companyBusinessId = cb.id
+        AND cstb.companySonBillId = csb.id
+        AND cstb.id = csbi.companySonTotalBillId
+        /*AND csbi.isReservedFundAudit NOT IN (1)
+        AND csbi.isSocialSecurityAudit NOT IN (1)*/
+        /*AND cstb.status NOT IN (2)*/
+        <!--<if test="billMonth != null">
+
+        </if>-->
+        AND (DATE_FORMAT(cstb.billMonth, '%Y-%m') = DATE_FORMAT(#{billMonth}, '%Y-%m') or
+        DATE_FORMAT(csbi.serviceMonth, '%Y-%m') = DATE_FORMAT(#{serviceMonth}, '%Y-%m'))
+        <if test="billMadeMethod != null">
+            AND (bm.tuoGuan = #{billMadeMethod} OR bm.daiLi = #{billMadeMethod})
+        </if>
+        AND csbi.isAudit = 0
+        <if test="companyIds != null and companyIds.size > 0">
+            AND csb.companyId in(
+            <foreach collection="companyIds" separator="," item="companyId">
+                #{companyId}
+            </foreach>
+            )
+        </if>
+        <!--<if test="serviceMonth != null and serviceMonth.size > 0">
+            AND (
+            <foreach collection="serviceMonth" separator="or" item="month">
+                DATE_FORMAT(csbi.serviceMonth, '%Y-%m') = DATE_FORMAT(#{month}, '%Y-%m')
+            </foreach>
+            )
+        </if>-->
+        GROUP BY csbi.id
+    </select>
+    <select id="getByServiceMonthSSI" resultMap="BaseResultOther">
+        SELECT csbi.*,cb.companyId,
+        ssi.id AS ssi_id,
+        ssi.idCard AS ssi_idCard,
+        ssi.serviceNowYM AS ssi_serviceNowYM,
+        ssi.companyTotalPay AS ssi_companyTotalPay,
+        ssi.memberTotalPay AS ssi_memberTotalPay,
+        ssii.id AS ssi_ssii_id,
+        ssii.insuranceName AS ssi_ssii_insuranceName,
+        ssii.type AS ssi_ssii_type,
+        cstb.billMonth
+        FROM company_son_bill_item csbi
+        LEFT JOIN social_security_info ssi ON csbi.id = ssi.companySonBillItemId
+        LEFT JOIN social_security_info_item ssii ON ssi.id = ssii.socialSecurityInfoId,
+        company_business cb,
+        business_method bm,
+        company_son_bill csb ,
+        company_son_total_bill cstb
+        WHERE csb.companyId = cb.companyId
+        AND bm.companyBusinessId = cb.id
+        AND cstb.companySonBillId = csb.id
+        AND cstb.id = csbi.companySonTotalBillId
+        AND cstb.status NOT IN (2)
+        <if test="billMonth != null">
+            AND DATE_FORMAT(cstb.billMonth, '%Y-%m') = DATE_FORMAT(#{billMonth}, '%Y-%m')
+        </if>
+
+        AND (bm.tuoGuan = #{billMadeMethod} OR bm.daiLi = #{billMadeMethod})
+        AND csbi.isAudit = 0
+        <if test="serviceMonth != null and serviceMonth.size > 0">
+            AND (
+            <foreach collection="serviceMonth" separator="or" item="month">
+                DATE_FORMAT(csbi.serviceMonth, '%Y-%m') = DATE_FORMAT(#{month}, '%Y-%m')
+            </foreach>
+            )
+        </if>
+
+    </select>
+
+
+    <select id="memberAuditDtoList" resultType="com.magic.daoyuan.business.dto.MemberAuditDto" parameterType="map">
+         SELECT m.id,m.userName,co.companyName,
+            ssi.payPlaceName AS socialSecurityPayPlaceName ,ssi.transactorName AS socialSecurityTransactorName,
+            ssi.payCardinalNumber AS socialSecurityBaseNumber, ssi.insuranceLevelName AS socialSecurityInsuranceLevelName,
+            rfi.payPlaceName AS reservedFundsPayPlaceName,rfi.transactorName AS reservedFundsTransactorName,rfi.payCardinalNumber AS reservedFundsBaseNumber,
+            (SELECT group_concat(concat_ws(':',CONCAT(if(ssii.type=0,'公司缴纳','个人缴纳'),ssii.insuranceName),(ssii.payPrice-IFNULL(ssii.practicalPayPrice,0))))
+            FROM social_security_info_item ssii
+            where ssi.id = ssii.socialSecurityInfoId ) AS socialSecurityInfo,
+            IF(rfi.companyTotalPay IS NOT NULL,(CONCAT(concat_ws(':','公司缴纳',(rfi.companyTotalPay - IFNULL(rfi.practicalCompanyTotalPay,0))),
+            concat_ws(':','个人缴纳',(rfi.memberTotalPay - IFNULL(rfi.practicalMemberTotalPay,0))))),'--')
+              AS reservedFundsInfo
+
+        FROM member m
+        LEFT JOIN social_security_info ssi ON ssi.memberId = m.id AND ssi.serviceNowYM = #{serviceMonth}
+        LEFT JOIN reserved_funds_info rfi ON rfi.memberId = m.id AND rfi.serviceNowYM = #{serviceMonth}
+        , company co
+        WHERE m.companyId = co.id
+        AND co.id = #{companyId}
+        ORDER BY
+        <if test="pageArgs != null">
+            <if test="pageArgs.column != null and pageArgs.column != ''">
+                ${pageArgs.column} ${pageArgs.order},
+            </if>
+        </if>
+        m.id DESC
+        <if test="pageArgs != null">
+            limit #{pageArgs.pageStart}, #{pageArgs.pageSize}
+        </if>
+        GROUP BY m.id
+    </select>
+
+    <select id="memberAuditDtoCount" resultType="int">
+        SELECT COUNT(0)
+        FROM member m , company co
+        WHERE m.companyId = co.id
+        AND co.id = #{companyId}
+        GROUP BY m.id
+    </select>
+
+
+    <select id="listCompanyIdLast" resultMap="BaseResultOther2" >
+        SELECT * FROM company_son_bill csb,company_son_total_bill cstb ,company_son_bill_item csbi
+        WHERE cstb.companySonBillId = csb.id
+        AND cstb.id = csbi.companySonTotalBillId
+        GROUP BY csb.id
+
+        <if test="isAll == 0">
+            AND csb.companyId IN (
+            <foreach collection="companyIds" item="id" separator=",">
+                #{id}
+            </foreach>
+            )
+        </if>
+    </select>
+
+</mapper>

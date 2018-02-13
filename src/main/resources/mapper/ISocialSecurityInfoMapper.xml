@@ -1,0 +1,504 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.ISocialSecurityInfoMapper">
+
+    <resultMap id="BaseResultMap" type="com.magic.daoyuan.business.entity.SocialSecurityInfo">
+        <id column="id" property="id" javaType="java.lang.Integer" />
+        <result column="userName" property="userName" javaType="java.lang.String" />
+        <result column="certificateType" property="certificateType" javaType="java.lang.Integer"/>
+        <result column="idCard" property="idCard" javaType="java.lang.String" />
+        <result column="socialSecurityNum" property="socialSecurityNum" javaType="java.lang.String" />
+        <result column="payPlaceOrganizationName" property="payPlaceOrganizationName" javaType="java.lang.String" />
+        <result column="insuranceLevelName" property="insuranceLevelName" javaType="java.lang.String"/>
+        <result column="beginPayYM" property="beginPayYM" javaType="java.util.Date"/>
+        <result column="serviceNowYM" property="serviceNowYM" javaType="java.util.Date"/>
+        <result column="payCardinalNumber" property="payCardinalNumber" javaType="java.lang.Double"/>
+        <result column="companyTotalPay" property="companyTotalPay" javaType="java.lang.Double"/>
+        <result column="memberTotalPay" property="memberTotalPay" javaType="java.lang.Double"/>
+        <result column="practicalCompanyTotalPay" property="practicalCompanyTotalPay" javaType="java.lang.Double"/>
+        <result column="practicalMemberTotalPay" property="practicalMemberTotalPay" javaType="java.lang.Double"/>
+        <result column="companySonBillItemId" property="companySonBillItemId" javaType="java.lang.Integer"/>
+        <result column="memberId" property="memberId" javaType="java.lang.Integer"/>
+        <result column="waysOfCooperation" property="waysOfCooperation" javaType="java.lang.Integer"/>
+        <result column="isAudit" property="isAudit" javaType="java.lang.Integer"/>
+        <result column="billMadeMethod" property="billMadeMethod" javaType="java.lang.Integer"/>
+        <result column="transactorName" property="transactorName" javaType="java.lang.String"/>
+        <result column="organizationName" property="organizationName" javaType="java.lang.String"/>
+        <result column="payPlaceName" property="payPlaceName" javaType="java.lang.String"/>
+        <result column="companyName" property="companyName" javaType="java.lang.String"/>
+        <result column="processingScheme" property="processingScheme" javaType="java.lang.Integer"/>
+        <result column="affirmBillMonth" property="affirmBillMonth" javaType="java.util.Date"/>
+        <result column="billMonth" property="billMonth" javaType="java.util.Date"/>
+        <result column="billMonthCstb" property="billMonthCstb" javaType="java.util.Date"/>
+        <result column="realDoTime" property="realDoTime" javaType="java.util.Date"/>
+        <result column="isUploadKaoPan" property="isUploadKaoPan" javaType="java.lang.Integer"/>
+        <result column="taxPrice" property="taxPrice" javaType="java.lang.Double"/>
+    </resultMap>
+
+    <resultMap id="BaseResultItem" type="com.magic.daoyuan.business.entity.SocialSecurityInfo" extends="BaseResultMap">
+        <association property="socialSecurityInfoItems" columnPrefix="ssii_"
+                     resultMap="com.magic.daoyuan.business.mapper.ISocialSecurityInfoItemMapper.BaseResultMap"/>
+    </resultMap>
+
+
+
+    <select id="querySocialSecurityInfoByTotalBillId" resultMap="BaseResultMap">
+        SELECT
+            ssi.*,m.waysOfCooperation
+        FROM
+            social_security_info ssi,
+            company_son_bill_item csbi,
+            member m
+        WHERE
+            ssi.companySonBillItemId = csbi.id
+        AND m.id = ssi.memberId
+        AND csbi.companySonTotalBillId IN
+        <foreach collection="list" item="billId" index="index" separator="," open="(" close=")">
+            #{billId}
+        </foreach>
+    </select>
+
+    <delete id="del">
+        DELETE FROM social_security_info WHERE billMadeMethod = 0 AND companySonBillItemId IN (
+        select csbi.id from company_son_bill_item csbi WHERE
+        /*(csbi.isReservedFundAudit = 0 OR csbi.isSocialSecurityAudit = 0)
+        AND */csbi.companySonTotalBillId IN
+        <foreach collection="companySonTotalBillIds" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+        )
+    </delete>
+
+
+    <insert id="save" keyColumn="id" keyProperty="id" useGeneratedKeys="true"
+        parameterType="com.magic.daoyuan.business.entity.SocialSecurityInfo">
+        insert into social_security_info (userName,certificateType, idCard, socialSecurityNum,
+        payPlaceOrganizationName, insuranceLevelName,
+        beginPayYM, serviceNowYM, payCardinalNumber,
+        companyTotalPay, memberTotalPay,companySonBillItemId,memberId,
+        practicalCompanyTotalPay,practicalMemberTotalPay,
+        transactorName,organizationName,payPlaceName,billMadeMethod,isAudit,
+        processingScheme,companySonBillId,billMonth,realDoTime,isUploadKaoPan,taxPrice)
+        values
+        <foreach collection="list" separator="," item="record">
+            (#{record.userName},#{record.certificateType},#{record.idCard},#{record.socialSecurityNum},
+            #{record.payPlaceOrganizationName},#{record.insuranceLevelName},
+            #{record.beginPayYM},#{record.serviceNowYM},#{record.payCardinalNumber},
+            #{record.companyTotalPay},#{record.memberTotalPay},#{record.companySonBillItemId},#{record.memberId},
+            #{record.practicalCompanyTotalPay},#{record.practicalMemberTotalPay},
+            #{record.transactorName},#{record.organizationName},#{record.payPlaceName},
+            #{record.billMadeMethod},#{record.isAudit},#{record.processingScheme},
+            #{record.companySonBillId},#{record.billMonth},#{record.realDoTime},#{record.isUploadKaoPan},#{record.taxPrice})
+        </foreach>
+    </insert>
+
+
+    <update id="updateList" parameterType="com.magic.daoyuan.business.entity.SocialSecurityInfo">
+        <foreach collection="list" item="s" separator=";">
+            UPDATE social_security_info
+            <set>
+                <if test="s.memberTotalPay != null">
+                    memberTotalPay = #{s.memberTotalPay},
+                </if>
+                <if test="s.companyTotalPay != null">
+                    companyTotalPay = #{s.companyTotalPay},
+                </if>
+                <if test="s.taxPrice != null">
+                    taxPrice = #{s.taxPrice},
+                </if>
+                <if test="s.isUploadKaoPan != null">
+                    isUploadKaoPan = #{s.isUploadKaoPan},
+                </if>
+                <if test="s.realDoTime != null">
+                    realDoTime = #{s.realDoTime},
+                </if>
+                <if test="s.billMonth != null">
+                    billMonth = #{s.billMonth},
+                </if>
+                <if test="s.practicalCompanyTotalPay != null">
+                    practicalCompanyTotalPay = #{s.practicalCompanyTotalPay},
+                </if>
+                <if test="s.practicalMemberTotalPay != null">
+                    practicalMemberTotalPay = #{s.practicalMemberTotalPay},
+                </if>
+                <if test="s.socialSecurityNum != null and s.socialSecurityNum != ''">
+                    socialSecurityNum = #{s.socialSecurityNum},
+                </if>
+                <if test="s.isAudit != null and s.isAudit != ''">
+                    isAudit = #{s.isAudit},
+                </if>
+                <if test="s.companySonBillItemId != null and s.companySonBillItemId != ''">
+                    companySonBillItemId = #{s.companySonBillItemId},
+                </if>
+                <if test="s.processingScheme != null">
+                    processingScheme = #{s.processingScheme},
+                </if>
+                <if test="s.transactorName != null and s.transactorName != ''">
+                    transactorName = #{s.transactorName},
+                </if>
+                <if test="s.organizationName != null and s.organizationName != ''">
+                    organizationName = #{s.organizationName},
+                </if>
+            </set>
+            <where>
+                id = #{s.id}
+            </where>
+        </foreach>
+    </update>
+
+
+    <update id="updateList2">
+        update social_security_info set companySonBillItemId = NULL
+        where
+        billMadeMethod = 1
+        AND companySonBillItemId IN (
+        SELECT csbi.id FROM company_son_bill_item csbi WHERE csbi.companySonTotalBillId IN
+        (<foreach collection="companySonTotalBillIds" item="id" separator=",">
+            #{id}
+        </foreach>)
+        )
+    </update>
+
+    <select id="list" resultMap="BaseResultItem" parameterType="map">
+        SELECT ssi.*,
+        <if test="billMonth != null">
+        #{billMonth} AS billMonthCstb,
+        </if>
+        ssii.id AS ssii_id,
+        ssii.insuranceName AS ssii_insuranceName,
+        ssii.payPrice AS ssii_payPrice,
+        ssii.type AS ssii_type,
+        ssii.socialSecurityInfoId AS ssii_socialSecurityInfoId,
+        ssii.practicalPayPrice AS ssii_practicalPayPrice
+        FROM social_security_info ssi
+        LEFT JOIN social_security_info_item ssii ON ssi.id = ssii.socialSecurityInfoId
+        WHERE 1 = 1
+        AND ssi.id IN (
+            SELECT ss1.id FROM
+              (SELECT ss.id FROM social_security_info ss,company_son_bill_item csbi,company_son_total_bill cstb
+                WHERE (ss.companySonBillItemId = csbi.id or ss.processingScheme = 1)
+                AND cstb.id = csbi.companySonTotalBillId
+                AND ss.companySonBillId = cstb.companySonBillId
+                <if test="billMonth != null">
+                    AND DATE_FORMAT(cstb.billMonth, '%Y-%m') = DATE_FORMAT(#{billMonth}, '%Y-%m')
+                </if>
+                <if test="companyId != null">
+                    AND cstb.companyId = #{companyId}
+                </if>
+                <if test="userName != null and userName != ''">
+                    AND ss.userName Like '%${userName}%'
+                </if>
+                <if test="companySonTotalBillId != null">
+                    AND csbi.companySonTotalBillId = #{companySonTotalBillId}
+                </if>
+                <if test="payPlaceOrganizationName != null and payPlaceOrganizationName != ''">
+                    AND ss.payPlaceOrganizationName Like '%${payPlaceOrganizationName}%'
+                </if>
+                <if test="socialSecurityNum != null and socialSecurityNum != ''">
+                    AND ss.socialSecurityNum Like '%${socialSecurityNum}%'
+                </if>
+                <if test="insuranceLevelName != null and insuranceLevelName != ''">
+                    AND ss.insuranceLevelName Like '%${insuranceLevelName}%'
+                </if>
+                <if test="certificateType != null">
+                    AND ss.certificateType = #{certificateType}
+                </if>
+                <if test="idCard != null">
+                    AND ss.idCard = #{idCard}
+                </if>
+                <if test="companySonBillItemId != null">
+                    AND ss.companySonBillItemId = #{companySonBillItemId}
+                </if>
+                <if test="memberId != null">
+                    AND ss.memberId = #{memberId}
+                </if>
+                ORDER BY
+                <if test="pageArgs != null">
+                    <if test="pageArgs.column != null and pageArgs.column != ''">
+                        ${pageArgs.column} ${pageArgs.order},
+                    </if>
+                </if>
+                ss.id DESC
+                <if test="pageArgs != null">
+                    limit #{pageArgs.pageStart}, #{pageArgs.pageSize}
+                </if>
+          ) as ss1
+        )
+
+
+
+    </select>
+
+    <select id="listCount" resultType="int" parameterType="map">
+        SELECT
+        COUNT(0)
+        FROM social_security_info ssi,company_son_bill_item csbi,company_son_total_bill cstb
+        WHERE (ssi.companySonBillItemId = csbi.id or ssi.processingScheme = 1)
+        AND cstb.id = csbi.companySonTotalBillId
+        AND ssi.companySonBillId = cstb.companySonBillId
+        <if test="billMonth != null">
+            AND DATE_FORMAT(cstb.billMonth, '%Y-%m') = DATE_FORMAT(#{billMonth}, '%Y-%m')
+        </if>
+        <if test="companyId != null">
+            AND cstb.companyId = #{companyId}
+        </if>
+        <if test="userName != null and userName != ''">
+            AND ssi.userName Like '%${userName}%'
+        </if>
+        <if test="payPlaceOrganizationName != null and payPlaceOrganizationName != ''">
+            AND ssi.payPlaceOrganizationName Like '%${payPlaceOrganizationName}%'
+        </if>
+        <if test="socialSecurityNum != null and socialSecurityNum != ''">
+            AND ssi.socialSecurityNum Like '%${socialSecurityNum}%'
+        </if>
+        <if test="insuranceLevelName != null and insuranceLevelName != ''">
+            AND ssi.insuranceLevelName Like '%${insuranceLevelName}%'
+        </if>
+        <if test="certificateType != null">
+            AND ssi.certificateType = #{certificateType}
+        </if>
+        <if test="idCard != null">
+            AND ssi.idCard = #{idCard}
+        </if>
+        <if test="companySonBillItemId != null">
+            AND ssi.companySonBillItemId = #{companySonBillItemId}
+        </if>
+        <if test="memberId != null">
+            AND ssi.memberId = #{memberId}
+        </if>
+        <if test="companySonTotalBillId != null">
+            AND csbi.companySonTotalBillId = #{companySonTotalBillId}
+        </if>
+    </select>
+
+    <select id="processingSchemeCount" resultType="int">
+        SELECT COUNT(0) FROM social_security_info ssi WHERE
+        (ssi.practicalCompanyTotalPay <![CDATA[<>]]> ssi.companyTotalPay
+        OR ssi.practicalMemberTotalPay <![CDATA[<>]]> ssi.memberTotalPay)
+        AND ssi.processingScheme IS NULL
+        AND ssi.companySonBillItemId = #{companySonBillItemId}
+    </select>
+
+    <select id="getPayPriceByCompanySonBillItemIdAndCreateTime" resultType="double">
+
+       SELECT IFNULL(
+        (select sum(ssi.companyTotalPay+ssi.memberTotalPay)
+        from social_security_info ssi
+        WHERE
+        1 = 1
+        AND ssi.companySonBillId = #{companySonBillId}
+        AND DATE_FORMAT(ssi.billMonth, '%Y-%m') = DATE_FORMAT(#{createTime}, '%Y-%m')),0)
+    </select>
+
+    <select id="getPayPriceByCompanyIdAndBillMonth" resultType="double">
+       SELECT IFNULL(
+        (select sum(ssi.companyTotalPay+ssi.memberTotalPay)
+        from company_son_bill_item csbi,social_security_info ssi,company_son_total_bill cstb
+        WHERE
+        ssi.companySonBillItemId = csbi.id
+        AND ssi.companySonBillItemId = csbi.id
+        AND cstb.id = csbi.companySonTotalBillId
+        AND cstb.companyId = #{companyId}
+        AND DATE_FORMAT(cstb.billMonth, '%Y-%m') = DATE_FORMAT(#{billMonth}, '%Y-%m')),0)
+    </select>
+
+    <select id="getPracticalByCompanyIdAndBillMonth" resultType="double">
+        SELECT IFNULL(
+        (select (sum(ssi.companyTotalPay+ssi.memberTotalPay) - sum(ssi.practicalMemberTotalPay+ssi.practicalCompanyTotalPay))
+        from social_security_info ssi,company_son_total_bill cstb,member_business mb,member_business_item mbi
+        WHERE
+        ssi.processingScheme = 1
+        AND mb.memberId = ssi.memberId
+        AND mbi.`type` = 1
+        AND mb.id = mbi.memberBusinessId
+        AND mbi.isReceivable = 1
+        AND ssi.companySonBillId = cstb.companySonBillId
+        <if test="companyId != null">
+            AND cstb.companyId = #{companyId}
+        </if>
+        <if test="billMonth != null">
+            AND DATE_FORMAT(ssi.billMonth, '%Y-%m') <![CDATA[<]]> DATE_FORMAT(#{billMonth}, '%Y-%m')
+        </if>
+        <if test="createTime != null">
+            AND DATE_FORMAT(cstb.createTime, '%Y-%m') = DATE_FORMAT(#{createTime}, '%Y-%m')
+        </if>
+        AND DATE_FORMAT(cstb.billMonth, '%Y-%m') = DATE_FORMAT(#{billMonth}, '%Y-%m')),0)
+    </select>
+
+    <select id="auditList" resultMap="BaseResultItem" parameterType="map">
+        SELECT ssi.*,
+        cc.companyName,
+        ssii.id AS ssii_id,
+        ssii.insuranceName AS ssii_insuranceName,
+        ssii.payPrice AS ssii_payPrice,
+        ssii.type AS ssii_type,
+        ssii.socialSecurityInfoId AS ssii_socialSecurityInfoId,
+        ssii.practicalPayPrice AS ssii_practicalPayPrice
+        FROM social_security_info ssi
+        LEFT JOIN social_security_info_item ssii ON ssi.id = ssii.socialSecurityInfoId
+        ,member m ,company cc
+        WHERE 1 = 1
+        AND m.id = ssi.memberId
+        AND m.companyId = cc.id
+        AND ssi.id IN (
+        SELECT ss1.id FROM (select ssi.id from social_security_info ssi ,member m,company cc,
+        company_son_total_bill cstb ,company_son_bill_item csbi
+        WHERE ssi.memberId = m.id
+        AND cc.id = m.companyId
+        AND cstb.id = csbi.companySonTotalBillId
+        AND ssi.companySonBillItemId = csbi.id
+        AND cstb.status = 2
+        AND ssi.isAudit = 1
+        AND ssi.processingScheme IS NULL
+        AND (ssi.practicalCompanyTotalPay <![CDATA[<>]]> ssi.companyTotalPay
+        OR ssi.practicalMemberTotalPay <![CDATA[<>]]> ssi.memberTotalPay)
+        <if test="null != companyId">
+            AND cc.id = #{companyId}
+        </if>
+        <if test="null != serviceNowYM">
+            AND DATE_FORMAT(ssi.serviceNowYM, '%Y-%m') = DATE_FORMAT(#{serviceNowYM}, '%Y-%m')
+        </if>
+        ORDER BY
+        <if test="pageArgs != null">
+            <if test="pageArgs.column != null and pageArgs.column != ''">
+                ${pageArgs.column} ${pageArgs.order},
+            </if>
+        </if>
+        ssi.id DESC
+        <if test="pageArgs != null">
+            limit #{pageArgs.pageStart}, #{pageArgs.pageSize}
+        </if>
+        ) AS ss1 )
+    </select>
+
+    <select id="auditListCount" resultType="integer" parameterType="map">
+        select COUNT(0) from social_security_info ssi ,member m,company cc
+        WHERE ssi.memberId = m.id
+        AND cc.id = m.companyId
+        AND ssi.isAudit = 1
+        AND ssi.processingScheme IS NULL
+        AND (ssi.practicalCompanyTotalPay <![CDATA[<>]]> ssi.companyTotalPay
+        OR ssi.practicalMemberTotalPay <![CDATA[<>]]> ssi.memberTotalPay)
+        <if test="null != companyId">
+            AND cc.id = #{companyId}
+        </if>
+        <if test="null != serviceNowYM">
+            AND DATE_FORMAT(ssi.serviceNowYM, '%Y-%m') = DATE_FORMAT(#{serviceNowYM}, '%Y-%m')
+        </if>
+    </select>
+
+    <update id="update" parameterType="com.magic.daoyuan.business.entity.SocialSecurityInfo">
+        UPDATE social_security_info
+        <set>
+            <if test="isUploadKaoPan != null">
+                isUploadKaoPan = #{isUploadKaoPan},
+            </if>
+            <if test="realDoTime != null">
+                realDoTime = #{realDoTime},
+            </if>
+            <if test="billMonth != null">
+                billMonth = #{billMonth},
+            </if>
+            <if test="practicalCompanyTotalPay != null">
+                practicalCompanyTotalPay = #{practicalCompanyTotalPay},
+            </if>
+            <if test="practicalMemberTotalPay != null">
+                practicalMemberTotalPay = #{practicalMemberTotalPay},
+            </if>
+            <if test="socialSecurityNum != null and socialSecurityNum != ''">
+                socialSecurityNum = #{socialSecurityNum},
+            </if>
+            <if test="isAudit != null">
+                isAudit = #{isAudit},
+            </if>
+            <if test="companySonBillItemId != null">
+                companySonBillItemId = #{companySonBillItemId},
+            </if>
+            <if test="processingScheme != null">
+                processingScheme = #{processingScheme},
+            </if>
+        </set>
+        <where>
+            id = #{id}
+        </where>
+    </update>
+
+
+    <select id="info" resultMap="BaseResultMap">
+        select * from social_security_info ssi WHERE ssi.id = #{id}
+    </select>
+
+    <select id="listBySonBillItemId" resultMap="BaseResultMap">
+        SELECT
+        ssi.*
+        FROM
+        social_security_info ssi
+        WHERE ssi.companySonBillItemId IN
+        <foreach collection="sonBillItemIds" item="billId" index="index" separator="," open="(" close=")">
+            #{billId}
+        </foreach>
+    </select>
+
+    <update id="updateAffirm">
+        UPDATE social_security_info
+        SET processingScheme = 10,
+        affirmBillMonth = #{affirmBillMonth}
+        WHERE processingScheme = 1
+        AND DATE_FORMAT(billMonth, '%Y-%m') <![CDATA[<]]> DATE_FORMAT(#{affirmBillMonth}, '%Y-%m')
+        <if test="companySonBillId != null">
+            AND companySonBillId = #{companySonBillId}
+        </if>
+        <if test="companyId != null">
+          AND companySonBillId IN (
+            select csb.id from company_son_bill csb where csb.companyId = #{companyId}
+            )
+        </if>
+    </update>
+
+    <select id="getByMemberIdAndServiceNowYM" resultMap="BaseResultMap">
+        select * from social_security_info ssi
+        WHERE
+        DATE_FORMAT(ssi.serviceNowYM, '%Y-%m') = DATE_FORMAT(#{serviceNowYM}, '%Y-%m')
+        AND ssi.memberId = #{memberId}
+    </select>
+
+    <select id="getCompanyIdAndServiceNowYMAndServiceFeeConfigId" resultMap="BaseResultMap">
+        select ssi.*,m.waysOfCooperation from social_security_info ssi,company_son_bill csb,company_cooperation_method ccm,member m
+        WHERE
+        ssi.companySonBillId = csb.id
+        AND m.waysOfCooperation = ccm.cooperationMethodId
+        AND m.companyId = ccm.companyId
+        AND csb.companyId = ccm.id
+        AND ccm.serviceFeeConfigId = #{serviceFeeConfigId}
+        AND DATE_FORMAT(ssi.serviceNowYM, '%Y-%m') = DATE_FORMAT(#{serviceNowYM}, '%Y-%m')
+        AND csb.companyId = #{companyId}
+    </select>
+
+    <select id="getByCompanyAndBillMonth" resultMap="BaseResultMap">
+        select ssi.* from social_security_info ssi ,company_son_total_bill cstb,company_son_bill_item csbi
+        WHERE ssi.companySonBillItemId = csbi.id
+        AND csbi.companySonTotalBillId = cstb.id
+        AND (ssi.companyTotalPay <![CDATA[ <> ]]> ssi.practicalCompanyTotalPay
+        OR ssi.memberTotalPay <![CDATA[ <> ]]> ssi.practicalMemberTotalPay
+        OR ssi.practicalCompanyTotalPay is null
+	    OR ssi.practicalMemberTotalPay is null
+        )
+        AND DATE_FORMAT(cstb.billMonth, '%Y-%m') = DATE_FORMAT(#{billMonth}, '%Y-%m')
+        AND cstb.companyId = #{companyId}
+    </select>
+
+    <select id="getLastByMemberId" resultMap="BaseResultItem">
+        select ssi.* ,
+        ssii.id AS ssii_id,
+        ssii.insuranceName AS ssii_insuranceName,
+        ssii.payPrice AS ssii_payPrice,
+        ssii.type AS ssii_type,
+        ssii.socialSecurityInfoId AS ssii_socialSecurityInfoId,
+        ssii.practicalPayPrice AS ssii_practicalPayPrice
+        from social_security_info ssi
+        LEFT JOIN social_security_info_item ssii ON ssii.socialSecurityInfoId = ssi.id
+        WHERE ssi.memberId = 21511
+        AND ssi.id = (select max(ssi2.id) from social_security_info ssi2 WHERE ssi2.memberId = #{memberId})
+    </select>
+</mapper>

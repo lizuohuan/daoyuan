@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IBusinessYcMapper">
+
+
+
+    <select id="countBusinessYc" resultType="double">
+        SELECT
+            IFNULL(SUM(byi.price),0)
+        FROM
+            business_yc b,
+            business_yc_item byi
+        WHERE
+            b.id = byi.businessYcId
+            AND byi.companySonTotalBillId = #{companySonTotalBillId}
+    </select>
+
+    <select id="countBusinessYcByCompanyId" resultType="double">
+        SELECT
+            IFNULL(SUM(byi.price),0)
+        FROM
+            business_yc b,
+            business_yc_item byi,
+            company_son_total_bill cstb
+        WHERE
+            b.id = byi.businessYcId
+            AND cstb.id = byi.companySonTotalBillId
+            AND DATE_FORMAT(cstb.billMonth, '%Y-%m') = DATE_FORMAT(#{billMonth}, '%Y-%m')
+            AND cstb.companyId = #{companyId}
+    </select>
+
+    <insert id="batchAddBusinessYc" parameterType="com.magic.daoyuan.business.entity.BusinessYc" useGeneratedKeys="true"
+            keyProperty="id" keyColumn="id">
+        INSERT INTO business_yc (businessItemId, companySonTotalBillId, createTime)
+        VALUES
+        <foreach collection="list" item="yc" index="index" separator=",">
+            (#{yc.businessItemId}, #{yc.companySonTotalBillId}, NOW())
+        </foreach>
+    </insert>
+
+
+    <delete id="delBusinessYc">
+        DELETE FROM business_yc WHERE companySonTotalBillId = #{companySonTotalBillId}
+    </delete>
+
+
+    <resultMap id="BaseResult" type="com.magic.daoyuan.business.entity.BusinessYc">
+
+        <result column="id" property="id" javaType="java.lang.Integer"/>
+        <result column="businessItemId" property="businessItemId" javaType="java.lang.Integer"/>
+        <result column="companySonTotalBillId" property="companySonTotalBillId" javaType="java.lang.Integer"/>
+        <result column="createTime" property="createTime" javaType="java.util.Date"/>
+        <result column="businessItemName" property="businessItemName" javaType="java.lang.String"/>
+        <association property="businessYcItemList" column="id" select="com.magic.daoyuan.business.mapper.IBusinessYcItemMapper.queryBusinessYcItem"/>
+    </resultMap>
+
+    <select id="queryBusinessYc" resultMap="BaseResult">
+        SELECT byc.*,bi.itemName AS businessItemName
+        FROM business_yc byc,business_items bi,business_yc_item byi
+        WHERE byc.businessItemId = bi.id
+        AND byi.businessYcId = byc.id
+        AND byi.companySonTotalBillId = #{companySonTotalBillId}
+        GROUP BY byc.id
+    </select>
+
+    <select id="queryBusinessYc3" resultMap="BaseResult">
+        SELECT byc.*,bi.itemName AS businessItemName
+        FROM business_yc byc,business_items bi,business_yc_item byi
+        WHERE byc.businessItemId = bi.id
+        AND byi.businessYcId = byc.id
+        AND byi.companySonTotalBillId IN
+        <foreach collection="list" index="index" item="sonId" open="(" close=")" separator=",">
+            #{sonId}
+        </foreach>
+    </select>
+
+    <select id="queryBusinessYc2" resultMap="BaseResult">
+        SELECT byc.*,bi.itemName AS businessItemName
+        FROM business_yc byc,business_items bi,business_yc_item byi,company_son_total_bill cstb
+        WHERE byc.businessItemId = bi.id
+        AND byi.businessYcId = byc.id
+        AND byi.companySonTotalBillId = cstb.id
+        <if test="billMonth != null">
+            AND DATE_FORMAT(cstb.billMonth, '%Y-%m') = DATE_FORMAT(#{billMonth}, '%Y-%m')
+        </if>
+        <if test="companyId != null">
+            AND cstb.companyId = #{companyId}
+        </if>
+        GROUP BY byc.id
+    </select>
+
+    <delete id="del">
+        DELETE FROM business_yc WHERE id IN
+        <foreach collection="list" index="index" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </delete>
+
+
+</mapper>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.ICompanyServicePayPlaceMapper">
+
+
+    <insert id="batchAddCompanyServicePayPlace" parameterType="com.magic.daoyuan.business.entity.CompanyServicePayPlace">
+        INSERT INTO company_service_payplace (cityId, companyId, price,`type`)
+        VALUES
+        <foreach collection="list" index="index" item="servicePayPlace" separator=",">
+            (#{servicePayPlace.cityId}, #{servicePayPlace.companyId}, #{servicePayPlace.price},#{servicePayPlace.type})
+        </foreach>
+    </insert>
+
+
+    <delete id="delCompanyServicePayPlace">
+        DELETE FROM company_service_payplace WHERE companyId = #{companyId} AND `type` = #{type}
+    </delete>
+
+    <select id="queryCompanyServicePayPlace" resultType="com.magic.daoyuan.business.entity.CompanyServicePayPlace">
+        SELECT csp.* ,cc.name AS cityName
+        FROM company_service_payplace csp,citys cc
+        WHERE
+        csp.cityId = cc.id
+        AND companyId = #{companyId}
+        AND `type` = #{type}
+    </select>
+
+</mapper>

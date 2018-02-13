@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IContactsMapper">
+
+
+
+    <select id="queryContactsByIsReceiver" resultType="com.magic.daoyuan.business.entity.Contacts">
+        SELECT * FROM  contacts WHERE 1=1
+        <if test="companyId  != null" >
+            AND companyId = #{companyId}
+        </if>
+        <if test="isReceiver != null">
+            AND isReceiver = #{isReceiver}
+        </if>
+    </select>
+
+
+    <select id="queryContactsByCompanySonBillItemId" resultType="com.magic.daoyuan.business.entity.Contacts">
+        SELECT
+            con.*,cc.companyName AS companyName,cstb.billMonth
+        FROM
+            contacts con,
+            company_son_bill csb,
+            company_son_total_bill cstb,
+            company cc
+        WHERE
+            con.id = csb.contactsId
+        AND csb.id = cstb.companySonBillId
+        AND con.companyId =cc.id
+        AND cstb.id = #{companySonTotalBillId}
+    </select>
+
+    <select id="queryContactsByCompany" resultType="com.magic.daoyuan.business.entity.Contacts">
+        SELECT * FROM  contacts WHERE companyId = #{companyId} AND isValid = 1
+    </select>
+
+    <select id="queryContactsById" resultType="com.magic.daoyuan.business.entity.Contacts">
+        SELECT
+          cc.*,comp.companyName AS companyName
+        FROM
+          contacts cc,company comp
+        WHERE
+        cc.companyId = comp.id
+        AND cc.isReceiver = 1
+        AND cc.id = #{id}
+    </select>
+
+    <select id="countContactsByItems" resultType="java.lang.Integer">
+        SELECT
+          COUNT(0)
+        FROM
+          contacts cc
+        WHERE
+        1 = 1
+        <if test="type != null">
+            AND cc.`type` = #{type}
+        </if>
+        <if test="isReceiver != null">
+            AND cc.isReceiver = #{isReceiver}
+        </if>
+        <if test="weChat != null">
+            AND cc.weChat LIKE '%${weChat}%'
+        </if>
+        <if test="companyId != null">
+            AND cc.companyId = #{companyId}
+        </if>
+        <if test="contactsName != null">
+            AND cc.contactsName LIKE '%${contactsName}%'
+        </if>
+        <if test="landLine != null">
+            AND cc.landLine LIKE '%${landLine}%'
+        </if>
+        <if test="phone != null">
+            AND cc.phone LIKE '%${phone}%'
+        </if>
+        <if test="qq != null">
+            AND cc.qq LIKE '%${qq}%'
+        </if>
+        <if test="email != null">
+            AND cc.`email` LIKE '%${email}%'
+        </if>
+    </select>
+
+
+    <select id="queryContactsByItems" resultType="com.magic.daoyuan.business.entity.Contacts">
+        SELECT
+          cc.*,comp.companyName AS companyName
+        FROM
+          contacts cc,company comp
+        WHERE
+        cc.companyId = comp.id
+        AND 1 = 1
+        <if test="type != null">
+            AND cc.`type` = #{type}
+        </if>
+        <if test="isReceiver != null">
+            AND cc.isReceiver = #{isReceiver}
+        </if>
+        <if test="weChat != null">
+            AND cc.weChat LIKE '%${weChat}%'
+        </if>
+        <if test="companyId != null">
+            AND cc.companyId = #{companyId}
+        </if>
+        <if test="contactsName != null">
+            AND cc.contactsName LIKE '%${contactsName}%'
+        </if>
+        <if test="landLine != null">
+            AND cc.landLine LIKE '%${landLine}%'
+        </if>
+        <if test="phone != null">
+            AND cc.phone LIKE '%${phone}%'
+        </if>
+        <if test="qq != null">
+            AND cc.qq LIKE '%${qq}%'
+        </if>
+        <if test="email != null">
+            AND cc.`email` LIKE '%${email}%'
+        </if>
+        ORDER BY cc.id DESC
+        <if test="limit != null and limitSize != null">
+            LIMIT #{limit},#{limitSize}
+        </if>
+    </select>
+
+    <insert id="addContacts" parameterType="com.magic.daoyuan.business.entity.Contacts">
+        INSERT INTO contacts (contactsName, landLine, phone, qq, `email`, weChat, isReceiver, isValid,companyId,`type`,departmentName,jobTitle)
+        VALUES (#{contactsName}, #{landLine}, #{phone}, #{qq}, #{email}, #{weChat}, #{isReceiver}, 1,#{companyId},#{type},#{departmentName},#{jobTitle})
+    </insert>
+    <insert id="addList" parameterType="com.magic.daoyuan.business.entity.Contacts">
+        INSERT INTO contacts (contactsName, landLine, phone, qq, `email`, weChat, isReceiver, isValid,companyId,`type`,departmentName,jobTitle)
+        VALUES
+        <foreach collection="list" separator="," item="c">
+            (#{c.contactsName}, #{c.landLine}, #{c.phone}, #{c.qq}, #{c.email}, #{c.weChat},
+            #{c.isReceiver}, 1,#{c.companyId},#{c.type},#{c.departmentName},#{c.jobTitle})
+        </foreach>
+
+    </insert>
+
+    <update id="updateContacts" parameterType="com.magic.daoyuan.business.entity.Contacts">
+        UPDATE contacts
+        <set>
+            <if test="jobTitle != null">
+                `jobTitle` = #{jobTitle},
+            </if>
+            <if test="departmentName != null">
+                `departmentName` = #{departmentName},
+            </if>
+            <if test="companyId != null">
+                `companyId` = #{companyId},
+            </if>
+            <if test="isValid != null">
+                `isValid` = #{isValid},
+            </if>
+            <if test="isReceiver != null">
+                `isReceiver` = #{isReceiver},
+            </if>
+            <if test="weChat != null">
+                `weChat` = #{weChat},
+            </if>
+            <if test="email != null">
+                `email` = #{email},
+            </if>
+            <if test="qq != null">
+                qq = #{qq},
+            </if>
+            <if test="phone != null">
+                phone = #{phone},
+            </if>
+            <if test="landLine != null">
+                landLine = #{landLine},
+            </if>
+            <if test="contactsName != null">
+                contactsName = #{contactsName},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateList" parameterType="com.magic.daoyuan.business.entity.Contacts">
+        <foreach collection="list" item="c" separator=";">
+            UPDATE contacts
+            <set>
+                <if test="c.jobTitle != null">
+                    `jobTitle` = #{c.jobTitle},
+                </if>
+                <if test="c.departmentName != null">
+                    `departmentName` = #{c.departmentName},
+                </if>
+                <if test="c.companyId != null">
+                    `companyId` = #{c.companyId},
+                </if>
+                <if test="c.isValid != null">
+                    `isValid` = #{c.isValid},
+                </if>
+                <if test="c.isReceiver != null">
+                    `isReceiver` = #{c.isReceiver},
+                </if>
+                <if test="c.weChat != null">
+                    `weChat` = #{c.weChat},
+                </if>
+                <if test="c.email != null">
+                    `email` = #{c.email},
+                </if>
+                <if test="c.qq != null">
+                    qq = #{c.qq},
+                </if>
+                <if test="c.phone != null">
+                    phone = #{c.phone},
+                </if>
+                <if test="c.landLine != null">
+                    landLine = #{c.landLine},
+                </if>
+                <if test="c.contactsName != null">
+                    contactsName = #{c.contactsName},
+                </if>
+            </set>
+            WHERE id = #{c.id}
+        </foreach>
+
+    </update>
+
+</mapper>

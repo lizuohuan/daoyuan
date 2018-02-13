@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IMemberBusinessMapper">
+
+    <resultMap id="BaseResultMap" type="com.magic.daoyuan.business.entity.MemberBusiness" >
+        <id column="id" property="id" javaType="java.lang.Integer" />
+        <result column="businessId" property="businessId" javaType="java.lang.Integer" />
+        <result column="memberId" property="memberId" javaType="java.lang.Integer" />
+        <result column="companySonBillId" property="companySonBillId" javaType="java.lang.Integer" />
+    </resultMap>
+    
+    <resultMap id="BaseResultObject" type="com.magic.daoyuan.business.entity.MemberBusiness" extends="BaseResultMap">
+        <association property="member" columnPrefix="m_" resultMap="com.magic.daoyuan.business.mapper.IMemberMapper.BaseResultOther"/>
+        <association property="memberBusinessItem" columnPrefix="mbi_"
+                     resultMap="com.magic.daoyuan.business.mapper.IMemberBusinessItemMapper.BaseResultOther"/>
+    </resultMap>
+
+    <resultMap id="IncludeOtherItem" type="com.magic.daoyuan.business.entity.MemberBusiness" extends="BaseResultMap">
+        <association property="otherItemList" columnPrefix="b_" resultMap="com.magic.daoyuan.business.mapper.IMemberBusinessOtherItemMapper.BaseMap"/>
+    </resultMap>
+
+    <select id="queryMemberBusinessForDel" resultMap="IncludeOtherItem">
+        SELECT
+            mb.*, mbi.id AS b_id,
+            mbi.businessItemId AS b_businessItemId
+        FROM
+            member_business mb,
+            member_business_other_item mbi,
+            member m,
+            company cc
+        WHERE
+            mb.businessId = 7
+        AND mb.id = mbi.memberBusinessId
+        AND m.id = mb.memberId
+        AND m.companyId = cc.id
+        AND cc.id IN
+        <foreach collection="list" index="index" item="companyId" open="(" close=")" separator=",">
+            #{companyId}
+        </foreach>
+    </select>
+    <select id="statisticsMemberBusiness" resultType="int">
+        SELECT
+            COUNT(0)
+        FROM
+            member m,
+            member_business mb
+        WHERE
+            m.id = mb.memberId
+        AND m.companyId = #{companyId}
+        AND mb.businessId IN
+        <foreach collection="businessIds" item="b" index="index" open="(" close=")" separator=",">
+            #{b}
+        </foreach>
+    </select>
+
+    <select id="queryMemberBusinessByMember" resultMap="IncludeOtherItem">
+        SELECT
+            mb.*, mbi.businessItemId AS b_businessItemId,
+            mbi.memberBusinessId AS b_memberBusinessId,
+	        mbi.id AS b_id
+        FROM
+            member_business mb
+        LEFT JOIN member_business_other_item mbi ON mb.id = mbi.memberBusinessId
+        WHERE
+            mb.memberId IN
+            <foreach collection="list" index="index" item="memberId" separator="," open="(" close=")">
+                #{memberId}
+            </foreach>
+    </select>
+
+    <delete id="batchDel">
+        <foreach collection="list" index="index" item="l" separator=";">
+            DELETE FROM member_business WHERE memberId = #{l.memberId} AND businessId = #{l.businessId}
+        </foreach>
+    </delete>
+
+    <!-- 关联查询 公司险种 -->
+    <!--<sql id="BaseCompanyInsurances">-->
+        <!--ci.id AS m_ci_id,-->
+        <!--ci.companyId AS m_ci_companyId,-->
+        <!--ci.insuranceId AS m_ci_insuranceId,-->
+        <!--ci.coPayType AS m_ci_coPayType,-->
+        <!--ci.coPayPrice AS m_ci_coPayPrice,-->
+        <!--ci.mePayType AS m_ci_mePayType,-->
+        <!--ci.mePayPrice AS m_ci_mePayPrice,-->
+        <!--i2.insuranceName AS m_ci_insuranceName-->
+    <!--</sql>-->
+
+    <!-- 关联查询 险种档次的配置项  -->
+    <sql id="BasePayTheWay">
+        pt.id AS mbi_pt_id,
+        pt.coComputationalAccuracy AS mbi_pt_coComputationalAccuracy,
+        pt.coComputationRule AS mbi_pt_coComputationRule,
+        pt.isCMakeASupplementaryPayment AS mbi_pt_isCMakeASupplementaryPayment,
+        pt.meComputationalAccuracy AS mbi_pt_meComputationalAccuracy,
+        pt.meComputationRule AS mbi_pt_meComputationRule,
+        pt.isMMakeASupplementaryPayment AS mbi_pt_isMMakeASupplementaryPayment,
+        pt.insuranceLevelId AS mbi_pt_insuranceLevelId,
+        pt.coMinScope AS mbi_pt_coMinScope, pt.coMaxScope AS mbi_pt_coMaxScope,
+        pt.meMinScope AS mbi_pt_meMinScope, pt.meMaxScope AS mbi_pt_meMaxScope,
+        pt.mePrecision AS mbi_pt_mePrecision,pt.coPrecision AS mbi_pt_coPrecision,
+        i.insuranceName AS mbi_pt_insuranceName
+    </sql>
+
+    <!-- 关联查询 办理方  -->
+    <sql id="BaseTransactorInsuranceLevel">
+        til.id AS mbi_pt_til_id,
+        til.payTheWayId AS mbi_pt_til_payTheWayId,
+        til.transactorId AS mbi_pt_til_transactorId,
+        til.coPayType AS mbi_pt_til_coPayType,
+        til.coPayPrice AS mbi_pt_til_coPayPrice,
+        til.mePayType AS mbi_pt_til_mePayType,
+        til.mePayPrice AS mbi_pt_til_mePayPrice
+
+    </sql>
+    <insert id="addMemberBusiness" parameterType="com.magic.daoyuan.business.entity.MemberBusiness" useGeneratedKeys="true"
+            keyColumn="id" keyProperty="id">
+        INSERT INTO member_business (memberId, businessId,companySonBillId)
+        VALUES (#{memberId}, #{businessId},#{companySonBillId})
+    </insert>
+
+
+    <insert id="batchAddMemberBusiness" useGeneratedKeys="true" keyColumn="id" keyProperty="id" parameterType="com.magic.daoyuan.business.entity.MemberBusiness">
+        INSERT INTO member_business (memberId, businessId,companySonBillId)
+        VALUES
+        <foreach collection="list" index="index" item="memberBusiness" separator=",">
+            (#{memberBusiness.memberId},#{memberBusiness.businessId},#{memberBusiness.companySonBillId})
+        </foreach>
+    </insert>
+    
+    <delete id="delMemberBusiness">
+        DELETE FROM member_business WHERE memberId = #{memberId}
+    </delete>
+
+    <delete id="del">
+        DELETE FROM member_business WHERE id IN
+        <foreach collection="list" index="index" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </delete>
+
+    <delete id="batDelMemberBusiness">
+        DELETE FROM member_business WHERE businessId IN (3,4) AND memberId IN
+        <foreach collection="list" index="index" item="memberId" open="(" close=")" separator=",">
+            #{memberId}
+        </foreach>
+    </delete>
+
+    <select id="getByCompanySonBillId" resultMap="BaseResultObject" >
+        select
+          mb.id,mb.memberId,mb.companySonBillId,mb.businessId,
+          m.id AS m_id,m.userName AS m_userName, m.certificateNum AS m_certificateNum,
+          m.certificateType AS m_certificateType,
+          m.companyId AS m_companyId,
+          m.waysOfCooperation AS m_waysOfCooperation,
+
+          il.levelName AS mbi_insuranceLevelName,
+          mbi.id AS mbi_id ,
+          mbi.type AS mbi_type,
+          mbi.baseType AS mbi_baseType,
+          mbi.isFirstPay AS mbi_isFirstPay,
+          if(mbi.serveMethod = 0,o.organizationName,cpp.organizationName) AS mbi_organizationName,
+          if(mbi.serveMethod = 0,c1.mergerName,c2.mergerName) AS mbi_payPlaceName,
+          if(mbi.serveMethod = 0,pp.cityId,pp2.cityId) AS mbi_cityId,
+          mbi.serviceStartTime AS mbi_serviceStartTime,
+          mbi.coding AS mbi_coding,
+          mbi.serveMethod AS mbi_serveMethod ,
+          mbi.isReceivable AS mbi_isReceivable ,
+          mbi.payPlaceId AS mbi_payPlaceId ,
+          mbi.organizationId AS mbi_organizationId ,
+          mbi.transactorId AS mbi_transactorId ,
+          s.supplierName AS mbi_transactorName ,
+          mbi.insuranceLevelId AS mbi_insuranceLevelId ,
+          mbi.memberBusinessId AS mbi_memberBusinessId ,
+          mbi.ratio AS mbi_ratio ,
+          mbi.serviceStartTime AS mbi_serviceStartTime ,
+          mbi.billStartTime AS mbi_billStartTime ,
+          mbi.serviceEndTime AS mbi_serviceEndTime ,
+          mbi.coding AS mbi_coding ,
+          if(mbi.serveMethod = 0 ,o.computationalAccuracy , o2.computationalAccuracy) AS mbi_computationalAccuracy,
+          if(mbi.serveMethod = 0 ,o.computationRule , o2.computationRule) AS mbi_computationRule,
+          if(mbi.serveMethod = 0 ,o.minCardinalNumber , o2.minCardinalNumber) AS mbi_minCardinalNumber,
+          if(mbi.serveMethod = 0 ,o.maxCardinalNumber , o2.maxCardinalNumber) AS mbi_maxCardinalNumber,
+          if(mbi.serveMethod = 0 ,o.precision , o2.precision) AS mbi_precision,
+          CASE mbi.baseType
+            WHEN 2 THEN mbi.baseNumber
+            WHEN 1 THEN CASE mbi.type
+                                WHEN 0 THEN get_insurance_scope(il.id,mbi.baseType)
+                                ELSE CASE mbi.serveMethod
+                                    WHEN 0 THEN if(mbi.baseType = 0,o.minCardinalNumber,o.maxCardinalNumber)
+                                    ELSE sp_getBaseNumberByPayPlace(pp2.id,mbi.baseType ) END END
+            ELSE CASE mbi.type
+                                WHEN 0 THEN get_insurance_scope(il.id,mbi.baseType)
+                                ELSE CASE mbi.serveMethod
+                                    WHEN 0 THEN if(mbi.baseType = 0,o.minCardinalNumber,o.maxCardinalNumber)
+                                    ELSE sp_getBaseNumberByPayPlace(pp2.id,mbi.baseType ) END END END AS mbi_baseNumber,
+        <include refid="BasePayTheWay"/>,
+        <!--<include refid="BaseCompanyInsurances"/>,-->
+        <include refid="BaseTransactorInsuranceLevel"/>,
+        if(mbi.serveMethod = 0 ,pt.mePayPrice , if(pt.mePayType = 2,ci.mePayPrice,pt.mePayPrice)) AS mbi_pt_mePayPrice,
+        if(mbi.serveMethod = 0 ,pt.coPayPrice , if(pt.coPayType = 2,ci.coPayPrice,pt.coPayPrice)) AS mbi_pt_coPayPrice,
+        if(mbi.serveMethod = 0 ,pt.mePayType , if(pt.mePayType = 2,ci.mePayType,pt.mePayType)) AS mbi_pt_mePayType,
+        if(mbi.serveMethod = 0 ,pt.coPayType , if(pt.coPayType = 2,ci.coPayType,pt.coPayType)) AS mbi_pt_coPayType
+
+
+        from
+        member m,
+
+        member_business mb
+        LEFT JOIN member_business_item mbi ON mb.id = mbi.memberBusinessId
+        LEFT JOIN transactor t ON mbi.transactorId = t.id AND t.isValid = 1
+        LEFT JOIN supplier s ON t.supplierId = s.id
+        LEFT JOIN insurance_level il ON mbi.insuranceLevelId = il.id
+        LEFT JOIN pay_place pp ON mbi.payPlaceId = pp.id AND pp.isValid = 1
+        LEFT JOIN citys c1 ON c1.id = pp.cityId
+        LEFT JOIN organization o ON mbi.organizationId = o.id AND o.isValid = 1
+        LEFT JOIN company_pay_place cpp ON mbi.payPlaceId = cpp.id AND cpp.isValid = 1
+        LEFT JOIN organization o2 ON cpp.organizationId = o2.id AND o2.isValid = 1
+        LEFT JOIN pay_place pp2 ON cpp.payPlaceId = pp2.id AND pp2.isValid = 1
+        LEFT JOIN citys c2 ON c2.id = pp2.cityId
+        LEFT JOIN pay_the_way pt ON pt.insuranceLevelId = mbi.insuranceLevelId AND pt.isValid = 1
+        LEFT JOIN insurance i ON pt.insuranceId = i.id AND i.isValid = 1
+        LEFT JOIN transactor_insurance_level til ON pt.id = til.payTheWayId AND til.transactorId = mbi.transactorId AND til.isValid = 1
+        LEFT JOIN company_insurance ci ON ci.companyId = cpp.companyId /*AND i.id = ci.insuranceId AND ci.insuranceLevelId = il.id*/
+
+        WHERE mb.memberId = m.id
+        AND mb.companySonBillId = #{companySonBillId}
+    </select>
+</mapper>

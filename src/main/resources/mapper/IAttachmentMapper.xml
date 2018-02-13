@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IAttachmentMapper">
+
+
+    <select id="queryAttachmentByContract" resultType="com.magic.daoyuan.business.entity.Attachment">
+        SELECT * FROM attachment WHERE contractId = #{contractId}
+    </select>
+
+    <delete id="delAttachment">
+        DELETE FROM attachment WHERE contractId = #{contractId}
+    </delete>
+
+    <update id="batchUpdateAttachment">
+        <foreach collection="attachments" index="index" item="attachment" separator=";">
+            UPDATE attachment
+            <set>
+                <if test="attachment.attachmentName != null">
+                    attachmentName = #{attachment.attachmentName},
+                </if>
+                <if test="attachment.url != null">
+                    url = #{attachment.url},
+                </if>
+            </set>
+            WHERE id = #{attachment.id}
+        </foreach>
+    </update>
+
+    <update id="updateAttachment" parameterType="com.magic.daoyuan.business.entity.Attachment">
+        UPDATE attachment
+        <set>
+            <if test="attachmentName != null">
+                attachmentName = #{attachmentName},
+            </if>
+            <if test="url != null">
+                url = #{url},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <insert id="addAttachment" parameterType="com.magic.daoyuan.business.entity.Attachment">
+        INSERT INTO attachment (contractId, url, attachmentName)
+        VALUES
+        (#{contractId}, #{url}, #{attachmentName})
+    </insert>
+
+
+    <insert id="batchAddAttachment">
+        INSERT INTO attachment (contractId, url, attachmentName)
+        VALUES
+        <foreach collection="attachments" index="index" item="attachment" separator=",">
+            (#{attachment.contractId}, #{attachment.url}, #{attachment.attachmentName})
+        </foreach>
+    </insert>
+
+
+
+</mapper>

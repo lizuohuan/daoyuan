@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IMemberNumberMapper">
+
+
+
+    <insert id="batchAdd">
+      INSERT INTO member_number (memberId, serialNumber,payPlaceId)
+      VALUES
+        <foreach collection="list" index="index" item="l" separator=",">
+            (#{l.memberId},#{l.serialNumber},#{l.payPlaceId})
+        </foreach>
+    </insert>
+
+    <select id="queryMemberNumberByItems" resultType="com.magic.daoyuan.business.entity.MemberNumber">
+        SELECT id,memberId,serialNumber,payPlaceId FROM member_number WHERE id IN
+        <foreach collection="list" item="l" index="index" open="(" close=")" separator=",">
+            #{l}
+        </foreach>
+    </select>
+
+    <select id="queryMemberNumberByMember" resultType="com.magic.daoyuan.business.entity.MemberNumber">
+        SELECT id,memberId,serialNumber,payPlaceId FROM member_number WHERE 1=1
+        <if test="memberId != null">
+            AND memberId = #{memberId}
+        </if>
+
+    </select>
+
+    <select id="queryMemberNumberByIdCards" resultType="com.magic.daoyuan.business.entity.MemberNumber">
+        SELECT
+            mn.id,
+            mn.memberId,
+            mn.serialNumber,
+            mn.payPlaceId
+        FROM
+            member m,
+            member_number mn
+        WHERE
+            m.id = mn.memberId
+        AND m.certificateNum IN
+        <foreach collection="list" index="index" item="idCard" open="(" close=")" separator=",">
+            #{idCard}
+        </foreach>
+    </select>
+
+
+</mapper>

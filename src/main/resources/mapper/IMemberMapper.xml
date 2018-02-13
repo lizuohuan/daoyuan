@@ -1,0 +1,1088 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IMemberMapper">
+    <resultMap id="BaseResultMap" type="com.magic.daoyuan.business.entity.Member">
+        <id column="id" property="id" javaType="java.lang.Integer"/>
+        <result column="userName" property="userName" javaType="java.lang.String"/>
+        <result column="certificateType" property="certificateType" javaType="java.lang.Integer"/>
+        <result column="certificateNum" property="certificateNum" javaType="java.lang.String"/>
+        <result column="companyId" property="companyId" javaType="java.lang.Integer"/>
+        <result column="companyName" property="companyName" javaType="java.lang.String"/>
+        <result column="department" property="department" javaType="java.lang.String"/>
+        <result column="stateCooperation" property="stateCooperation" javaType="java.lang.Integer"/>
+        <result column="createTime" property="createTime" javaType="java.util.Date"/>
+        <result column="leaveOfficeTime" property="leaveOfficeTime" javaType="java.util.Date"/>
+        <result column="waysOfCooperation" property="waysOfCooperation" javaType="java.lang.Integer"/>
+        <result column="education" property="education" javaType="java.lang.Integer"/>
+        <result column="memberBusinessUpdateRecordId" property="memberBusinessUpdateRecordId"
+                javaType="java.lang.Integer"/>
+        <result column="recordId" property="recordId" javaType="java.lang.Integer"/>
+        <result column="cityId" property="cityId" javaType="java.lang.Integer"/>
+        <result column="cityName" property="cityName" javaType="java.lang.String"/>
+        <result column="phone" property="phone" javaType="java.lang.String"/>
+        <result column="businessIds" property="businessIds" javaType="java.lang.String"/>
+        <result column="serviceFee" property="serviceFee" javaType="java.lang.Double"/>
+        <result column="contractStartTime" property="contractStartTime" javaType="java.util.Date"/>
+        <result column="contractEndTime" property="contractEndTime" javaType="java.util.Date"/>
+    </resultMap>
+
+    <resultMap id="BaseResultMapMemberBusinessCityDto" type="com.magic.daoyuan.business.dto.MemberBusinessCityDto">
+        <result column="memberId" property="memberId" javaType="java.lang.Integer"/>
+        <result column="cityId" property="cityId" javaType="java.lang.Integer"/>
+    </resultMap>
+
+    <resultMap id="IncludeBusiness" type="com.magic.daoyuan.business.entity.Member" extends="BaseResultMap">
+        <association property="businessList" column="id"
+                     select="com.magic.daoyuan.business.mapper.IBusinessMapper.queryBusinessByMember"/>
+        <association property="memberSalary" column="id"
+                     select="com.magic.daoyuan.business.mapper.IMemberSalaryMapper.queryMemberSalary"/>
+        <association property="city" column="cityId" select="com.magic.daoyuan.business.mapper.ICityMapper.queryCity"/>
+        <association property="updateRecordList" column="id" select="com.magic.daoyuan.business.mapper.IMemberBusinessUpdateRecordMapper.getMemberUpdateList"/>
+    </resultMap>
+
+
+    <resultMap id="OnlyBusiness" type="com.magic.daoyuan.business.entity.Member" extends="BaseResultMap">
+        <association property="businessList" columnPrefix="m_" resultMap="com.magic.daoyuan.business.mapper.IBusinessMapper.BaseBusiness"/>
+    </resultMap>
+
+
+
+    <resultMap id="BaseResultOther" type="com.magic.daoyuan.business.entity.Member" extends="BaseResultMap">
+        <association property="companyInsurances" columnPrefix="ci_"
+                     resultMap="com.magic.daoyuan.business.mapper.ICompanyInsuranceMapper.BaseResultMap"/>
+    </resultMap>
+
+    <resultMap id="BaseResultOther2" type="com.magic.daoyuan.business.entity.Member" extends="BaseResultMap">
+        <association property="recordItems" columnPrefix="mburi_"
+                     resultMap="com.magic.daoyuan.business.mapper.IMemberBusinessUpdateRecordItemMapper.BaseResult"/>
+    </resultMap>
+
+    <resultMap id="BaseResultOther3" type="com.magic.daoyuan.business.entity.Member" extends="BaseResultMap">
+        <association property="memberBusinessItems" columnPrefix="mbi_"
+                     resultMap="com.magic.daoyuan.business.mapper.IMemberBusinessItemMapper.BaseResultMap"/>
+    </resultMap>
+
+    <resultMap id="ExtendBaseResultOther2" type="com.magic.daoyuan.business.entity.Member" extends="BaseResultMap" >
+        <collection property="recordItemDtos" columnPrefix="mburi_"
+                    ofType="com.magic.daoyuan.business.dto.MemberBusinessUpdateRecordItemDto">
+            <id column="id" property="id" javaType="java.lang.Integer"/>
+            <result column="memberBusinessUpdateRecordId" property="memberBusinessUpdateRecordId" javaType="java.lang.Integer"/>
+            <result column="memberId" property="memberId" javaType="java.lang.Integer"/>
+        </collection>
+        <collection property="monthPayBusinessDtoList" columnPrefix="mpb_"
+                     resultMap="com.magic.daoyuan.business.mapper.IMemberMonthPayBusinessMapper.BaseResultMapDto"/>
+        <collection property="memberMonthPayBusinessList" columnPrefix="mmpb_"
+                     resultMap="com.magic.daoyuan.business.mapper.IMemberMonthPayBusinessMapper.BaseResultMap"/>
+        <collection property="memberBusinessCityDtoSet" columnPrefix="mbc_"
+                     resultMap="BaseResultMapMemberBusinessCityDto"/>
+        <collection property="memberBusinessSet" columnPrefix="mb_"
+                     resultMap="com.magic.daoyuan.business.mapper.IMemberBusinessMapper.BaseResultMap"/>
+        <collection property="memberBusinessItems" columnPrefix="mbi_"
+                     resultMap="com.magic.daoyuan.business.mapper.IMemberBusinessItemMapper.BaseResultMap"/>
+    </resultMap>
+
+    <resultMap id="ExtendBaseResultOther3" type="com.magic.daoyuan.business.entity.Member" extends="BaseResultMap" >
+        <association property="memberBusinessItems" columnPrefix="mbi_"
+                     resultMap="com.magic.daoyuan.business.mapper.IMemberBusinessItemMapper.BaseResultMap"/>
+    </resultMap>
+
+
+
+
+
+    <select id="queryMemberByIdCardList" resultMap="BaseResultMap">
+        SELECT id,certificateNum FROM  member WHERE certificateNum IN
+        <foreach collection="list" index="index" item="idCard" open="(" close=")" separator=",">
+            #{idCard}
+        </foreach>
+    </select>
+
+
+    <select id="batchQueryMemberAllField" resultMap="IncludeBusiness">
+        SELECT m.*,cc.companyName AS companyName,
+        ci.`name` AS cityName
+        FROM member m,company cc,citys ci
+        WHERE  m.companyId = cc.id
+        AND ci.id = m.cityId
+        AND m.id IN
+        <foreach collection="list" index="index" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </select>
+
+    <select id="queryFeeBack" resultMap="BaseResultMap">
+        SELECT
+            mbur.memberId AS id
+        FROM
+            member_business_update_record mbur,
+            member_business_update_record_item mburi
+        WHERE
+            mburi.memberBusinessUpdateRecordId = mbur.id
+        AND mburi.`status` = 1
+        <if test="memberId != null">
+            AND mbur.memberId = #{memberId}
+        </if>
+        GROUP BY mbur.memberId
+    </select>
+
+    <select id="queryMemberByIdCards" resultMap="BaseResultMap">
+        SELECT id,certificateNum FROM member WHERE certificateNum = #{idCard}
+    </select>
+
+    <select id="batchQueryMember" resultMap="IncludeBusiness">
+        SELECT m.id,m.cityId FROM member m
+        WHERE m.id IN
+        <foreach collection="list" item="id" index="index" close=")" open="(" separator=",">
+            #{id}
+        </foreach>
+    </select>
+
+
+    <select id="queryExportUser_" resultType="com.magic.daoyuan.business.entity.ExportUser">
+        SELECT
+            t.*
+        FROM
+            (
+                SELECT
+                    m.id AS memberId,
+                    m.userName,
+                    m.certificateNum,
+                    mburi.createTime,
+                    IFNULL(m.phone, '--') AS phone,
+                    m.stateCooperation,
+                    (
+                        SELECT
+                            mn.serialNumber
+                        FROM
+                            member_number mn
+                        WHERE
+                            mn.memberId = m.id
+                        AND CASE mburi.serveMethod
+                        WHEN 0 THEN
+                            mn.payPlaceId = mburi.payPlaceId
+                        ELSE
+                            mn.payPlaceId = (
+                                SELECT
+                                    cpp.payPlaceId
+                                FROM
+                                    company_pay_place cpp
+                                WHERE
+                                    cpp.id = mburi.payPlaceId
+                            )
+                        END
+                    ) AS coding
+                FROM
+                    member_business_update_record mbur,
+                    member m,
+                    member_business_update_record_item mburi
+                WHERE
+                    m.id = mbur.memberId
+                AND mbur.id = mburi.memberBusinessUpdateRecordId
+                AND mbur.serviceType = 0
+                AND mburi.`status` = 1
+                AND mburi.serviceStatus = #{serviceStatus}
+                <if test="isTuo != 1 and payPlaceId != null">
+                    AND ((mburi.payPlaceId = #{payPlaceId} AND mburi.serveMethod = 0)
+                    OR (SELECT cpp.payPlaceId FROM company_pay_place cpp  WHERE cpp.id = mburi.payPlaceId AND mburi.serveMethod = 1) = #{payPlaceId} )
+                </if>
+                <if test="isTuo == 1 and payPlaceId != null">
+                    AND mburi.payPlaceId = #{payPlaceId} AND mburi.serveMethod = 1
+                </if>
+                <if test="organizationId != null">
+                    AND mburi.organizationId = #{organizationId}
+                </if>
+                <if test="transactorId != null">
+                    AND mburi.transactorId = #{transactorId}
+                </if>
+                <if test="companyId != null">
+                    AND m.companyId = #{companyId}
+                </if>
+                ORDER BY
+                    mburi.id DESC
+            ) AS t
+        GROUP BY
+            t.memberId
+    </select>
+
+    <select id="queryExportUser" resultType="com.magic.daoyuan.business.entity.ExportUser">
+        SELECT
+            t.*
+        FROM
+            (
+                SELECT
+                    m.id AS memberId,
+                    m.userName,
+                    m.certificateNum,
+                    m.education,
+                    il.levelName,
+                    CASE il.levelName WHEN '一档' THEN '01 城镇职工'
+                                                        WHEN '二档' THEN '02 原综保本市户籍劳动者'
+                                                        WHEN '三档' THEN '03 非本市户籍农民工'
+                                                        ELSE '类别不明' END AS categoryName,
+                    CASE m.education  WHEN 0 THEN '11 博士研究生'
+                                                        WHEN 1 THEN '14 硕士研究生'
+                                                        WHEN 2 THEN '21 大学本科'
+                                                        WHEN 3 THEN '31 大学专科'
+                                                        WHEN 4 THEN '61 普通中学'
+                                                        ELSE '其他' END AS educationName,
+                    (SELECT
+                    mbi.serviceStartTime
+                    FROM
+                    member_business mb,
+                    member_business_item mbi
+                    WHERE
+                    mb.id = mbi.memberBusinessId
+                    AND mb.businessId = 3
+                    AND mb.memberId = m.id) AS createTime,
+                    IFNULL(m.phone,'--') AS phone,
+                    m.stateCooperation,
+                    mbi.coding,
+                    CASE mbi.baseType
+                WHEN 0 THEN
+                    (
+                        SELECT ptw.coMinScope
+                        FROM pay_the_way ptw
+                        WHERE
+                            ptw.insuranceLevelId = il.id
+                        ORDER BY
+                            ptw.coMinScope ASC
+                        LIMIT 0, 1
+                    )
+                WHEN 1 THEN
+                    (
+                        SELECT
+                            ptw.coMaxScope
+                        FROM
+                            pay_the_way ptw
+                        WHERE
+                            ptw.insuranceLevelId = il.id
+                        ORDER BY
+                            ptw.coMaxScope DESC
+                        LIMIT 0, 1
+                    )
+                ELSE
+                    mbi.baseNumber
+                END AS salary
+                FROM
+                    member_business_update_record mbur,
+                    member m,
+                    insurance_level il,
+                    member_business_update_record_item mburi,
+                    member_business mb,
+                    member_business_item mbi
+                <if test="serviceStatus == 1">
+                    ,member_number mn
+                </if>
+                WHERE
+                    m.id = mbur.memberId
+                AND mburi.insuranceLevelId = il.id
+                AND mbur.id = mburi.memberBusinessUpdateRecordId
+                AND mb.id = mbi.memberBusinessId
+                AND mb.businessId = 3
+                AND mb.memberId = m.id
+                AND mburi.`status` = 1
+                AND mburi.serviceStatus = #{serviceStatus}
+                <if test="isTuo != 1 and payPlaceId != null">
+                    AND ((mburi.payPlaceId = #{payPlaceId} AND mburi.serveMethod = 0)
+                    OR (SELECT cpp.payPlaceId FROM company_pay_place cpp  WHERE cpp.id = mburi.payPlaceId AND mburi.serveMethod = 1) = #{payPlaceId} )
+                </if>
+                <if test="isTuo == 1 and payPlaceId != null">
+                    AND mburi.payPlaceId = #{payPlaceId} AND mburi.serveMethod = 1
+                </if>
+                <if test="organizationId != null">
+                    AND mburi.organizationId = #{organizationId}
+                </if>
+                <if test="transactorId != null">
+                    AND mburi.transactorId = #{transactorId}
+                </if>
+                <if test="companyId != null">
+                    AND m.companyId = #{companyId}
+                </if>
+                <if test="serviceStatus == 1">
+                    AND mn.memberId = m.id
+                    AND CASE mburi.serveMethod WHEN 0 THEN mn.payPlaceId = mburi.payPlaceId
+                    ELSE mn.payPlaceId = (SELECT cpp.payPlaceId FROM company_pay_place cpp WHERE cpp.id = mburi.payPlaceId) END
+                </if>
+                ORDER BY
+                    mburi.id DESC
+            ) AS t
+        GROUP BY
+            t.memberId
+    </select>
+
+
+    <select id="queryAllMemberIdCard" resultMap="OnlyBusiness">
+        SELECT
+            m.id,
+            m.certificateNum,
+            mb.businessId AS m_id,
+            m.stateCooperation,
+            m.companyId,
+            mbi.serveMethod AS m_mbi_serveMethod,
+            CASE mbi.serveMethod WHEN 1 THEN (SELECT cpp.payPlaceId FROM  company_pay_place cpp
+                                  WHERE cpp.id =mbi.payPlaceId)
+                                 ELSE mbi.payPlaceId END AS m_mbi_payPlaceId
+        FROM
+            member m
+        LEFT JOIN member_business mb ON mb.memberId = m.id
+        LEFT JOIN member_business_item mbi ON mbi.memberBusinessId = mb.id
+    </select>
+
+    <select id="queryMemberByIdCard" resultMap="BaseResultMap">
+    SELECT id FROM member WHERE certificateNum = #{idCard}
+  </select>
+
+    <select id="queryVerifyMember" resultMap="BaseResultMap">
+        SELECT
+        *
+        FROM
+        (
+        SELECT
+        m.id,
+        m.userName,
+        m.certificateNum,
+        m.certificateType,
+        mburi.memberBusinessUpdateRecordId,
+        mburi.id AS recordId,
+        mburi.serviceStatus,
+        mburi.createTime
+        FROM
+        member m,
+        member_business_update_record mbur,
+        member_business_update_record_item mburi
+        WHERE
+        m.id = mbur.memberId
+        AND mbur.id = mburi.memberBusinessUpdateRecordId
+        AND mbur.serviceType = 0
+        AND mburi.`status` = 1
+        <if test="companyId != null">
+            AND m.companyId = #{companyId}
+        </if>
+        ORDER BY
+        mburi.createTime DESC
+        ) AS t
+        GROUP BY
+        t.id
+    </select>
+
+    <select id="queryMemberBusinessYc" resultMap="IncludeBusiness">
+    SELECT
+        m.*
+    FROM
+        member m,
+        member_business mb
+
+    WHERE m.id = mb.memberId
+    AND mb.businessId = 7
+    AND m.companyId = #{companyId}
+  </select>
+    <select id="queryMemberBusinessYc2" resultMap="IncludeBusiness">
+    SELECT
+        m.*
+    FROM
+        member m,
+        member_business mb
+
+    WHERE m.id = mb.memberId
+    AND mb.businessId = 7
+    AND m.companyId IN (
+    <foreach collection="companyIdSet" item="companyId" separator=",">
+        #{companyId}
+    </foreach>
+    )
+  </select>
+
+    <select id="queryMemberBusinessInsurance" resultMap="IncludeBusiness">
+    SELECT
+        m.*
+    FROM
+        member m,
+        member_business mb
+
+    WHERE m.id = mb.memberId
+    AND mb.businessId = 6
+    AND m.companyId = #{companyId}
+    AND m.id NOT IN (
+        SELECT bi.memberId FROM business_insurance bi
+        WHERE DATE_FORMAT(bi.serviceEndTime,'%y-%m') >= DATE_FORMAT(#{serviceDate},'%y-%m')
+    )
+  </select>
+
+    <select id="queryMemberBusinessInsurance2" resultMap="IncludeBusiness">
+    SELECT
+        m.*
+    FROM
+        member m,
+        member_business mb
+
+    WHERE m.id = mb.memberId
+    AND mb.businessId = 6
+    AND (
+    <foreach collection="companyDateMapList" separator="or" item="map">
+        m.companyId = #{map.companyId}
+        AND m.id NOT IN (
+        SELECT bi.memberId FROM business_insurance bi
+        WHERE DATE_FORMAT(bi.serviceEndTime,'%y-%m') >= DATE_FORMAT(#{map.serviceDate},'%y-%m')
+        )
+    </foreach>)
+
+  </select>
+
+
+    <select id="queryMemberByCompany" resultMap="BaseResultMap">
+    SELECT m.* FROM member m WHERE 1=1
+    <if test="companyId != null">
+        AND m.companyId = #{companyId}
+    </if>
+  </select>
+
+
+  <select id="info" resultMap="IncludeBusiness" parameterType="java.lang.Integer">
+    select 
+      *
+    from member
+    where id = #{id}
+  </select>
+
+
+    <delete id="delete" parameterType="java.lang.Integer">
+    delete from member
+    where id = #{id}
+  </delete>
+    <insert id="save" parameterType="com.magic.daoyuan.business.entity.Member" useGeneratedKeys="true" keyColumn="id"
+            keyProperty="id">
+    insert into member (certificateType, certificateNum, userName, companyId, department, stateCooperation, createTime,
+     leaveOfficeTime, waysOfCooperation, cityId, contractStartTime, contractEndTime,education,phone)
+     values (#{certificateType},#{certificateNum},#{userName},#{companyId},#{department},#{stateCooperation},now(),
+     #{leaveOfficeTime},#{waysOfCooperation},#{cityId},#{contractStartTime},#{contractEndTime},#{education},#{phone})
+  </insert>
+
+
+    <insert id="batchAddMember" parameterType="com.magic.daoyuan.business.entity.Member" useGeneratedKeys="true"
+            keyColumn="id" keyProperty="id">
+        INSERT INTO member (certificateType, certificateNum, userName, companyId, department, stateCooperation, createTime,
+        leaveOfficeTime, waysOfCooperation, cityId, contractStartTime, contractEndTime,education,phone)
+        VALUES
+        <foreach collection="list" index="index" item="member" separator=",">
+            (#{member.certificateType},#{member.certificateNum},#{member.userName},#{member.companyId},#{member.department},#{member.stateCooperation},now(),
+            #{member.leaveOfficeTime},#{member.waysOfCooperation},#{member.cityId},#{member.contractStartTime},
+            #{member.contractEndTime},#{member.education},#{member.phone})
+        </foreach>
+    </insert>
+
+
+    <update id="batchUpdateMember">
+        <foreach collection="list" item="member" index="index" separator=";">
+            update member
+            <set>
+                <if test="member.phone != null">
+                    phone = #{member.phone},
+                </if>
+                <if test="member.education != null">
+                    education = #{member.education},
+                </if>
+                <if test="member.certificateType != null">
+                    certificateType = #{member.certificateType},
+                </if>
+                <if test="member.certificateNum != null and member.certificateNum != ''">
+                    certificateNum = #{member.certificateNum},
+                </if>
+                <if test="member.userName != null and member.userName != ''">
+                    userName = #{member.userName},
+                </if>
+                <if test="member.companyId != null">
+                    companyId = #{member.companyId},
+                </if>
+                <if test="member.department != null">
+                    department = #{member.department},
+                </if>
+                <if test="member.stateCooperation != null">
+                    stateCooperation = #{member.stateCooperation},
+                </if>
+                <if test="member.leaveOfficeTime != null">
+                    leaveOfficeTime = #{member.leaveOfficeTime},
+                </if>
+                <if test="member.waysOfCooperation != null">
+                    waysOfCooperation = #{member.waysOfCooperation},
+                </if>
+                <if test="member.cityId != null">
+                    cityId = #{member.cityId},
+                </if>
+                <if test="member.contractStartTime != null">
+                    contractStartTime = #{member.contractStartTime},
+                </if>
+                <if test="member.contractEndTime != null">
+                    contractEndTime = #{member.contractEndTime},
+                </if>
+            </set>
+            where id = #{member.id}
+
+        </foreach>
+    </update>
+
+    <update id="update" parameterType="com.magic.daoyuan.business.entity.Member">
+        update member
+        <set>
+            <if test="phone != null">
+                phone = #{phone},
+            </if>
+            <if test="education != null">
+                education = #{education},
+            </if>
+            <if test="certificateType != null">
+                certificateType = #{certificateType},
+            </if>
+            <if test="certificateNum != null and certificateNum != ''">
+                certificateNum = #{certificateNum},
+            </if>
+            <if test="userName != null and userName != ''">
+                userName = #{userName},
+            </if>
+            <if test="companyId != null">
+                companyId = #{companyId},
+            </if>
+            <if test="department != null">
+                department = #{department},
+            </if>
+            <if test="stateCooperation != null">
+                stateCooperation = #{stateCooperation},
+            </if>
+            <if test="leaveOfficeTime != null">
+                leaveOfficeTime = #{leaveOfficeTime},
+            </if>
+            <if test="waysOfCooperation != null">
+                waysOfCooperation = #{waysOfCooperation},
+            </if>
+            <if test="cityId != null">
+                cityId = #{cityId},
+            </if>
+            <if test="contractStartTime != null">
+                contractStartTime = #{contractStartTime},
+            </if>
+            <if test="contractEndTime != null">
+                contractEndTime = #{contractEndTime},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+    <update id="updateAll" parameterType="com.magic.daoyuan.business.entity.Member">
+    update member
+    set
+      certificateType = #{certificateType},
+      certificateNum = #{certificateNum},
+      userName = #{userName},
+      companyId = #{companyId},
+      department = #{department},
+      stateCooperation = #{stateCooperation},
+      leaveOfficeTime = #{leaveOfficeTime},
+      waysOfCooperation = #{waysOfCooperation},
+      cityId = #{cityId},
+      contractStartTime = #{contractStartTime},
+      contractEndTime = #{contractEndTime}
+    where id = #{id}
+  </update>
+
+
+    <select id="list" resultMap="BaseResultMap" parameterType="map">
+        SELECT m.*,cc.mergerName AS cityName,com.companyName AS companyName
+        FROM member m,citys cc,company com
+        WHERE m.companyId = com.id
+        AND m.cityId = cc.id
+        <if test="certificateType != null">
+            AND m.certificateType = #{certificateType}
+        </if>
+        <if test="certificateNum != null and certificateNum != ''">
+            AND m.certificateNum like '%${certificateNum}%'
+        </if>
+        <if test="userName != null and userName != ''">
+            AND m.userName like '%${userName}%'
+        </if>
+        <if test="beforeService != null ">
+            AND com.beforeService = #{beforeService}
+        </if>
+        <if test="companyName != null and companyName != ''">
+            AND com.companyName like '%${companyName}%'
+        </if>
+        <if test="companyId != null">
+            AND m.companyId = #{companyId}
+        </if>
+        <if test="stateCooperation != null">
+            AND m.stateCooperation = #{stateCooperation}
+        </if>
+        <if test="leaveOfficeTimeStartTime != null">
+            AND m.leaveOfficeTime <![CDATA[ >= ]]> #{leaveOfficeTimeStartTime}
+        </if>
+        <if test="leaveOfficeTimeEndTime != null">
+            AND m.leaveOfficeTime <![CDATA[ <= ]]> #{leaveOfficeTimeEndTime}
+        </if>
+        <if test="waysOfCooperation != null">
+            AND m.waysOfCooperation = #{waysOfCooperation}
+        </if>
+        <if test="cityId != null">
+            AND m.cityId = #{cityId}
+        </if>
+        <if test="contractStartTimeStartTime != null">
+            AND m.contractStartTime <![CDATA[ >= ]]> #{contractStartTimeStartTime}
+        </if>
+        <if test="contractStartTimeEndTime != null">
+            AND m.contractStartTime <![CDATA[ <= ]]> #{contractStartTimeEndTime}
+        </if>
+        <if test="contractEndTimeStartTime != null">
+            AND m.contractEndTime <![CDATA[ >= ]]> #{contractEndTimeStartTime}
+        </if>
+        <if test="contractEndTimeEndTime != null">
+            AND m.contractEndTime <![CDATA[ <= ]]> #{contractEndTimeEndTime}
+        </if>
+        ORDER BY
+        <if test="pageArgs != null">
+            <if test="pageArgs.column != null and pageArgs.column != ''">
+                ${pageArgs.column} ${pageArgs.order},
+            </if>
+        </if>
+        m.id DESC
+        <if test="pageArgs != null">
+            limit #{pageArgs.pageStart}, #{pageArgs.pageSize}
+        </if>
+    </select>
+
+    <select id="listCount" resultType="int" parameterType="map">
+        SELECT
+        COUNT(*)
+        FROM member m,company com
+        WHERE m.companyId = com.id
+        <if test="certificateType != null">
+            AND m.certificateType = #{certificateType}
+        </if>
+        <if test="certificateNum != null and certificateNum != ''">
+            AND m.certificateNum like '%${certificateNum}%'
+        </if>
+        <if test="userName != null and userName != ''">
+            AND m.userName like '%${userName}%'
+        </if>
+        <if test="companyName != null and companyName != ''">
+            AND com.companyName like '%${companyName}%'
+        </if>
+        <if test="beforeService != null ">
+            AND com.beforeService = #{beforeService}
+        </if>
+        <if test="companyId != null">
+            AND m.companyId = #{companyId}
+        </if>
+        <if test="stateCooperation != null">
+            AND m.stateCooperation = #{stateCooperation}
+        </if>
+        <if test="leaveOfficeTimeStartTime != null">
+            AND m.leaveOfficeTime <![CDATA[ >= ]]> #{leaveOfficeTimeStartTime}
+        </if>
+        <if test="leaveOfficeTimeEndTime != null">
+            AND m.leaveOfficeTime <![CDATA[ <= ]]> #{leaveOfficeTimeEndTime}
+        </if>
+        <if test="waysOfCooperation != null">
+            AND m.waysOfCooperation = #{waysOfCooperation}
+        </if>
+        <if test="cityId != null">
+            AND m.cityId = #{cityId}
+        </if>
+        <if test="contractStartTimeStartTime != null">
+            AND m.contractStartTime <![CDATA[ >= ]]> #{contractStartTimeStartTime}
+        </if>
+        <if test="contractStartTimeEndTime != null">
+            AND m.contractStartTime <![CDATA[ <= ]]> #{contractStartTimeEndTime}
+        </if>
+        <if test="contractEndTimeStartTime != null">
+            AND m.contractEndTime <![CDATA[ >= ]]> #{contractEndTimeStartTime}
+        </if>
+        <if test="contractEndTimeEndTime != null">
+            AND m.contractEndTime <![CDATA[ <= ]]> #{contractEndTimeEndTime}
+        </if>
+    </select>
+
+
+    <select id="getCountByCompanySonBillId" resultType="int">
+    select COUNT(0) from member m, member_business mb
+    WHERE m.id = mb.memberId
+    AND m.waysOfCooperation = #{companyCooperationMethod}
+    AND mb.companySonBillId = #{companySonBillId}
+  </select>
+
+    <select id="getBusinessIds" resultMap="BaseResultMap">
+    select m.*,GROUP_CONCAT(mb.businessId) AS businessIds from member m
+    LEFT JOIN member_business mb ON m.id = mb.memberId
+    WHERE m.companyId = #{companyId}
+    GROUP BY m.id
+	ORDER BY mb.businessId ASC
+  </select>
+
+
+    <select id="getBaseByCompanyId" resultMap="BaseResultMap">
+      SELECT * FROM member m WHERE m.companyId = #{companyId}
+  </select>
+
+
+    <select id="getByCompanyId" resultMap="BaseResultOther3">
+      select m.*,
+          mbi.id AS mbi_id ,
+          mbi.type AS mbi_type,
+          mbi.baseType AS mbi_baseType,
+          mbi.isFirstPay AS mbi_isFirstPay,
+          mbi.serviceStartTime AS mbi_serviceStartTime,
+          mbi.coding AS mbi_coding,
+          mbi.serveMethod AS mbi_serveMethod ,
+          mbi.isReceivable AS mbi_isReceivable ,
+          mbi.payPlaceId AS mbi_payPlaceId ,
+          mbi.organizationId AS mbi_organizationId ,
+          mbi.transactorId AS mbi_transactorId ,
+          mbi.insuranceLevelId AS mbi_insuranceLevelId ,
+          mbi.memberBusinessId AS mbi_memberBusinessId ,
+          mbi.ratio AS mbi_ratio ,
+          mbi.serviceStartTime AS mbi_serviceStartTime ,
+          mbi.billStartTime AS mbi_billStartTime ,
+          mbi.serviceEndTime AS mbi_serviceEndTime ,
+          mbi.coding AS mbi_coding
+        from member m ,member_business mb , member_business_item mbi
+        WHERE m.id = mb.memberId
+        AND mb.id = mbi.memberBusinessId
+        AND m.companyId = #{companyId}
+  </select>
+
+    <select id="getMemberBusinessUpdateRecordItem" resultMap="BaseResultOther2">
+      select m.*,
+       mburi.id AS mburi_id
+       from member m ,member_business_update_record mbur ,member_business_update_record_item mburi
+      WHERE m.id = mbur.memberId
+      AND mbur.id = mburi.memberBusinessUpdateRecordId
+      AND m.companyId = #{companyId}
+  </select>
+
+    <select id="getCompanyMember" resultType="com.magic.daoyuan.business.entity.Member">
+      select m.*
+       from member m
+      WHERE
+      m.companyId = #{companyId}
+  </select>
+
+
+    <select id="getMemberBusinessItem" resultMap="BaseResultOther3">
+        select m.*,
+          mbi.id AS mbi_id ,
+          mbi.type AS mbi_type,
+          mbi.baseType AS mbi_baseType,
+          mbi.isFirstPay AS mbi_isFirstPay,
+          mbi.serviceStartTime AS mbi_serviceStartTime,
+          mbi.coding AS mbi_coding,
+          mbi.serveMethod AS mbi_serveMethod ,
+          mbi.isReceivable AS mbi_isReceivable ,
+          mbi.payPlaceId AS mbi_payPlaceId ,
+          mbi.organizationId AS mbi_organizationId ,
+          mbi.transactorId AS mbi_transactorId ,
+          mbi.insuranceLevelId AS mbi_insuranceLevelId ,
+          mbi.memberBusinessId AS mbi_memberBusinessId ,
+          mbi.ratio AS mbi_ratio ,
+          mbi.serviceStartTime AS mbi_serviceStartTime ,
+          mbi.billStartTime AS mbi_billStartTime ,
+          mbi.serviceEndTime AS mbi_serviceEndTime ,
+          mbi.coding AS mbi_coding
+        from member m ,member_business mb , member_business_item mbi
+        WHERE m.id = mb.memberId
+        AND mb.id = mbi.memberBusinessId
+        AND m.waysOfCooperation = #{companyCooperationMethod}
+        AND mb.companySonBillId = #{companySonBillId}
+
+
+    </select>
+
+
+    <select id="getMemberByBillMadeMethod" resultMap="ExtendBaseResultOther2" >
+        SELECT m.*,
+        if(mbi.serveMethod = 0,pp.cityId,pp2.cityId) AS mbi_cityId,
+        if(mbi.serveMethod = 0,bm.daiLi,bm.tuoGuan) AS mbi_billMadeMethod,
+        if(mbi.serveMethod = 0,o.organizationName,cpp.organizationName) AS mbi_organizationName,
+        if(mbi.serveMethod = 0,c1.mergerName,c2.mergerName) AS mbi_payPlaceName,
+        mbi.id AS mbi_id ,
+        mb.businessId AS mbi_businessId,
+        mbi.isReceivable AS mbi_isReceivable,
+        mbi.serviceStartTime AS mbi_serviceStartTime,
+        CASE mbi.baseType
+            WHEN 2 THEN mbi.baseNumber
+            WHEN 1 THEN CASE mbi.type
+                                WHEN 0 THEN get_insurance_scope(il.id,mbi.baseType)
+                                ELSE CASE mbi.serveMethod
+                                    WHEN 0 THEN if(mbi.baseType = 0,o.minCardinalNumber,o.maxCardinalNumber)
+                                    ELSE sp_getBaseNumberByPayPlace(pp2.id,mbi.baseType ) END END
+            ELSE CASE mbi.type
+                                WHEN 0 THEN get_insurance_scope(il.id,mbi.baseType)
+                                ELSE CASE mbi.serveMethod
+                                    WHEN 0 THEN if(mbi.baseType = 0,o.minCardinalNumber,o.maxCardinalNumber)
+                                    ELSE sp_getBaseNumberByPayPlace(pp2.id,mbi.baseType ) END END END AS mbi_baseNumber
+        FROM member m
+        LEFT JOIN member_business mb ON mb.memberId = m.id
+        LEFT JOIN member_business_item mbi ON mb.id = mbi.memberBusinessId
+        LEFT JOIN insurance_level il ON mbi.insuranceLevelId = il.id
+        LEFT JOIN organization o ON mbi.organizationId = o.id AND o.isValid = 1
+        LEFT JOIN pay_place pp ON mbi.payPlaceId = pp.id
+		LEFT JOIN citys c1 ON c1.id = pp.cityId
+        LEFT JOIN company_pay_place cpp ON mbi.payPlaceId = cpp.id
+        LEFT JOIN pay_place pp2 ON cpp.payPlaceId = pp2.id
+		LEFT JOIN citys c2 ON c2.id = pp2.cityId,
+        company_business cb,
+        business_method bm
+        WHERE cb.companyId = m.companyId
+        AND mb.businessId = cb.businessId
+        AND bm.companyBusinessId = cb.id
+        AND (bm.tuoGuan = #{billMadeMethod} OR bm.daiLi = #{billMadeMethod})
+    </select>
+
+
+    <select id="getMemberByIdCards" resultMap="ExtendBaseResultOther2">
+        SELECT m.*,mburi.id AS mburi_id ,m.id AS mburi_memberId,
+        mmpb2.memberMonthPayBusinessStr AS mpb_memberMonthPayBusinessStr,
+        mmpb2.serviceMonth AS mpb_serviceMonth,
+        mmpb2.memberId AS mpb_memberId,
+        mmpb3.id AS mmpb_id,
+        mmpb3.memberId AS mmpb_memberId,
+        mmpb3.businessId AS mmpb_businessId,
+        mmpb3.serviceMonth AS mmpb_serviceMonth,
+        mbc.memberId AS mbc_memberId,
+        mbc.cityId AS mbc_cityId,
+        mb.id AS mb_id,
+        mb.memberId AS mb_memberId,
+        mb.businessId AS mb_businessId,
+        mb.companySonBillId AS mb_companySonBillId,
+        if(mbi.serveMethod = 0,pp.cityId,pp2.cityId) AS mbi_cityId,
+        if(mbi.serveMethod = 0,bm.daiLi,bm.tuoGuan) AS mbi_billMadeMethod,
+        if(mbi.serveMethod = 0,o.organizationName,cpp.organizationName) AS mbi_organizationName,
+        if(mbi.serveMethod = 0,c1.mergerName,c2.mergerName) AS mbi_payPlaceName,
+        mbi.id AS mbi_id,
+        mb.businessId AS mbi_businessId,
+        mbi.isReceivable AS mbi_isReceivable,
+        mbi.serviceStartTime AS mbi_serviceStartTime,
+        CASE mbi.baseType
+        WHEN 2 THEN mbi.baseNumber
+        WHEN 1 THEN CASE mbi.type
+        WHEN 0 THEN get_insurance_scope(il.id,mbi.baseType)
+        ELSE CASE mbi.serveMethod
+        WHEN 0 THEN if(mbi.baseType = 0,o.minCardinalNumber,o.maxCardinalNumber)
+        ELSE sp_getBaseNumberByPayPlace(pp2.id,mbi.baseType ) END END
+        ELSE CASE mbi.type
+        WHEN 0 THEN get_insurance_scope(il.id,mbi.baseType)
+        ELSE CASE mbi.serveMethod
+        WHEN 0 THEN if(mbi.baseType = 0,o.minCardinalNumber,o.maxCardinalNumber)
+        ELSE sp_getBaseNumberByPayPlace(pp2.id,mbi.baseType ) END END END AS mbi_baseNumber
+
+        FROM member m
+        LEFT JOIN member_business_update_record mbur ON m.id = mbur.memberId
+        LEFT JOIN member_business_update_record_item mburi ON mbur.id = mburi.memberBusinessUpdateRecordId AND mburi.status = 2 AND isCalculate = 0
+        LEFT JOIN member_business mb ON mb.memberId = m.id
+        LEFT JOIN member_business_item mbi ON mb.id = mbi.memberBusinessId
+        LEFT JOIN insurance_level il ON mbi.insuranceLevelId = il.id
+        LEFT JOIN organization o ON mbi.organizationId = o.id AND o.isValid = 1
+        LEFT JOIN pay_place pp ON mbi.payPlaceId = pp.id
+        LEFT JOIN citys c1 ON c1.id = pp.cityId
+        LEFT JOIN company_pay_place cpp ON mbi.payPlaceId = cpp.id
+        LEFT JOIN pay_place pp2 ON cpp.payPlaceId = pp2.id
+        LEFT JOIN citys c2 ON c2.id = pp2.cityId
+        LEFT JOIN (
+        SELECT m2.id AS memberId,
+        if(mbi.serveMethod=0,pp.cityId,pp2.cityId) AS cityId
+        FROM member m2 ,member_business mb ,member_business_item mbi
+        LEFT JOIN pay_place pp ON mbi.payPlaceId = pp.id
+        LEFT JOIN company_pay_place cpp ON cpp.id = mbi.payPlaceId
+        LEFT JOIN pay_place pp2 ON pp2.id = cpp.payPlaceId
+        WHERE m2.id = mb.memberId
+        AND mb.id = mbi.memberBusinessId
+        <!--AND m2.companyId IN (
+        <foreach collection="companyIds" item="companyId" separator=",">
+            #{companyId}
+        </foreach>
+        )-->
+        ) as mbc ON mbc.memberId = m.id
+        LEFT JOIN (SELECT mmpb.id, mmpb.businessId, mmpb.serviceMonth,mmpb.memberId FROM member_month_pay_business mmpb
+        <if test="null != dateSet and dateSet.size > 0">
+            WHERE
+            <foreach collection="dateSet" separator="or" item="date">
+                DATE_FORMAT(mmpb.serviceMonth,'%y-%m') = DATE_FORMAT(#{date},'%y-%m')
+            </foreach>
+        </if>
+        GROUP BY mmpb.memberId,mmpb.serviceMonth,mmpb.businessId) AS mmpb3 ON mmpb3.memberId = m.id
+        LEFT JOIN (SELECT GROUP_CONCAT(distinct mmpb.businessId ORDER BY mmpb.businessId ASC) AS memberMonthPayBusinessStr,
+                  mmpb.serviceMonth,mmpb.memberId
+                  FROM member_month_pay_business mmpb
+            <if test="null != dateSet and dateSet.size > 0">
+                WHERE
+                <foreach collection="dateSet" separator="or" item="date">
+                    DATE_FORMAT(mmpb.serviceMonth,'%y-%m') = DATE_FORMAT(#{date},'%y-%m')
+                </foreach>
+            </if>
+            GROUP BY mmpb.memberId,mmpb.serviceMonth) AS mmpb2 ON mmpb2.memberId = m.id,
+        company_business cb,
+        business_method bm
+        WHERE
+        cb.companyId = m.companyId
+        AND mb.businessId = cb.businessId
+        AND bm.companyBusinessId = cb.id
+        AND m.certificateNum IN (
+        <foreach collection="idCards" item="idCard" separator=",">
+            #{idCard}
+        </foreach>
+        )
+    </select>
+    <select id="getMemberByCompanyIdsAndDateSet" resultMap="ExtendBaseResultOther2">
+        SELECT m.*,mburi.id AS mburi_id ,m.id AS mburi_memberId,
+        mburi.memberBusinessUpdateRecordId AS mburi_memberBusinessUpdateRecordId,
+        mmpb2.memberMonthPayBusinessStr AS mpb_memberMonthPayBusinessStr,
+        mmpb2.serviceMonth AS mpb_serviceMonth ,
+        mmpb2.memberId AS mpb_memberId,
+        mmpb3.id AS mmpb_id,
+        mmpb3.memberId AS mmpb_memberId,
+        mmpb3.businessId AS mmpb_businessId,
+        mmpb3.serviceMonth AS mmpb_serviceMonth,
+        mbc.memberId AS mbc_memberId,
+        mbc.cityId AS mbc_cityId,
+        mb.id AS mb_id,
+        mb.memberId AS mb_memberId,
+        mb.businessId AS mb_businessId,
+        mb.companySonBillId AS mb_companySonBillId,
+        if(mbi.serveMethod = 0,pp.cityId,pp2.cityId) AS mbi_cityId,
+        if(mbi.serveMethod = 0,o.organizationName,cpp.organizationName) AS mbi_organizationName,
+        if(mbi.serveMethod = 0,c1.mergerName,c2.mergerName) AS mbi_payPlaceName,
+        mbi.id AS mbi_id
+        FROM
+
+        member m
+        LEFT JOIN member_business_update_record mbur ON m.id = mbur.memberId
+        LEFT JOIN member_business_update_record_item mburi ON mbur.id = mburi.memberBusinessUpdateRecordId AND mburi.status = 2 AND isCalculate = 0
+        LEFT JOIN member_business mb ON mb.memberId = m.id
+        LEFT JOIN member_business_item mbi ON mb.id = mbi.memberBusinessId
+        LEFT JOIN pay_place pp ON mbi.payPlaceId = pp.id
+        LEFT JOIN citys c1 ON c1.id = pp.cityId
+        LEFT JOIN company_pay_place cpp ON mbi.payPlaceId = cpp.id
+        LEFT JOIN pay_place pp2 ON cpp.payPlaceId = pp2.id
+        LEFT JOIN citys c2 ON c2.id = pp2.cityId
+        LEFT JOIN (
+            SELECT m2.id AS memberId,
+            if(mbi.serveMethod=0,pp.cityId,pp2.cityId) AS cityId
+            FROM member m2 ,member_business mb ,member_business_item mbi
+            LEFT JOIN pay_place pp ON mbi.payPlaceId = pp.id
+            LEFT JOIN company_pay_place cpp ON cpp.id = mbi.payPlaceId
+            LEFT JOIN pay_place pp2 ON pp2.id = cpp.payPlaceId
+            WHERE m2.id = mb.memberId
+            AND mb.id = mbi.memberBusinessId
+            AND m2.companyId IN (
+                <foreach collection="companyIds" item="companyId" separator=",">
+                    #{companyId}
+                </foreach>
+                )
+            ) as mbc ON mbc.memberId = m.id
+
+        LEFT JOIN (SELECT mmpb.id, mmpb.businessId, mmpb.serviceMonth,mmpb.memberId FROM member_month_pay_business mmpb
+        <if test="null != dateSet and dateSet.size > 0">
+            WHERE
+            <foreach collection="dateSet" separator="or" item="date">
+                DATE_FORMAT(mmpb.serviceMonth,'%y-%m') = DATE_FORMAT(#{date},'%y-%m')
+            </foreach>
+        </if>
+        GROUP BY mmpb.memberId,mmpb.serviceMonth,mmpb.businessId) AS mmpb3 ON mmpb3.memberId = m.id
+
+        LEFT JOIN (SELECT GROUP_CONCAT(distinct mmpb.businessId ORDER BY mmpb.businessId ASC) AS memberMonthPayBusinessStr,
+                  mmpb.serviceMonth,mmpb.memberId
+                  FROM member_month_pay_business mmpb
+            <if test="null != dateSet and dateSet.size > 0">
+                WHERE
+                <foreach collection="dateSet" separator="or" item="date">
+                    DATE_FORMAT(mmpb.serviceMonth,'%y-%m') = DATE_FORMAT(#{date},'%y-%m')
+                </foreach>
+            </if>
+            GROUP BY mmpb.memberId,mmpb.serviceMonth) AS mmpb2 ON mmpb2.memberId = m.id
+
+
+
+        WHERE
+        m.companyId IN (
+        <foreach collection="companyIds" item="companyId" separator=",">
+            #{companyId}
+        </foreach>
+        )
+    </select>
+
+
+
+    <select id="getMemberByCompanyIdAndDate" resultMap="ExtendBaseResultOther2">
+        SELECT m.*,
+
+        mburi_.id AS mburi_id ,
+        mburi_.memberId AS mburi_memberId,
+        mburi_.memberBusinessUpdateRecordId AS mburi_memberBusinessUpdateRecordId,
+
+        mmpb2.memberMonthPayBusinessStr AS mpb_memberMonthPayBusinessStr,
+        mmpb2.serviceMonth AS mpb_serviceMonth ,
+        mmpb2.memberId AS mpb_memberId,
+        mmpb3.id AS mmpb_id,
+        mmpb3.memberId AS mmpb_memberId,
+        mmpb3.businessId AS mmpb_businessId,
+        mmpb3.serviceMonth AS mmpb_serviceMonth,
+        mmpb3.cityId AS mmpb_cityId,
+        mmpb3.companySonBillId AS mmpb_companySonBillId,
+
+        mmpb3.memberId AS mbc_memberId,
+        mmpb3.cityId AS mbc_cityId,
+
+        mb.id AS mb_id,
+        mb.memberId AS mb_memberId,
+        mb.businessId AS mb_businessId,
+        mb.companySonBillId AS mb_companySonBillId
+        FROM
+
+        member m
+        LEFT JOIN (SELECT mbur.memberId,mburi.id,mburi.memberBusinessUpdateRecordId FROM member_business_update_record mbur,member_business_update_record_item mburi
+        WHERE mbur.id = mburi.memberBusinessUpdateRecordId AND mburi.status = 2 AND mburi.isCalculate = 0) AS mburi_ ON m.id = mburi_.memberId
+
+        /*LEFT JOIN member_business_update_record mbur ON m.id = mbur.memberId
+        LEFT JOIN member_business_update_record_item mburi ON mbur.id = mburi.memberBusinessUpdateRecordId AND mburi.status = 2*/
+        LEFT JOIN member_business mb ON mb.memberId = m.id
+
+        LEFT JOIN (SELECT mmpb.id, mmpb.businessId, mmpb.serviceMonth,
+                  mmpb.memberId,mmpb.cityId,mmpb.companySonBillId FROM member_month_pay_business mmpb
+          WHERE DATE_FORMAT(mmpb.serviceMonth,'%y-%m') = DATE_FORMAT(#{date},'%y-%m')
+        GROUP BY mmpb.memberId,mmpb.serviceMonth,mmpb.businessId) AS mmpb3 ON mmpb3.memberId = m.id
+
+        LEFT JOIN (SELECT GROUP_CONCAT(distinct mmpb.businessId ORDER BY mmpb.businessId ASC) AS memberMonthPayBusinessStr,
+                  mmpb.serviceMonth,mmpb.memberId
+                  FROM member_month_pay_business mmpb
+                  WHERE DATE_FORMAT(mmpb.serviceMonth,'%y-%m') = DATE_FORMAT(#{date},'%y-%m')
+            GROUP BY mmpb.memberId,mmpb.serviceMonth) AS mmpb2 ON mmpb2.memberId = m.id
+
+
+
+        WHERE
+        m.companyId =  #{companyId}
+    </select>
+
+    <select id="getCompanyIds" resultType="integer">
+        select m.companyId from member m
+        WHERE m.certificateNum IN (
+        <foreach collection="idCards" item="idCard" separator=",">
+            #{idCard}
+        </foreach>
+        )
+    </select>
+
+
+    <select id="getBusinessItem" resultMap="ExtendBaseResultOther3">
+        select m.companyId,m.id,m.certificateNum,
+        mbi.id AS mbi_id,
+        mbi.isReceivable AS mbi_isReceivable ,
+        mbi.firstPayBillMonth AS mbi_firstPayBillMonth,
+        mb.businessId AS mbi_businessId
+        from member m,member_business mb,member_business_item mbi
+        WHERE
+        m.id = mb.memberId
+        AND mbi.memberBusinessId = mb.id
+        AND mb.businessId = #{businessId}
+        AND m.certificateNum IN (
+        <foreach collection="idCards" item="idCard" separator=",">
+            #{idCard}
+        </foreach>
+        )
+
+    </select>
+</mapper>

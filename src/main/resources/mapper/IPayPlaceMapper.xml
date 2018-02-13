@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IPayPlaceMapper">
+
+
+
+    <resultMap id="BasePatPlace" type="com.magic.daoyuan.business.entity.PayPlace">
+        <result column="id" property="id" javaType="java.lang.Integer"/>
+        <result column="payPlaceName" property="payPlaceName" javaType="java.lang.String"/>
+        <result column="cityId" property="cityId" javaType="java.lang.Integer"/>
+        <result column="type" property="type" javaType="java.lang.Integer"/>
+        <result column="yearAlterMonth" property="yearAlterMonth" javaType="java.lang.Integer"/>
+        <result column="operationType" property="operationType" javaType="java.lang.Integer"/>
+        <result column="inTheEndTime" property="inTheEndTime" javaType="java.lang.Integer"/>
+        <result column="remindTime" property="remindTime" javaType="java.lang.Integer"/>
+        <result column="remindContent" property="remindContent" javaType="java.lang.String"/>
+    </resultMap>
+
+    <resultMap id="IncludeOther" type="com.magic.daoyuan.business.entity.PayPlace" extends="BasePatPlace">
+        <association property="city" column="cityId" select="com.magic.daoyuan.business.mapper.ICityMapper.queryCityId"/>
+    </resultMap>
+
+    <resultMap id="BaseInsurance" type="com.magic.daoyuan.business.entity.PayPlace" extends="BasePatPlace">
+        <association property="insurances" columnPrefix="i_"
+                     resultMap="com.magic.daoyuan.business.mapper.IInsuranceMapper.BaseInsurancePayTheWay2" />
+    </resultMap>
+
+    <resultMap id="BaseInsuranceLevel" type="com.magic.daoyuan.business.entity.PayPlace" extends="BasePatPlace">
+        <association property="insurancesLevelList" columnPrefix="il_"
+                     resultMap="com.magic.daoyuan.business.mapper.IInsuranceLevelMapper.BaseInsurancePayTheWay2" />
+    </resultMap>
+
+    <resultMap id="BaseOrganizationMap" type="com.magic.daoyuan.business.entity.PayPlace" extends="IncludeOther">
+        <association property="organizations" columnPrefix="o_"
+                     resultMap="com.magic.daoyuan.business.mapper.IOrganizationMapper.BaseTransactorMap"/>
+        <association property="city"  columnPrefix="ci_"
+                     resultMap="com.magic.daoyuan.business.mapper.ICityMapper.BaseCity"/>
+    </resultMap>
+
+
+    <select id="queryAllPayPlaceForImport" resultMap="BasePatPlace">
+        SELECT cc.name AS payPlaceName,pp.*
+        FROM pay_place pp,citys cc
+        WHERE pp.cityId = cc.id
+    </select>
+
+    <select id="queryAllPayPlace" resultMap="BasePatPlace">
+        SELECT DISTINCT(cityId), pp.id,pp.`type`,cc.mergerName AS payPlaceName
+        FROM pay_place pp,citys cc
+        WHERE pp.cityId = cc.id
+        GROUP BY cc.id
+    </select>
+
+
+    <select id="queryPayPlaceByType" resultMap="BasePatPlace">
+        SELECT  pp.id,pp.`type`,cc.`name` AS payPlaceName
+        FROM pay_place pp,citys cc
+        WHERE pp.cityId = cc.id
+        <if test="type != null">
+            AND `type` = #{type}
+        </if>
+    </select>
+
+
+    <select id="queryPayPlaceByType2" resultMap="BasePatPlace">
+        SELECT  pp.id,pp.`type`,cc.mergerName AS payPlaceName
+        FROM pay_place pp,citys cc
+        WHERE pp.cityId = cc.id
+        <if test="type != null">
+            AND `type` = #{type}
+        </if>
+    </select>
+
+    <!-- 关联查询 险种档次的配置项  -->
+    <sql id="BasePayTheWay">
+        pt.id AS i_pt_id,
+        pt.coPayType AS i_pt_coPayType,
+        pt.coPayPrice AS i_pt_coPayPrice,
+        pt.coComputationalAccuracy AS i_pt_coComputationalAccuracy,
+        pt.coComputationRule AS i_pt_coComputationRule,
+        pt.isCMakeASupplementaryPayment AS i_pt_isCMakeASupplementaryPayment,
+        pt.mePayType AS i_pt_mePayType, pt.mePayPrice AS i_pt_mePayPrice,
+        pt.meComputationalAccuracy AS i_pt_meComputationalAccuracy,
+        pt.meComputationRule AS i_pt_meComputationRule,
+        pt.isMMakeASupplementaryPayment AS i_pt_isMMakeASupplementaryPayment,
+        pt.insuranceLevelId AS i_pt_insuranceLevelId,
+        pt.coMinScope AS i_pt_coMinScope, pt.coMaxScope AS i_pt_coMaxScope,
+        pt.meMinScope AS i_pt_meMinScope, pt.meMaxScope AS i_pt_meMaxScope,
+        pt.mePrecision AS i_pt_mePrecision,pt.coPrecision AS i_pt_coPrecision
+    </sql>
+
+    <!-- 关联查询 险种档次的配置项  -->
+    <sql id="BasePayTheWay3">
+        pt.id AS il_pt_id,
+        pt.coPayType AS il_pt_coPayType,
+        pt.coPayPrice AS il_pt_coPayPrice,
+        pt.coComputationalAccuracy AS il_pt_coComputationalAccuracy,
+        pt.coComputationRule AS il_pt_coComputationRule,
+        pt.isCMakeASupplementaryPayment AS il_pt_isCMakeASupplementaryPayment,
+        pt.mePayType AS il_pt_mePayType, pt.mePayPrice AS il_pt_mePayPrice,
+        pt.meComputationalAccuracy AS il_pt_meComputationalAccuracy,
+        pt.meComputationRule AS il_pt_meComputationRule,
+        pt.isMMakeASupplementaryPayment AS il_pt_isMMakeASupplementaryPayment,
+        pt.insuranceLevelId AS il_pt_insuranceLevelId,
+        pt.coMinScope AS il_pt_coMinScope, pt.coMaxScope AS il_pt_coMaxScope,
+        pt.meMinScope AS il_pt_meMinScope, pt.meMaxScope AS il_pt_meMaxScope,
+        pt.mePrecision AS il_pt_mePrecision,pt.coPrecision AS il_pt_coPrecision
+    </sql>
+
+    <!-- 关联查询 经办机构  -->
+    <sql id="BaseOrganization">
+        o.id AS o_id,o.organizationName AS o_organizationName,
+        o.operationType AS o_operationType,
+        o.inTheEndTime AS o_inTheEndTime,
+        o.remindTime AS o_remindTime,
+        o.remindContent AS o_remindContent,
+        o.`precision` AS o_precision,
+        o.isValid AS o_isValid,
+        o.payPlaceId AS o_payPlaceId,
+        o.computationalAccuracy AS o_computationalAccuracy,
+        o.computationRule AS o_computationRule, o.minCardinalNumber AS o_minCardinalNumber,
+        o.maxCardinalNumber AS o_maxCardinalNumber
+    </sql>
+    <!-- 关联查询 经办机构下的办理方  -->
+    <sql id="BaseTransactor">
+        t.id AS o_t_id,
+        s.supplierName AS o_t_transactorName,
+        t.organizationId AS o_t_organizationId,
+        t.inTheEndTime AS o_t_inTheEndTime,
+        t.operationType AS o_t_operationType,
+        t.remindTime AS o_t_remindTime, t.remindContent AS o_t_remindContent,
+        t.minScope AS o_t_minScope, t.maxScope AS o_t_maxScope,t.organizationId AS o_t_organizationId
+    </sql>
+
+    <!-- 关联查询 办理方下的险种档次配置  -->
+    <sql id="BasePayTheWay2">
+        pt.id AS o_t_pt_id,
+        til.coPayType AS o_t_pt_coPayType,
+        til.coPayPrice AS o_t_pt_coPayPrice,
+        pt.coComputationalAccuracy AS o_t_pt_coComputationalAccuracy,
+        pt.coComputationRule AS o_t_pt_coComputationRule,
+        pt.isCMakeASupplementaryPayment AS o_t_pt_isCMakeASupplementaryPayment,
+        til.mePayType AS o_t_pt_mePayType,
+        til.mePayPrice AS o_t_pt_mePayPrice,
+        pt.meComputationalAccuracy AS o_t_pt_meComputationalAccuracy,
+        pt.meComputationRule AS o_t_pt_meComputationRule,
+        pt.isMMakeASupplementaryPayment AS o_t_pt_isMMakeASupplementaryPayment,
+        pt.insuranceLevelId AS o_t_pt_insuranceLevelId,
+        pt.coMinScope AS o_t_pt_coMinScope, pt.coMaxScope AS o_t_pt_coMaxScope,
+        pt.meMinScope AS o_t_pt_meMinScope, pt.meMaxScope AS o_t_pt_meMaxScope,
+        pt.mePrecision AS o_t_pt_mePrecision,pt.coPrecision AS o_t_pt_coPrecision
+    </sql>
+
+
+    <select id="countPayPlaceByItems" resultType="java.lang.Integer">
+        SELECT COUNT(0) FROM pay_place pp
+        WHERE pp.isValid = 1
+        <if test="type != null">
+            AND pp.`type` = #{type}
+        </if>
+        <if test="cityIds != null">
+            AND pp.`cityId`IN
+            <foreach collection="cityIds" index="index" item="cityId" open="(" close=")" separator=",">
+                #{cityId}
+            </foreach>
+        </if>
+    </select>
+
+
+    <select id="queryPayPlaceByItems" resultMap="IncludeOther">
+        SELECT pp.* FROM pay_place pp
+        WHERE pp.isValid = 1
+        <if test="type != null">
+            AND pp.`type` = #{type}
+        </if>
+        <if test="cityId != null">
+            AND pp.`cityId` = #{cityId}
+        </if>
+        <if test="cityIds != null">
+            AND pp.`cityId`IN
+            <foreach collection="cityIds" index="index" item="cityId" open="(" close=")" separator=",">
+                #{cityId}
+            </foreach>
+        </if>
+        ORDER BY pp.id DESC
+        <if test="limit != null and limitSize != null">
+            LIMIT #{limit},#{limitSize}
+        </if>
+    </select>
+
+    <select id="queryPayPlaceByItems2" resultMap="IncludeOther">
+        SELECT pp.* FROM pay_place pp
+        WHERE pp.isValid = 1
+        <if test="type != null">
+            AND pp.`type` = #{type}
+        </if>
+        <if test="cityIds != null">
+            AND pp.`cityId`IN
+            <foreach collection="cityIds" index="index" item="cityId" open="(" close=")" separator=",">
+                #{cityId}
+            </foreach>
+        </if>
+        ORDER BY pp.id DESC
+        <if test="limit != null and limitSize != null">
+            LIMIT #{limit},#{limitSize}
+        </if>
+    </select>
+
+    <select id="queryPayPlaceById" resultMap="IncludeOther">
+        SELECT pp.* FROM pay_place pp
+        WHERE pp.id = #{id}
+
+    </select>
+
+
+
+    <select id="queryPayPlaceByCompanyPayPlace" resultMap="IncludeOther">
+        SELECT pp.* FROM pay_place pp
+        WHERE pp.id = (SELECT cpp.payPlaceId FROM  company_pay_place cpp WHERE  cpp.id = #{companyPayPlace})
+    </select>
+
+
+    <update id="updatePayPlace" parameterType="com.magic.daoyuan.business.entity.PayPlace">
+        UPDATE pay_place
+        <set>
+          <if test="payPlaceName != null">
+              payPlaceName = #{payPlaceName},
+          </if>
+          <if test="cityId != null">
+              cityId = #{cityId},
+          </if>
+          <if test="isValid != null">
+              isValid = #{isValid},
+          </if>
+          <if test="yearAlterMonth != null">
+              yearAlterMonth = #{yearAlterMonth},
+          </if>
+            <if test="operationType != null">
+                operationType = #{operationType},
+            </if>
+            <if test="inTheEndTime != null">
+                inTheEndTime = #{inTheEndTime},
+            </if>
+            <if test="remindTime != null">
+                remindTime = #{remindTime},
+            </if>
+            <if test="remindContent != null and remindContent != ''">
+                remindContent = #{remindContent},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+
+    <insert id="addPayPlace" keyProperty="id" keyColumn="id" useGeneratedKeys="true"
+            parameterType="com.magic.daoyuan.business.entity.PayPlace">
+        INSERT INTO pay_place (payPlaceName, cityId, `type`, isValid,yearAlterMonth, operationType, inTheEndTime, remindTime, remindContent)
+        VALUES
+        (#{payPlaceName}, #{cityId}, #{type},  1,#{yearAlterMonth}, #{operationType}, #{inTheEndTime}, #{remindTime}, #{remindContent})
+    </insert>
+
+
+
+    <select id="getInsuranceByCityId" resultMap="BaseInsurance">
+        select p.*,i.insuranceName AS i_insuranceName , i.remark AS i_remark,i.id AS i_id,
+        il.levelName AS i_pt_insuranceLevelName ,il.id AS i_id ,<include refid="BasePayTheWay"/>
+        from pay_place p
+        LEFT JOIN insurance i ON p.id = i.payPlaceId AND i.isValid = 1
+        LEFT JOIN pay_the_way pt ON i.id = pt.insuranceId AND pt.isValid = 1
+        LEFT JOIN insurance_level il ON il.id = pt.insuranceLevelId
+        WHERE
+        p.isValid = 1 AND p.type = 0  AND
+        p.cityId = #{cityId}
+    </select>
+
+    <select id="getInsuranceByCityId2" resultMap="BaseInsuranceLevel">
+        select p.*,i.insuranceName AS il_pt_insuranceName ,il.id AS il_id,
+        il.levelName AS il_levelName,il.payPlaceId AS il_payPlaceId,<include refid="BasePayTheWay3"/>
+        from pay_place p
+        LEFT JOIN insurance_level il ON p.id = il.payPlaceId
+        LEFT JOIN pay_the_way pt ON il.id = pt.insuranceLevelId AND pt.isValid = 1
+        LEFT JOIN insurance i ON i.id = pt.insuranceId
+        WHERE
+        p.isValid = 1 AND p.type = 0  AND
+        p.cityId = #{cityId}
+    </select>
+
+    <select id="getOTILByCityId" resultMap="BaseOrganizationMap">
+        select p.*,i.insuranceName AS o_t_pt_insuranceName,il.levelName AS o_t_pt_insuranceLevelName,
+        ci.mergerName AS ci_mergerName,
+        <include refid="BaseOrganization"/>,
+        <include refid="BaseTransactor"/>,
+        <include refid="BasePayTheWay2"/>
+        from pay_place p
+        LEFT JOIN organization o ON p.id = o.payPlaceId AND o.isValid = 1
+        LEFT JOIN transactor t ON o.id = t.organizationId AND t.isValid = 1 AND t.type = 0
+        LEFT JOIN supplier s ON s.id = t.supplierId
+        LEFT JOIN transactor_insurance_level til ON t.id = til.transactorId
+        LEFT JOIN pay_the_way pt ON pt.id = til.payTheWayId  AND pt.isValid = 1
+        LEFT JOIN insurance i ON i.id = pt.insuranceId
+        LEFT JOIN insurance_level il ON il.id = pt.insuranceLevelId,
+        citys ci
+        WHERE p.isValid = 1
+        AND p.cityId = ci.id
+        AND p.cityId = #{cityId}
+
+    </select>
+
+
+
+</mapper>

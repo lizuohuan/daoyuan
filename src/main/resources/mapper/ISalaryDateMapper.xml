@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.ISalaryDateMapper">
+
+
+
+    <select id="querySalaryDateByCompany" resultType="com.magic.daoyuan.business.entity.SalaryDate">
+        SELECT * FROM salary_date WHERE companyId = #{companyId}
+    </select>
+
+    <delete id="delSalaryDate">
+        DELETE FROM salary_date WHERE companyId = #{companyId}
+    </delete>
+
+    <insert id="addSalaryDate" parameterType="com.magic.daoyuan.business.entity.SalaryDate">
+        INSERT INTO salary_date ( companyId, grantDate)
+        VALUES ( #{companyId}, #{grantDate})
+    </insert>
+
+    <insert id="batchAddSalaryDate">
+        INSERT INTO salary_date ( companyId, grantDate)
+        VALUES
+        <foreach collection="salaryDateList" index="index" item="salaryDate" separator=",">
+            ( #{salaryDate.companyId}, #{salaryDate.grantDate})
+        </foreach>
+    </insert>
+
+</mapper>

@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.ICompanyPayPlaceMapper">
+
+
+    <resultMap id="BaseResultMap" type="com.magic.daoyuan.business.entity.CompanyPayPlace">
+        <result column="id" property="id" javaType="java.lang.Integer"/>
+        <result column="companyId" property="companyId" javaType="java.lang.Integer"/>
+        <result column="payPlaceId" property="payPlaceId" javaType="java.lang.Integer"/>
+        <result column="organizationName" property="organizationName" javaType="java.lang.String"/>
+        <result column="transactorName" property="transactorName" javaType="java.lang.String"/>
+        <result column="payPlaceName" property="payPlaceName" javaType="java.lang.String"/>
+        <result column="coding" property="coding" javaType="java.lang.String"/>
+        <result column="isValid" property="isValid" javaType="java.lang.Integer"/>
+        <result column="type" property="type" javaType="java.lang.Integer"/>
+        <result column="organizationId" property="organizationId" javaType="java.lang.Integer"/>
+        <result column="coPayPrice" property="coPayPrice" javaType="java.lang.Double" />
+        <result column="mePayPrice" property="mePayPrice" javaType="java.lang.Double" />
+    </resultMap>
+
+    
+    <select id="queryTransactorByOrganization" resultMap="com.magic.daoyuan.business.mapper.ITransactorMapper.BaseResultMap">
+        SELECT
+            cpp.id,
+            cpp.organizationName,
+            cpp.transactorName,
+            1 AS flag
+        FROM
+            company_pay_place cpp
+        WHERE
+            1 = 1
+            <if test="type == 0">
+                AND cpp.organizationName = #{organizationName}
+            </if>
+            <if test="type == 1">
+                AND cpp.organizationId = #{organizationId}
+            </if>
+    </select>
+    
+    <select id="queryOrganizationByPayPlace" resultMap="com.magic.daoyuan.business.mapper.IOrganizationMapper.BaseOrganization">
+        SELECT
+            1 AS flag,
+            cc.companyName AS companyName,
+            CASE cpp.type WHEN 0 THEN cpp.id
+                                 ELSE cpp.organizationId END AS id,
+            CASE cpp.type WHEN 0 THEN organizationName
+                                 ELSE (SELECT o.organizationName FROM organization o WHERE o.id = cpp.organizationId) END AS organizationName
+        FROM
+            company_pay_place cpp,company cc
+        WHERE
+            cpp.payPlaceId = #{payPlaceId}
+            AND cc.id = cpp.companyId
+        GROUP BY
+        CASE cpp.type WHEN 0 THEN  cpp.organizationName
+                                    ELSE  cpp.organizationId END
+    </select>
+
+    <select id="queryAlCompanyPayPlace" resultMap="BaseResultMap">
+        SELECT cc.name AS payPlaceName,cpp.*
+        FROM company_pay_place cpp,pay_place pp ,citys cc
+        WHERE cpp.isValid = 1
+        AND cpp.payPlaceId = pp.id
+        AND pp.cityId = cc.id
+    </select>
+
+    <select id="queryCompanyPayPlaceByItems" resultMap="BaseResultMap">
+        SELECT
+            CASE cpp.type WHEN 1 THEN (SELECT o.organizationName FROM organization o  WHERE o.id = cpp.organizationId)
+                                 ELSE cpp.organizationName END AS organizationName,
+            cpp.*, cc.mergerName AS payPlaceName
+        FROM
+            company_pay_place cpp,
+            pay_place pp,
+            citys cc
+        WHERE
+            cpp.isValid = 1
+        AND cpp.payPlaceId = pp.id
+        AND pp.cityId = cc.id
+        <if test="type != null">
+            AND cpp.`type` = #{type}
+        </if>
+        <if test="companyId != null">
+            AND cpp.companyId = #{companyId}
+        </if>
+    </select>
+
+    <insert id="save" parameterType="com.magic.daoyuan.business.entity.CompanyPayPlace" keyProperty="id"
+            keyColumn="id" useGeneratedKeys="true">
+        insert into company_pay_place (companyId, payPlaceId, isValid,
+        organizationName, transactorName,`type`,coPayPrice,mePayPrice,organizationId,coding)
+        values (#{companyId},#{payPlaceId},1,#{organizationName},#{transactorName},#{type},
+        #{coPayPrice},#{mePayPrice},#{organizationId},#{coding})
+    </insert>
+
+    <select id="info" resultMap="BaseResultMap">
+        select cpp.*,pp.payPlaceName from company_pay_place cpp , pay_place pp WHERE cpp.payPlaceId = pp.id AND cpp.id = #{id}
+    </select>
+
+    <update id="update" parameterType="com.magic.daoyuan.business.entity.CompanyPayPlace" >
+        update company_pay_place
+        <set>
+            <if test="coding != null">
+                coding = #{coding},
+            </if>
+            <if test="organizationId != null">
+                organizationId = #{organizationId},
+            </if>
+            <if test="payPlaceId != null">
+                payPlaceId = #{payPlaceId},
+            </if>
+            <if test="isValid != null">
+                isValid = #{isValid},
+            </if>
+            <if test="coPayPrice != null">
+                coPayPrice = #{coPayPrice},
+            </if>
+            <if test="mePayPrice != null">
+                mePayPrice = #{mePayPrice},
+            </if>
+            <if test="type != null">
+                `type` = #{type},
+            </if>
+            <if test="organizationName != null and  organizationName != ''">
+                organizationName = #{organizationName},
+            </if>
+            <if test="transactorName != null and transactorName != ''">
+                transactorName = #{transactorName},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <select id="list" resultMap="BaseResultMap" parameterType="map">
+        SELECT
+            CASE cpp.type
+            WHEN 1 THEN
+            (SELECT organizationName FROM organization WHERE id = cpp.organizationId)
+            ELSE
+            cpp.organizationName
+            END AS organizationName,
+            cpp.*, cc.mergerName AS payPlaceName
+        FROM
+            company_pay_place cpp,
+            pay_place pp,
+            citys cc
+        WHERE
+        cpp.payPlaceId = pp.id
+        AND cc.id = pp.cityId
+        <if test="transactorName != null and transactorName != ''">
+            AND cpp.transactorName Like '%${transactorName}%'
+        </if>
+        <if test="organizationName != null and organizationName != ''">
+            AND cpp.organizationName Like '%${organizationName}%'
+        </if>
+        <if test="payPlaceName != null and payPlaceName != ''">
+            AND pp.payPlaceName Like '%${payPlaceName}%'
+        </if>
+        <if test="isValid != null">
+            AND cpp.isValid = #{isValid}
+        </if>
+        <if test="type != null">
+            AND cpp.type = #{type}
+        </if>
+        AND cpp.companyId = #{companyId}
+        ORDER BY
+        <if test="pageArgs != null">
+            <if test="pageArgs.column != null and pageArgs.column != ''">
+                ${pageArgs.column} ${pageArgs.order},
+            </if>
+        </if>
+        cpp.id DESC
+        <if test="pageArgs != null">
+            limit #{pageArgs.pageStart}, #{pageArgs.pageSize}
+        </if>
+    </select>
+
+    <select id="listCount" resultType="int" parameterType="map">
+        SELECT
+        COUNT(*)
+        FROM company_pay_place cpp , pay_place pp
+        WHERE cpp.payPlaceId = pp.id
+        <if test="transactorName != null and transactorName != ''">
+            AND cpp.transactorName Like '%${transactorName}%'
+        </if>
+        <if test="organizationName != null and organizationName != ''">
+            AND cpp.organizationName Like '%${organizationName}%'
+        </if>
+        <if test="payPlaceName != null and payPlaceName != ''">
+            AND pp.payPlaceName Like '%${payPlaceName}%'
+        </if>
+        <if test="isValid != null">
+            AND cpp.isValid = #{isValid}
+        </if>
+        <if test="type != null">
+            AND cpp.type = #{type}
+        </if>
+        AND cpp.companyId = #{companyId}
+    </select>
+
+
+    <select id="isHave" resultMap="BaseResultMap">
+      select * from company_pay_place cpp
+      WHERE cpp.transactorName = #{transactorName}
+
+      AND cpp.companyId = #{companyId}
+      AND cpp.payPlaceId = #{payPlaceId}
+      <if test="type == 0">
+          AND cpp.organizationName = #{organizationName}
+      </if>
+      <if test="type == 1">
+          AND cpp.organizationId = #{organizationId}
+      </if>
+      <if test="id != null">
+          AND cpp.id NOT IN (#{id})
+      </if>
+
+    </select>
+
+
+    <select id="judgeIsExistOrganization" resultType="int">
+        SELECT
+          COUNT(0)
+        FROM
+          company_pay_place cpp
+        WHERE
+        cpp.companyId = #{companyId}
+        <if test="type == 0">
+            AND cpp.organizationName = #{organizationName}
+        </if>
+        <if test="type == 1" >
+            AND cpp.organizationId =#{organizationId}
+        </if>
+    </select>
+
+</mapper>

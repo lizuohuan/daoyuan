@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IInsuranceLevelMapper">
+
+
+    <resultMap id="BaseInsuranceLevel" type="com.magic.daoyuan.business.entity.InsuranceLevel">
+        <result column="id" property="id" javaType="java.lang.Integer"/>
+        <result column="payPlaceId" property="payPlaceId" javaType="java.lang.Integer"/>
+        <result column="levelName" property="levelName" javaType="java.lang.String"/>
+    </resultMap>
+    <resultMap id="BaseInsurancePayTheWay2" type="com.magic.daoyuan.business.entity.InsuranceLevel" extends="BaseInsuranceLevel">
+        <association property="payTheWays" columnPrefix="pt_"
+                     resultMap="com.magic.daoyuan.business.mapper.IPayTheWayMapper.BaseResultMap"/>
+    </resultMap>
+
+    <select id="queryAllInsuranceLevel" resultMap="BaseInsuranceLevel">
+        SELECT * FROM insurance_level
+    </select>
+
+    <select id="queryInsuranceLevelByPayPlace" resultMap="BaseInsuranceLevel">
+        SELECT
+            il.id,
+            il.levelName
+        FROM
+            <if test="isTuoGuan == 1" >
+                company_insurance ci,
+                insurance i,
+            </if>
+            pay_place p,
+            insurance_level il
+        WHERE
+          1 = 1
+        <if test="isTuoGuan == 1" >
+            AND ci.insuranceLevelId = il.id
+            AND i.id = ci.insuranceId
+            AND p.id = i.payPlaceId
+        </if>
+        <if test="isTuoGuan == 0">
+            AND p.id = il.payPlaceId
+        </if>
+        <if test="payPlaceId != null">
+            AND p.id = #{payPlaceId}
+        </if>
+        group by il.id
+    </select>
+
+    <select id="countInsuranceLevelByItems" resultType="java.lang.Integer">
+        SELECT
+          COUNT(0)
+        FROM insurance_level il
+        WHERE 1=1
+        <if test="insuranceId != null">
+            AND il.id NOT IN (SELECT ptw.insuranceLevelId FROM pay_the_way ptw WHERE 1 = 1
+            <if test="insuranceLevelId != null">
+                AND ptw.insuranceLevelId NOT IN (#{insuranceLevelId})
+            </if>
+            AND ptw.insuranceId = #{insuranceId})
+        </if>
+        <if test="payPlaceId != null">
+            and il.payPlaceId = #{payPlaceId}
+        </if>
+    </select>
+
+    <select id="queryInsuranceLevelByItems" resultMap="BaseInsuranceLevel">
+        SELECT
+          il.*
+        FROM insurance_level il
+        WHERE
+        1=1
+        <if test="insuranceId != null">
+           AND il.id NOT IN (SELECT ptw.insuranceLevelId FROM pay_the_way ptw WHERE 1 = 1
+            <if test="insuranceLevelId != null">
+                AND ptw.insuranceLevelId NOT IN (#{insuranceLevelId})
+            </if>
+            AND ptw.insuranceId = #{insuranceId})
+        </if>
+        <if test="payPlaceId != null">
+            and il.payPlaceId = #{payPlaceId}
+        </if>
+
+        ORDER BY il.id DESC
+        <if test="limit != null and limitSize != null">
+            LIMIT #{limit},#{limitSize}
+        </if>
+    </select>
+
+    <select id="queryInsuranceLevelById" resultMap="BaseInsuranceLevel">
+        SELECT
+          il.*
+        FROM insurance_level il
+        WHERE
+        il.id = #{id}
+    </select>
+
+    <insert id="addInsuranceLevel" parameterType="com.magic.daoyuan.business.entity.InsuranceLevel" useGeneratedKeys="true"
+        keyColumn="id" keyProperty="id">
+        INSERT INTO insurance_level (levelName, payPlaceId)
+        VALUES (#{levelName}, #{payPlaceId})
+    </insert>
+
+    <update id="updateInsuranceLevel" parameterType="com.magic.daoyuan.business.entity.InsuranceLevel">
+
+        UPDATE insurance_level
+        <set>
+            <if test="levelName != null">
+                levelName = #{levelName},
+            </if>
+            <if test="payPlaceId != null">
+                payPlaceId = #{payPlaceId},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+
+</mapper>

@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.ITransactorMapper" >
+  <resultMap id="BaseResultMap" type="com.magic.daoyuan.business.entity.Transactor" >
+    <id column="id" property="id" javaType="java.lang.Integer" />
+    <result column="operationType" property="operationType" javaType="java.lang.Integer" />
+    <result column="inTheEndTime" property="inTheEndTime" javaType="java.lang.Integer" />
+    <result column="remindTime" property="remindTime" javaType="java.lang.Integer" />
+    <result column="remindContent" property="remindContent" javaType="java.lang.String" />
+    <result column="isValid" property="isValid" javaType="java.lang.Integer" />
+    <result column="organizationId" property="organizationId" javaType="java.lang.Integer" />
+    <result column="supplierId" property="supplierId" javaType="java.lang.Integer" />
+    <result column="isReceive" property="isReceive" javaType="java.lang.Integer" />
+    <result column="isImplements" property="isImplements" javaType="java.lang.Integer" />
+    <result column="type" property="type" javaType="java.lang.Integer" />
+    <result column="transactorName" property="transactorName" javaType="java.lang.String" />
+    <result column="minScope" property="minScope" javaType="java.lang.Double" />
+    <result column="maxScope" property="maxScope" javaType="java.lang.Double" />
+    <result column="flag" property="flag" javaType="java.lang.Integer" />
+  </resultMap>
+
+  <resultMap id="BaseTransactorInsuranceLevelMap" type="com.magic.daoyuan.business.entity.Transactor" extends="BaseResultMap">
+    <association property="payTheWays" columnPrefix="pt_"
+                 resultMap="com.magic.daoyuan.business.mapper.IPayTheWayMapper.BaseResultMap"/>
+  </resultMap>
+
+  <select id="queryAllTransactor" resultMap="BaseResultMap">
+    SELECT s.supplierName AS transactorName,t.*
+     FROM transactor t,supplier s WHERE t.supplierId = s.id
+  </select>
+
+  <select id="queryTransactorByOrganization" resultMap="BaseResultMap">
+    SELECT
+        t.id,
+        0 AS flag,
+    CASE t.type WHEN 0 THEN s.supplierName
+    ELSE t.transactorName END AS transactorName
+    FROM
+        transactor t
+    LEFT JOIN supplier s ON t.supplierId = s.id
+    WHERE
+        t.isValid = 1
+        <if test="organizationId != null">
+          AND t.organizationId = #{organizationId}
+        </if>
+  </select>
+
+  <select id="info" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select 
+      *
+    from transactor
+    where id = #{id}
+  </select>
+  <delete id="delete" parameterType="java.lang.Integer" >
+    delete from transactor
+    where id = #{id}
+  </delete>
+  <insert id="save" parameterType="com.magic.daoyuan.business.entity.Transactor" >
+      insert into transactor (operationType, inTheEndTime, remindTime, remindContent,
+      isValid, supplierId, minScope, maxScope,organizationId,transactorName,`type`,isImplements,isReceive)
+      values (#{operationType},#{inTheEndTime},#{remindTime},#{remindContent},
+      1,#{supplierId},#{minScope},#{maxScope},#{organizationId},#{transactorName},#{type},#{isImplements},#{isReceive})
+  </insert>
+
+  <update id="update" parameterType="com.magic.daoyuan.business.entity.Transactor" >
+    update transactor
+    <set>
+      <if test="isReceive != null">
+        `isReceive` = #{isReceive},
+      </if>
+      <if test="isImplements != null">
+        `isImplements` = #{isImplements},
+      </if>
+      <if test="operationType != null">
+        `operationType` = #{operationType},
+      </if>
+      <if test="inTheEndTime != null">
+        `inTheEndTime` = #{inTheEndTime},
+      </if>
+      <if test="remindTime != null">
+        `remindTime` = #{remindTime},
+      </if>
+      <if test="remindContent != null and remindContent != ''">
+        `remindContent` = #{remindContent},
+      </if>
+      <if test="transactorName != null and transactorName != ''">
+        `transactorName` = #{transactorName},
+      </if>
+      <if test="isValid != null">
+        isValid = #{isValid},
+      </if>
+      <if test="minScope != null">
+        minScope = #{minScope},
+      </if>
+      <if test="maxScope != null">
+        maxScope = #{maxScope},
+      </if>
+      <if test="organizationId != null">
+        organizationId = #{organizationId},
+      </if>
+      <if test="supplierId != null">
+        supplierId = #{supplierId},
+      </if>
+      <if test="type != null">
+        `type` = #{type},
+      </if>
+    </set>
+    where id = #{id}
+  </update>
+  <update id="updateAll" parameterType="com.magic.daoyuan.business.entity.Transactor" >
+    update transactor
+    set
+      `operationType` = #{operationType},
+    `inTheEndTime` = #{inTheEndTime},
+    `remindTime` = #{remindTime},
+    `remindContent` = #{remindContent},
+    isValid = #{isValid},
+    minScope = #{minScope},
+    maxScope = #{maxScope},
+    supplierId = #{supplierId}
+    where id = #{id}
+  </update>
+
+
+
+
+  <select id="list" resultMap="BaseResultMap" parameterType="map">
+    SELECT s.supplierName AS transactorName,t.*
+    FROM transactor t ,supplier s
+    WHERE t.supplierId = s.id
+    <if test="transactorName != null and transactorName != ''">
+      AND s.supplierName Like '%${transactorName}%'
+    </if>
+    <if test="operationType != null">
+      AND t.operationType = #{operationType}
+    </if>
+    <if test="isValid != null">
+      AND t.isValid = #{isValid}
+    </if>
+    <if test="organizationId != null">
+      AND t.organizationId = #{organizationId}
+    </if>
+    <if test="type != null">
+      AND t.type = #{type}
+    </if>
+    ORDER BY
+    <if test="pageArgs != null">
+      <if test="pageArgs.column != null and pageArgs.column != ''">
+        ${pageArgs.column} ${pageArgs.order},
+      </if>
+    </if>
+    t.id DESC
+    <if test="pageArgs != null">
+      limit #{pageArgs.pageStart}, #{pageArgs.pageSize}
+    </if>
+  </select>
+
+  <select id="listCount" resultType="int" parameterType="map">
+    SELECT
+    COUNT(*)
+    FROM transactor t,supplier s
+    WHERE t.supplierId = s.id
+    <if test="transactorName != null and transactorName != ''">
+      AND s.supplierName Like '%${transactorName}%'
+    </if>
+    <if test="operationType != null">
+      AND t.operationType = #{operationType}
+    </if>
+    <if test="isValid != null">
+      AND t.isValid = #{isValid}
+    </if>
+    <if test="type != null">
+      AND t.type = #{type}
+    </if>
+    <if test="organizationId != null">
+      AND t.organizationId = #{organizationId}
+    </if>
+  </select>
+
+
+
+
+
+</mapper>

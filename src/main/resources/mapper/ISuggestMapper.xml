@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.ISuggestMapper">
+
+
+
+
+
+    <insert id="addSuggest" parameterType="com.magic.daoyuan.business.entity.Suggest">
+        INSERT INTO suggest (content, companyId, createTime)
+        VALUES (#{content}, #{companyId}, NOW())
+    </insert>
+
+
+    <select id="listForAdmin" resultType="com.magic.daoyuan.business.entity.Suggest" parameterType="map">
+        SELECT
+        s.*,cc.companyName
+        FROM suggest s ,company cc
+        WHERE s.companyId = cc.id
+        <if test="companyName != null and companyName != ''">
+            AND cc.companyName Like '%${companyName}%'
+        </if>
+
+        <if test="startTime != null">
+            AND s.createTime <![CDATA[ >= ]]> #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND s.createTime <![CDATA[ <= ]]> #{endTime}
+        </if>
+        ORDER BY
+        <if test="pageArgs != null">
+            <if test="pageArgs.column != null and pageArgs.column != ''">
+                ${pageArgs.column} ${pageArgs.order},
+            </if>
+        </if>
+        s.id DESC
+        <if test="pageArgs != null">
+            limit #{pageArgs.pageStart}, #{pageArgs.pageSize}
+        </if>
+    </select>
+
+
+    <select id="listForAdminCount" resultType="java.lang.Integer" parameterType="map">
+        SELECT
+        COUNT(0)
+        FROM suggest s ,company cc
+        WHERE s.companyId = cc.id
+        <if test="companyName != null and companyName != ''">
+            AND cc.companyName Like '%${companyName}%'
+        </if>
+
+        <if test="startTime != null">
+            AND s.createTime <![CDATA[ >= ]]> #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND s.createTime <![CDATA[ <= ]]> #{endTime}
+        </if>
+    </select>
+
+    <delete id="delete" >
+        DELETE FROM suggest WHERE id = #{id}
+    </delete>
+</mapper>

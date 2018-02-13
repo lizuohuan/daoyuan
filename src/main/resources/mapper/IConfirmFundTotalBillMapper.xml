@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IConfirmFundTotalBillMapper">
+    
+    
+    <resultMap id="BaseConfirmFundTotalBill" type="com.magic.daoyuan.business.entity.ConfirmFundTotalBill">
+        <result column="id" property="id" javaType="java.lang.Integer"/>
+        <result column="confirmFundId" property="confirmFundId" javaType="java.lang.Integer"/>
+        <result column="companySonTotalBillId" property="companySonTotalBillId" javaType="java.lang.Integer"/>
+        <result column="status" property="status" javaType="java.lang.Integer"/>
+        <result column="companyId" property="companyId" javaType="java.lang.Integer"/>
+        <result column="amount" property="amount" javaType="java.lang.Double"/>
+    </resultMap>
+
+
+    <insert id="batchAddConfirmFundTotalBill" parameterType="com.magic.daoyuan.business.entity.ConfirmFundTotalBill"
+        useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO confirm_fund_total_bill (confirmFundId, companySonTotalBillId,amount,`status`,companyId)
+        VALUES 
+        <foreach collection="list" index="index" item="cftb" separator=",">
+            (#{cftb.confirmFundId}, #{cftb.companySonTotalBillId},#{cftb.amount},#{cftb.status},#{cftb.companyId})
+        </foreach>
+    </insert>
+
+
+    <insert id="addConfirmFundTotalBill" parameterType="com.magic.daoyuan.business.entity.ConfirmFundTotalBill">
+        INSERT INTO confirm_fund_total_bill (confirmFundId, companySonTotalBillId,amount,`status`,companyId)
+        VALUES(#{confirmFundId}, #{companySonTotalBillId},#{amount},#{status},#{companyId})
+    </insert>
+
+    <update id="update">
+        <foreach collection="list" index="index" item="cftb" separator=";">
+            UPDATE confirm_fund_total_bill
+            <set>
+                <if test="cftb.status != null">
+                    `status` = #{cftb.status},
+                </if>
+                <if test="cftb.companyId != null">
+                    `companyId` = #{cftb.companyId},
+                </if>
+                <if test="cftb.confirmFundId != null">
+                    `confirmFundId` = #{cftb.confirmFundId},
+                </if>
+                <if test="cftb.amount != null">
+                    `amount` = #{cftb.amount},
+                </if>
+            </set>
+            WHERE id = #{cftb.id}
+        </foreach>
+    </update>
+
+    <delete id="del">
+        DELETE FROM confirm_fund_total_bill WHERE id IN
+        <foreach collection="list" index="index" item="cftb" open="(" close=")" separator=",">
+            #{cftb.id}
+        </foreach>
+    </delete>
+
+
+    <select id="queryConfirmFundTotalBillByCompanyId" resultMap="BaseConfirmFundTotalBill">
+
+        SELECT * FROM confirm_fund_total_bill WHERE `status` = 0 AND companyId IN
+        <foreach collection="list" index="index" item="cId" open="(" close=")" separator=",">
+            #{cId}
+        </foreach>
+
+    </select>
+
+</mapper>

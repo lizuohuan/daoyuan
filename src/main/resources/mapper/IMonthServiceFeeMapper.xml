@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.magic.daoyuan.business.mapper.IMonthServiceFeeMapper">
+
+    <resultMap id="BaseResultMap" type="com.magic.daoyuan.business.entity.MonthServiceFee">
+        <id column="id" property="id" javaType="java.lang.Integer" />
+        <result column="month" property="month" javaType="java.util.Date" />
+        <result column="serviceFee" property="serviceFee" javaType="java.lang.Double" />
+        <result column="companySonTotalBillId" property="companySonTotalBillId" javaType="java.lang.Integer" />
+        <result column="createTime" property="createTime" javaType="java.util.Date" />
+        <result column="companyId" property="companyId" javaType="java.lang.Integer" />
+        <result column="serviceFeeConfigId" property="serviceFeeConfigId" javaType="java.lang.Integer" />
+        <result column="companySonBillId" property="companySonBillId" javaType="java.lang.Integer" />
+        <result column="waysOfCooperation" property="waysOfCooperation" javaType="java.lang.Integer" />
+        <result column="companyCooperationMethodJson" property="companyCooperationMethodJson" javaType="java.lang.String" />
+    </resultMap>
+
+    <resultMap id="BaseResultMapOther" type="com.magic.daoyuan.business.entity.MonthServiceFee" extends="BaseResultMap">
+        <association property="monthServiceFeeDetailList" columnPrefix="msfd_"
+                     resultMap="com.magic.daoyuan.business.mapper.IMonthServiceFeeDetailMapper.BaseResultMap"/>
+    </resultMap>
+
+    <select id="queryMonthServiceFeeByTotalBillId" resultType="com.magic.daoyuan.business.entity.MonthServiceFeeDetail">
+        SELECT msfd.*,m.waysOfCooperation FROM month_service_fee msf,month_service_fee_detail msfd,member m
+        WHERE
+        msf.id = msfd.monthServiceFeeId
+        AND m.id = msfd.memberId
+        AND msf.companySonTotalBillId IN
+        <foreach collection="list" index="index" item="billId" close=")" open="(" separator=",">
+            #{billId}
+        </foreach>
+    </select>
+
+    <insert id="save" keyProperty="id" keyColumn="id" parameterType="com.magic.daoyuan.business.entity.MonthServiceFee"
+            useGeneratedKeys="true">
+        insert into month_service_fee (`month`, serviceFee, companySonTotalBillId, createTime,
+        companyId,serviceFeeConfigId,companyCooperationMethodJson,companySonBillId,waysOfCooperation)
+        values
+        <foreach collection="list" item="record" separator=",">
+            (#{record.month},#{record.serviceFee},#{record.companySonTotalBillId},
+            now(),#{record.companyId},#{record.serviceFeeConfigId},
+            #{record.companyCooperationMethodJson},#{record.companySonBillId},#{record.waysOfCooperation})
+        </foreach>
+    </insert>
+
+    <update id="updateList" parameterType="com.magic.daoyuan.business.entity.MonthServiceFee">
+        <foreach collection="list" separator="," item="msf">
+            update month_service_fee set serviceFee = #{msf.serviceFee} where id = #{msf.id}
+        </foreach>
+    </update>
+
+
+    <select id="info" resultMap="BaseResultMap">
+        SELECT * FROM month_service_fee msf WHERE msf.id = #{id}
+    </select>
+
+    <select id="getByCompanySonTotalBillId" resultType="double">
+        SELECT ifnull(
+        (select SUM(msf.serviceFee)  from month_service_fee msf
+         WHERE msf.companySonTotalBillId = #{companySonTotalBillId})
+        ,0.0)
+    </select>
+
+    <delete id="delete">
+        DELETE FROM month_service_fee WHERE companySonTotalBillId IN (
+        <foreach collection="companySonTotalBillIds" separator="," item="id">
+            #{id}
+        </foreach>
+        )
+    </delete>
+
+
+    <select id="getByCompanyIdAndServiceMonthCount" resultType="int" >
+        SELECT COUNT(0) from month_service_fee msf
+        WHERE
+        msf.companyId = #{companyId}
+        AND DATE_FORMAT(msf.month, '%Y-%m') = DATE_FORMAT(#{serviceMonth}, '%Y-%m')
+    </select>
+
+
+    <select id="getByDateAndCompanyCompanyId" resultMap="BaseResultMap">
+        SELECT * FROM month_service_fee msf
+        <if test="(null != companyIds and companyIds.length > 0) or (null != dateSet and dateSet.size > 0)">
+            WHERE 1 = 1
+            <if test="null != companyIds and companyIds.length > 0">
+                AND msf.companyId IN (
+                <foreach collection="companyIds" separator="," item="id">
+                    #{id}
+                </foreach>
+                )
+            </if>
+            <if test="null != dateSet and dateSet.size > 0">
+                AND
+                <foreach collection="dateSet" separator="or" item="date">
+                DATE_FORMAT(msf.month, '%Y-%m') = DATE_FORMAT(#{date}, '%Y-%m')
+                </foreach>
+            </if>
+        </if>
+    </select>
+
+    <select id="getByDateAndCompanyId" resultMap="BaseResultMapOther">
+        SELECT msf.*,
+            msfd.id AS msfd_id,
+            msfd.monthServiceFeeId AS msfd_monthServiceFeeId,
+            msfd.memberId AS msfd_memberId,
+            msfd.amount AS msfd_amount,
+            msfd.companySonBillId AS msfd_companySonBillId,
+            msfd.businessStr AS msfd_businessStr,
+            msfd.waysOfCooperation AS msfd_waysOfCooperation
+        FROM month_service_fee msf
+        LEFT JOIN month_service_fee_detail msfd ON msfd.monthServiceFeeId = msf.id
+        WHERE 1 = 1
+        AND msf.companyId = #{companyId}
+        AND DATE_FORMAT(msf.month, '%Y-%m') = DATE_FORMAT(#{date}, '%Y-%m')
+    </select>
+
+    <select id="getByDateAndCompanyIdOnlyOne" resultMap="BaseResultMap">
+        SELECT msf.*
+        FROM month_service_fee msf
+        WHERE 1 = 1
+        AND msf.companyId = #{companyId}
+        AND DATE_FORMAT(msf.month, '%Y-%m') = DATE_FORMAT(#{date}, '%Y-%m')
+        limit 0,1
+    </select>
+
+    <select id="getByDateAndCompanyIdOnlyOneAndServiceFeeConfigId" resultType="double">
+        SELECT sum(msf.serviceFee)
+        FROM month_service_fee msf
+        WHERE 1 = 1
+        AND msf.serviceFeeConfigId = #{serviceFeeConfigId}
+        AND msf.companyId = #{companyId}
+        AND DATE_FORMAT(msf.month, '%Y-%m') = DATE_FORMAT(#{date}, '%Y-%m')
+    </select>
+
+</mapper>
